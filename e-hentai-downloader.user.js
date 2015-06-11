@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.1
+// @version      1.2
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -9,6 +9,8 @@
 // @include      http://exhentai.org/g/*
 // @include      http://g.e-hentai.org/g/*
 // @namespace    http://ext.ccloli.com
+// @updateURL    https://github.com/ccloli/E-Hentai-Downloader/raw/master/e-hentai-downloader.user.js
+// @downloadURL  https://github.com/ccloli/E-Hentai-Downloader/raw/master/e-hentai-downloader.user.js
 // @grant        GM_xmlhttpRequest
 // ==/UserScript==
 
@@ -9441,7 +9443,7 @@ function fetchOriginalImage() {
 		url: imageList[index - 1][0],
 		responseType: 'arraybuffer', 
 		onload: function(res) {
-			zip.folder(gid + '_' + token).file(imageList[index - 1][1], res.response);
+			zip.folder(unsafeWindow.gid + '_' + unsafeWindow.token).file(imageList[index - 1][1], res.response);
 			pushDialog('Succeed!\n');
 			if (index < imageList.length) {
 				pushDialog('Fetching Image ' + (++index) + ': ' + imageList[index - 1][1] + ' ... ');
@@ -9449,10 +9451,10 @@ function fetchOriginalImage() {
 			}
 			else {
 				pushDialog('Fetched Images Successful!\n\nFinished Download at ' + new Date());
-				zip.folder(gid + '_' + token).file('info.txt', logStr);
+				zip.folder(unsafeWindow.gid + '_' + unsafeWindow.token).file('info.txt', logStr);
 				var data = zip.generate({type: 'blob'});
 				saveAs(data, document.getElementById('gn').textContent + '.zip');
-				zip.remove(gid + '_' + token);
+				zip.remove(unsafeWindow.gid + '_' + unsafeWindow.token);
 			}
 		},
 		onerror: function() {
@@ -9466,11 +9468,11 @@ function fetchOriginalImage() {
 				if (prompt('Fetch Images\' Failed, Please Try Again Later. Would You Like To Download Downloaded Images?')) {
 					//window.open('data:text/plain,' + logStr);
 					pushDialog('\n\nFinished Download at ' + new Date());
-					zip.folder(gid + '_' + token).file('info.txt', logStr);
+					zip.folder(unsafeWindow.gid + '_' + unsafeWindow.token).file('info.txt', logStr);
 					var data = zip.generate({type: 'blob'});
 					saveAs(data, document.getElementById('gn').textContent + '.zip');
 				}
-				zip.remove(gid + '_' + token);
+				zip.remove(unsafeWindow.gid + '_' + unsafeWindow.token);
 			}
 		}
 	});
@@ -9490,9 +9492,9 @@ function ehDownload() {
 	for (var i = 0; i < metaNodes.length; i++) {
 		logStr += metaNodes[i].getElementsByClassName('gdt1')[0].textContent + ' ' + metaNodes[i].getElementsByClassName('gdt2')[0].textContent + '\n';
 	}
-	pushDialog('Rating: ' + original_rating + '\n\n');
+	pushDialog('Rating: ' + unsafeWindow.original_rating + '\n\n');
 	imageList = [];
-	var fetchURL = document.querySelector('.gdtl a').getAttribute('href');
+	var fetchURL = document.querySelector('#gdt a').getAttribute('href');
 	var xhr = new XMLHttpRequest();
 	xhr.onreadystatechange = function() {
 		if (xhr.readyState == 4) {
