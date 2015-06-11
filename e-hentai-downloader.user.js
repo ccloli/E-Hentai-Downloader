@@ -1,13 +1,18 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.0
+// @version      1.1
 // @description  Download E-Hentai archive as zip file
-// @author       ccloli
+// @author       864907600cc
+// @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
 // @match        http://exhentai.org/g/*
+// @match        http://g.e-hentai.org/g/*
 // @include      http://exhentai.org/g/*
+// @include      http://g.e-hentai.org/g/*
+// @namespace    http://ext.ccloli.com
 // @grant        GM_xmlhttpRequest
 // ==/UserScript==
 
+// This script using JSZip & FileSaver
 
 // ==========---------- JSZip Begin ----------========== //
 /*!
@@ -9414,11 +9419,11 @@ if (typeof module !== "undefined" && module !== null) {
 // ==========---------- FileSaver.js End ----------========== //
 
 var zip;
-var length = 0;
 var index = 1;
 var retryCount = 0;
 var imageList = [];
 var logStr;
+var origin = window.location.origin;
 
 function pushDialog(str) {
 	logStr += str;
@@ -9433,13 +9438,13 @@ function fetchOriginalImage() {
 	//console.log(imageList[index - 1]);
 	GM_xmlhttpRequest({
 		method: 'GET',
-		url: imageList[index - 1],
+		url: imageList[index - 1][0],
 		responseType: 'arraybuffer', 
 		onload: function(res) {
-			zip.folder(gid + '_' + token).file(index + '.jpg', res.response);
+			zip.folder(gid + '_' + token).file(imageList[index - 1][1], res.response);
 			pushDialog('Succeed!\n');
 			if (index < imageList.length) {
-				pushDialog('Fetching Image ' + (++index) + ' ... ');
+				pushDialog('Fetching Image ' + (++index) + ': ' + imageList[index - 1][1] + ' ... ');
 				fetchOriginalImage();
 			}
 			else {
@@ -9473,7 +9478,6 @@ function fetchOriginalImage() {
 
 function ehDownload() {
 	zip = new JSZip();
-	length = 0;
 	index = 1;
 	retryCount = 0;
 	ehDownloadDialog.style.display = 'block';
@@ -9485,7 +9489,6 @@ function ehDownload() {
 	var metaNodes = document.querySelectorAll('#gdd tr');
 	for (var i = 0; i < metaNodes.length; i++) {
 		logStr += metaNodes[i].getElementsByClassName('gdt1')[0].textContent + ' ' + metaNodes[i].getElementsByClassName('gdt2')[0].textContent + '\n';
-		if (metaNodes[i].getElementsByClassName('gdt1')[0].textContent == 'Length:') length = parseInt(metaNodes[i].getElementsByClassName('gdt2')[0].textContent);
 	}
 	pushDialog('Rating: ' + original_rating + '\n\n');
 	imageList = [];
@@ -9495,10 +9498,11 @@ function ehDownload() {
 		if (xhr.readyState == 4) {
 			if (xhr.status == 200) {
 				retryCount = 0;
-				var imageURL = xhr.responseText.match(/<a href="(http:\/\/exhentai\.org\/fullimg\.php\?\S+?)"/)[1];
+				var imageURL = xhr.responseText.indexOf('fullimg.php') >= 0 ? xhr.responseText.match(RegExp('<a href="(' + origin.replace(/\./gi, '\\.') + '\/fullimg\\.php\\?\\S+?)"'))[1].replace(/&amp;/gi, '&') : xhr.responseText.match(/<img id="img" src="(\S+?)"/)[1];
 				pushDialog('Successed!\nImage ' + index + ': ' + imageURL + '\n');
-				imageList.push(imageURL.replace(/&amp;/gi, '&'));
-				var nextFetchURL = xhr.responseText.match(/<a id="next"[\s\S]+?href="(http:\/\/exhentai\.org\/s\/\S+?)"/)[1];
+				var fileName = xhr.responseText.match(/g\/l.png" \/><\/a><\/div><div>([\s\S]+?) :: /)[1];
+				imageList.push([imageURL, fileName]);
+				var nextFetchURL = xhr.responseText.match(RegExp('<a id="next"[\\s\\S]+?href="(' + location.origin.replace(/\./gi, '\\.') + '\\/s\\/\\S+?)"'))[1];
 				if (nextFetchURL != fetchURL) {
 					fetchURL = nextFetchURL;
 					pushDialog('Fetching Page ' + (++index) + ': ' + nextFetchURL + ' ... ');
@@ -9507,7 +9511,7 @@ function ehDownload() {
 				}
 				else {
 					index = 1;
-					pushDialog('\nFetching Image 1 ... ');
+					pushDialog('\nFetching Image 1: ' + imageList[0][1] + ' ... ');
 					fetchOriginalImage();
 				}
 			}
