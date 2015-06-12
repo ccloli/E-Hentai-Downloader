@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.3
+// @version      1.4
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -9447,12 +9447,13 @@ function fetchOriginalImage(index) {
 	// https://github.com/greasemonkey/greasemonkey/issues/1834
 	//console.log(imageList[index - 1]);
 	if (retryCount[index - 1] == null) retryCount[index - 1] = 0;
+	//console.log(retryCount);
 	fetchThread[index - 1] = GM_xmlhttpRequest({
 		method: 'GET',
 		url: imageList[index - 1][0],
 		responseType: 'arraybuffer', 
 		onload: function(res) {
-			if (!setting['enbale-multi-threading']) {
+			if (!setting['enable-multi-threading']) {
 				zip.folder(unsafeWindow.gid + '_' + unsafeWindow.token).file(imageList[index - 1][1], res.response);
 				pushDialog('Succeed!\n');
 				if (index < imageList.length) {
@@ -9469,7 +9470,6 @@ function fetchOriginalImage(index) {
 			} 
 			else {
 				imageData[index - 1] = res.response;
-				console.log(index, downloadedCount, fetchCount);
 				downloadedCount++;
 				console.log(index, downloadedCount, fetchCount);
 				fetchCount--;
@@ -9502,7 +9502,7 @@ function fetchOriginalImage(index) {
 			}
 		},
 		onerror: function() {
-			if (!setting['enbale-multi-threading']) {
+			if (!setting['enable-multi-threading']) {
 				if (retryCount < 3) {
 					pushDialog('Failed! Retrying... ');
 					retryCount++;
@@ -9510,8 +9510,7 @@ function fetchOriginalImage(index) {
 				}
 				else {
 					pushDialog('Failed!\nFetch Images\' Failed.');
-					for (var i = 0; i < fetchThread.length; i++) fetchThread[i].abort();
-					if (prompt('Fetch Images\' Failed, Please Try Again Later. Would You Like To Download Downloaded Images?')) {
+					if (confirm('Fetch Images\' Failed, Please Try Again Later. Would You Like To Download Downloaded Images?')) {
 						//window.open('data:text/plain,' + logStr);
 						pushDialog('\n\nFinished Download at ' + new Date());
 						zip.folder(unsafeWindow.gid + '_' + unsafeWindow.token).file('info.txt', logStr);
@@ -9522,16 +9521,18 @@ function fetchOriginalImage(index) {
 				}
 			}
 			else {
+				console.error(index, imageList[index - 1][1], retryCount[index - 1], downloadedCount, fetchCount);
 				if (retryCount[index - 1] < 3) {
-					var preStr = 'Fetching Image ' + (++index) + ': ' + imageList[index - 1][1] + ' ... ';
+					var preStr = 'Fetching Image ' + index + ': ' + imageList[index - 1][1] + ' ... ';
 					for (var i = 0; i < retryCount[index - 1]; i++) preStr += 'Failed! Retrying... ';
 					pushDialog(preStr, 'Failed! Retrying... ');
 					retryCount[index - 1]++;
 					fetchOriginalImage(index);
 				}
 				else {
-					pushDialog('Fetching Image ' + (++index) + ': ' + imageList[index - 1][1] + ' ... Failed! Retrying... Failed! Retrying... Failed! Retrying... ', 'Failed!\nFetch Images\' Failed.');
-					if (prompt('Fetch Images\' Failed, Please Try Again Later. Would You Like To Download Downloaded Images?')) {
+					for (var i = 0; i < fetchThread.length; i++) fetchThread[i].abort();
+					pushDialog('Fetching Image ' + index + ': ' + imageList[index - 1][1] + ' ... Failed! Retrying... Failed! Retrying... Failed! Retrying... ', 'Failed!\nFetch Images\' Failed.');
+					if (confirm('Fetch Images\' Failed, Please Try Again Later. Would You Like To Download Downloaded Images?')) {
 						//window.open('data:text/plain,' + logStr);
 						for (var j = 0; j < imageData.length; j++) {
 							if (imageData[j] != null && imageData[j] != 'Fetching') {
@@ -9555,8 +9556,7 @@ function fetchOriginalImage(index) {
 function ehDownload() {
 	zip = new JSZip();
 	var index = 1;
-	if (!setting['enbale-multi-threading']) retryCount = 0;
-	else retryCount = [];
+	retryCount = 0;
 	downloadedCount = fetchCount = 0;
 	ehDownloadDialog.style.display = 'block';
 	logStr = document.getElementById('gn').textContent + '\n' 
@@ -9590,11 +9590,12 @@ function ehDownload() {
 				}
 				else {
 					index = 1;
-					if (!setting['enbale-multi-threading']) {
+					if (!setting['enable-multi-threading']) {
 						pushDialog('\nFetching Image 1: ' + imageList[0][1] + ' ... ');
 						fetchOriginalImage(index);
 					}
 					else {
+						retryCount = [];
 						pushDialog('\n');
 						for (var i = fetchCount; i < setting['thread-count']; i++) {
 							for (var j = 0; j < imageList.length; j++) {
@@ -9619,7 +9620,7 @@ function ehDownload() {
 				}
 				else {
 					pushDialog('Failed!\nFetch Images\' URL Failed, Please Try Again Later.');
-					if (prompt('Fetch Images\' URL Failed, Please Try Again Later. Would You Like To See The Log File?')) {
+					if (confirm('Fetch Images\' URL Failed, Please Try Again Later. Would You Like To See The Log File?')) {
 						window.open('data:text/plain,' + logStr);
 					}
 				}
@@ -9635,12 +9636,13 @@ function ehDownloadSet() {
 	var ehDownloadSettingPanel = document.createElement('div');
 	ehDownloadSettingPanel.style.cssText = 'position: fixed; left: 0; right: 0; top: 0; bottom: 0; padding: 5px; border: 1px solid #000000; background: #34353b; color: #dddddd; width: 500px; height: 65px; margin: auto; z-index: 999;';
 	ehDownloadSettingPanel.innerHTML = '\
-			<div><label><input type="checkbox" data-ehd-setting="enbale-multi-threading"> Enable Multi-Threading Download</label></div>\
+			<div><label><input type="checkbox" data-ehd-setting="enable-multi-threading"> Enable Multi-Threading Download</label></div>\
 			<div><label>Multi-Threading Download Thread Count (<=5 is advised) <input type="number" data-ehd-setting="thread-count" min="1"></label></div>\
 			<div><button>Save</button> <button>Cancel</button></div>';
 	document.body.appendChild(ehDownloadSettingPanel);
 	for (var i in setting) {
 		var element = ehDownloadSettingPanel.querySelector('input[data-ehd-setting="' + i + '"]');
+		if (!element) continue;
 		if (element.getAttribute('type') == 'checkbox') ((setting[i]) && (element.setAttribute('checked', 'checked')));
 		else element.setAttribute('value', setting[i]);
 	}
@@ -9648,6 +9650,7 @@ function ehDownloadSet() {
 		if (event.target.tagName.toLowerCase() == 'button') {
 			if (event.target.textContent == 'Save') {
 				var inputs = ehDownloadSettingPanel.querySelectorAll('input[data-ehd-setting]');
+				setting = {};
 				for (var i = 0; i < inputs.length; i++) {
 					setting[inputs[i].dataset.ehdSetting] = inputs[i].getAttribute('type') == 'checkbox' ? inputs[i].checked : inputs[i].getAttribute('type') == 'number' ? Number(inputs[i].value) : inputs[i].value;
 				}
