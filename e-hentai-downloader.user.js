@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.4
+// @version      1.5
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -16,7 +16,7 @@
 // @grant        GM_xmlhttpRequest
 // ==/UserScript==
 
-// This script using JSZip & FileSaver
+// This script using JSZip & FileSaver.js
 
 // ==========---------- JSZip Begin ----------========== //
 /*!
@@ -9179,12 +9179,12 @@ module.exports = ZStream;
 // ==========---------- FileSaver.js Begin ----------========== //
 
 /* FileSaver.js
- *  A saveAs() FileSaver implementation.
- *  2014-05-27
+ * A saveAs() FileSaver implementation.
+ * 2015-05-07.2
  *
- *  By Eli Grey, http://eligrey.com
- *  License: X11/MIT
- *    See https://github.com/eligrey/FileSaver.js/blob/master/LICENSE.md
+ * By Eli Grey, http://eligrey.com
+ * License: X11/MIT
+ *   See https://github.com/eligrey/FileSaver.js/blob/master/LICENSE.md
  */
 
 /*global self */
@@ -9192,16 +9192,10 @@ module.exports = ZStream;
 
 /*! @source http://purl.eligrey.com/github/FileSaver.js/blob/master/FileSaver.js */
 
-var saveAs = saveAs
-  // IE 10+ (native saveAs)
-  || (typeof navigator !== "undefined" &&
-	  navigator.msSaveOrOpenBlob && navigator.msSaveOrOpenBlob.bind(navigator))
-  // Everyone else
-  || (function(view) {
+var saveAs = saveAs || (function(view) {
 	"use strict";
 	// IE <10 is explicitly unsupported
-	if (typeof navigator !== "undefined" &&
-		/MSIE [1-9]\./.test(navigator.userAgent)) {
+	if (typeof navigator !== "undefined" && /MSIE [1-9]\./.test(navigator.userAgent)) {
 		return;
 	}
 	var
@@ -9211,7 +9205,7 @@ var saveAs = saveAs
 			return view.URL || view.webkitURL || view;
 		}
 		, save_link = doc.createElementNS("http://www.w3.org/1999/xhtml", "a")
-		, can_use_save_link = !view.externalHost && "download" in save_link
+		, can_use_save_link = "download" in save_link
 		, click = function(node) {
 			var event = doc.createEvent("MouseEvents");
 			event.initMouseEvent(
@@ -9229,18 +9223,23 @@ var saveAs = saveAs
 		}
 		, force_saveable_type = "application/octet-stream"
 		, fs_min_size = 0
-		, deletion_queue = []
-		, process_deletion_queue = function() {
-			var i = deletion_queue.length;
-			while (i--) {
-				var file = deletion_queue[i];
+		// See https://code.google.com/p/chromium/issues/detail?id=375297#c7 and
+		// https://github.com/eligrey/FileSaver.js/commit/485930a#commitcomment-8768047
+		// for the reasoning behind the timeout and revocation flow
+		, arbitrary_revoke_timeout = 500 // in ms
+		, revoke = function(file) {
+			var revoker = function() {
 				if (typeof file === "string") { // file is an object URL
 					get_URL().revokeObjectURL(file);
 				} else { // file is a File
 					file.remove();
 				}
+			};
+			if (view.chrome) {
+				revoker();
+			} else {
+				setTimeout(revoker, arbitrary_revoke_timeout);
 			}
-			deletion_queue.length = 0; // clear queue
 		}
 		, dispatch = function(filesaver, event_types, event) {
 			event_types = [].concat(event_types);
@@ -9256,7 +9255,15 @@ var saveAs = saveAs
 				}
 			}
 		}
+		, auto_bom = function(blob) {
+			// prepend BOM for UTF-8 XML and text/* types (including HTML)
+			if (/^\s*(?:text\/\S*|application\/xml|\S*\/\S*\+xml)\s*;.*charset\s*=\s*utf-8/i.test(blob.type)) {
+				return new Blob(["\ufeff", blob], {type: blob.type});
+			}
+			return blob;
+		}
 		, FileSaver = function(blob, name) {
+			blob = auto_bom(blob);
 			// First try a.download, then web filesystem, then object URLs
 			var
 				  filesaver = this
@@ -9264,11 +9271,6 @@ var saveAs = saveAs
 				, blob_changed = false
 				, object_url
 				, target_view
-				, get_object_url = function() {
-					var object_url = get_URL().createObjectURL(blob);
-					deletion_queue.push(object_url);
-					return object_url;
-				}
 				, dispatch_all = function() {
 					dispatch(filesaver, "writestart progress write writeend".split(" "));
 				}
@@ -9276,15 +9278,20 @@ var saveAs = saveAs
 				, fs_error = function() {
 					// don't create more object URLs than needed
 					if (blob_changed || !object_url) {
-						object_url = get_object_url(blob);
+						object_url = get_URL().createObjectURL(blob);
 					}
 					if (target_view) {
 						target_view.location.href = object_url;
 					} else {
-						window.open(object_url, "_blank");
+						var new_tab = view.open(object_url, "_blank");
+						if (new_tab == undefined && typeof safari !== "undefined") {
+							//Apple do not allow window.open, see http://bit.ly/1kZffRI
+							view.location.href = object_url
+						}
 					}
 					filesaver.readyState = filesaver.DONE;
 					dispatch_all();
+					revoke(object_url);
 				}
 				, abortable = function(func) {
 					return function() {
@@ -9301,17 +9308,20 @@ var saveAs = saveAs
 				name = "download";
 			}
 			if (can_use_save_link) {
-				object_url = get_object_url(blob);
+				object_url = get_URL().createObjectURL(blob);
 				save_link.href = object_url;
 				save_link.download = name;
 				click(save_link);
 				filesaver.readyState = filesaver.DONE;
 				dispatch_all();
+				revoke(object_url);
 				return;
 			}
 			// Object and web filesystem URLs have a problem saving in Google Chrome when
 			// viewed in a tab, so I force save with application/octet-stream
 			// http://code.google.com/p/chromium/issues/detail?id=91158
+			// Update: Google errantly closed 91158, I submitted it again:
+			// https://code.google.com/p/chromium/issues/detail?id=389642
 			if (view.chrome && type && type !== force_saveable_type) {
 				slice = blob.slice || blob.webkitSlice;
 				blob = slice.call(blob, 0, blob.size, force_saveable_type);
@@ -9338,9 +9348,9 @@ var saveAs = saveAs
 							file.createWriter(abortable(function(writer) {
 								writer.onwriteend = function(event) {
 									target_view.location.href = file.toURL();
-									deletion_queue.push(file);
 									filesaver.readyState = filesaver.DONE;
 									dispatch(filesaver, "writeend", event);
+									revoke(file);
 								};
 								writer.onerror = function() {
 									var error = writer.error;
@@ -9379,6 +9389,13 @@ var saveAs = saveAs
 			return new FileSaver(blob, name);
 		}
 	;
+	// IE 10+ (native saveAs)
+	if (typeof navigator !== "undefined" && navigator.msSaveOrOpenBlob) {
+		return function(blob, name) {
+			return navigator.msSaveOrOpenBlob(auto_bom(blob), name);
+		};
+	}
+
 	FS_proto.abort = function() {
 		var filesaver = this;
 		filesaver.readyState = filesaver.DONE;
@@ -9397,11 +9414,6 @@ var saveAs = saveAs
 	FS_proto.onwriteend =
 		null;
 
-	view.addEventListener("unload", process_deletion_queue, false);
-	saveAs.unload = function() {
-		process_deletion_queue();
-		view.removeEventListener("unload", process_deletion_queue, false);
-	};
 	return saveAs;
 }(
 	   typeof self !== "undefined" && self
@@ -9412,11 +9424,11 @@ var saveAs = saveAs
 // while `this` is nsIContentFrameMessageManager
 // with an attribute `content` that corresponds to the window
 
-if (typeof module !== "undefined" && module !== null) {
-  module.exports = saveAs;
+if (typeof module !== "undefined" && module.exports) {
+  module.exports.saveAs = saveAs;
 } else if ((typeof define !== "undefined" && define !== null) && (define.amd != null)) {
   define([], function() {
-	return saveAs;
+    return saveAs;
   });
 }
 
@@ -9433,6 +9445,8 @@ var setting = GM_getValue('ehD-setting') ? JSON.parse(GM_getValue('ehD-setting')
 var fetchCount = 0;
 var downloadedCount = 0;
 var fetchThread = [];
+var dirName = !setting['dir-name'] ? unsafeWindow.gid + '_' + unsafeWindow.token : setting['dir-name'].replace(/\{gid\}/gi, unsafeWindow.gid).replace(/\{token\}/gi, unsafeWindow.token).replace(/\{title\}/gi, document.getElementById('gn').textContent.replace(/[:"*?|<>\/\\\n]/gi, '-')).replace(/\{subtitle\}/gi, document.getElementById('gj').textContent.replace(/[:"*?|<>\/\\\n]/gi, '-')).replace(/\{tag\}/gi, document.querySelector('.ic').getAttribute('alt').toUpperCase()).replace(/\{uploader\}/gi, document.querySelector('#gdn a').textContent.replace(/[:"*?|<>\/\\\n]/gi, '-'));
+var fileName = !setting['file-name'] ? document.getElementById('gn').textContent : setting['file-name'].replace(/\{gid\}/gi, unsafeWindow.gid).replace(/\{token\}/gi, unsafeWindow.token).replace(/\{title\}/gi, document.getElementById('gn').textContent.replace(/[:"*?|<>\/\\\n]/gi, '-')).replace(/\{subtitle\}/gi, document.getElementById('gj').textContent.replace(/[:"*?|<>\/\\\n]/gi, '-')).replace(/\{tag\}/gi, document.querySelector('.ic').getAttribute('alt').toUpperCase()).replace(/\{uploader\}/gi, document.querySelector('#gdn a').textContent.replace(/[:"*?|<>\/\\\n]/gi, '-'));
 
 function pushDialog(str, str2) {
 	if (str2 == null) logStr += str;
@@ -9454,7 +9468,7 @@ function fetchOriginalImage(index) {
 		responseType: 'arraybuffer', 
 		onload: function(res) {
 			if (!setting['enable-multi-threading']) {
-				zip.folder(unsafeWindow.gid + '_' + unsafeWindow.token).file(imageList[index - 1][1], res.response);
+				zip.folder(dirName).file(imageList[index - 1][1], res.response);
 				pushDialog('Succeed!\n');
 				if (index < imageList.length) {
 					pushDialog('Fetching Image ' + (++index) + ': ' + imageList[index - 1][1] + ' ... ');
@@ -9462,9 +9476,10 @@ function fetchOriginalImage(index) {
 				}
 				else {
 					pushDialog('Fetched Images Successful!\n\nFinished Download at ' + new Date());
-					zip.folder(unsafeWindow.gid + '_' + unsafeWindow.token).file('info.txt', logStr);
+					logStr += '\n\nGenerated By E-Hentai Downloader. https://github.com/ccloli/E-Hentai-Downloader';
+					zip.folder(dirName).file('info.txt', logStr);
 					var data = zip.generate({type: 'blob'});
-					saveAs(data, document.getElementById('gn').textContent + '.zip');
+					saveAs(data, fileName + '.zip');
 					zip.remove(unsafeWindow.gid + '_' + unsafeWindow.token);
 				}
 			} 
@@ -9491,12 +9506,13 @@ function fetchOriginalImage(index) {
 				}
 				else {
 					for (var j = 0; j < imageList.length; j++) {
-						zip.folder(unsafeWindow.gid + '_' + unsafeWindow.token).file(imageList[j][1], imageData.shift());
+						zip.folder(dirName).file(imageList[j][1], imageData.shift());
 					}
 					pushDialog('Fetched Images Successful!\n\nFinished Download at ' + new Date());
-					zip.folder(unsafeWindow.gid + '_' + unsafeWindow.token).file('info.txt', logStr);
+					logStr += '\n\nGenerated By E-Hentai Downloader. https://github.com/ccloli/E-Hentai-Downloader';
+					zip.folder(dirName).file('info.txt', logStr);
 					var data = zip.generate({type: 'blob'});
-					saveAs(data, document.getElementById('gn').textContent + '.zip');
+					saveAs(data, fileName + '.zip');
 					zip.remove(unsafeWindow.gid + '_' + unsafeWindow.token);
 				}
 			}
@@ -9509,13 +9525,14 @@ function fetchOriginalImage(index) {
 					fetchOriginalImage(index);
 				}
 				else {
-					pushDialog('Failed!\nFetch Images\' Failed.');
-					if (confirm('Fetch Images\' Failed, Please Try Again Later. Would You Like To Download Downloaded Images?')) {
+					pushDialog('Failed!\nFetch Images Failed.');
+					if (confirm('Fetch Images Failed, Please Try Again Later. Would You Like To Download Downloaded Images?')) {
 						//window.open('data:text/plain,' + logStr);
 						pushDialog('\n\nFinished Download at ' + new Date());
-						zip.folder(unsafeWindow.gid + '_' + unsafeWindow.token).file('info.txt', logStr);
+						logStr += '\n\nGenerated By E-Hentai Downloader. https://github.com/ccloli/E-Hentai-Downloader';
+						zip.folder(dirName).file('info.txt', logStr);
 						var data = zip.generate({type: 'blob'});
-						saveAs(data, document.getElementById('gn').textContent + '.zip');
+						saveAs(data, fileName + '.zip');
 					}
 					zip.remove(unsafeWindow.gid + '_' + unsafeWindow.token);
 				}
@@ -9531,19 +9548,21 @@ function fetchOriginalImage(index) {
 				}
 				else {
 					for (var i = 0; i < fetchThread.length; i++) fetchThread[i].abort();
-					pushDialog('Fetching Image ' + index + ': ' + imageList[index - 1][1] + ' ... Failed! Retrying... Failed! Retrying... Failed! Retrying... ', 'Failed!\nFetch Images\' Failed.');
-					if (confirm('Fetch Images\' Failed, Please Try Again Later. Would You Like To Download Downloaded Images?')) {
+					pushDialog('Fetching Image ' + index + ': ' + imageList[index - 1][1] + ' ... Failed! Retrying... Failed! Retrying... Failed! Retrying... ', 'Failed!');
+					pushDialog('\nFetch Images Failed.');
+					if (confirm('Fetch Images Failed, Please Try Again Later. Would You Like To Download Downloaded Images?')) {
 						//window.open('data:text/plain,' + logStr);
 						for (var j = 0; j < imageData.length; j++) {
 							if (imageData[j] != null && imageData[j] != 'Fetching') {
-								zip.folder(unsafeWindow.gid + '_' + unsafeWindow.token).file(imageList[j][1], imageData[j]);
+								zip.folder(dirName).file(imageList[j][1], imageData[j]);
 								imageData[j] = null;
 							}
 						}
 						pushDialog('\n\nFinished Download at ' + new Date());
-						zip.folder(unsafeWindow.gid + '_' + unsafeWindow.token).file('info.txt', logStr);
+						logStr += '\n\nGenerated By E-Hentai Downloader. https://github.com/ccloli/E-Hentai-Downloader';
+						zip.folder(dirName).file('info.txt', logStr);
 						var data = zip.generate({type: 'blob'});
-						saveAs(data, document.getElementById('gn').textContent + '.zip');
+						saveAs(data, fileName + '.zip');
 					}
 					zip.remove(unsafeWindow.gid + '_' + unsafeWindow.token);
 
@@ -9634,11 +9653,14 @@ function ehDownload() {
 
 function ehDownloadSet() {
 	var ehDownloadSettingPanel = document.createElement('div');
-	ehDownloadSettingPanel.style.cssText = 'position: fixed; left: 0; right: 0; top: 0; bottom: 0; padding: 5px; border: 1px solid #000000; background: #34353b; color: #dddddd; width: 500px; height: 65px; margin: auto; z-index: 999;';
+	ehDownloadSettingPanel.style.cssText = 'position: fixed; left: 0; right: 0; top: 0; bottom: 0; padding: 5px; border: 1px solid #000000; background: #34353b; color: #dddddd; width: 500px; height: 210px; margin: auto; z-index: 999; text-align: left;';
 	ehDownloadSettingPanel.innerHTML = '\
-			<div><label><input type="checkbox" data-ehd-setting="enable-multi-threading"> Enable Multi-Threading Download</label></div>\
-			<div><label>Multi-Threading Download Thread Count (<=5 is advised) <input type="number" data-ehd-setting="thread-count" min="1"></label></div>\
-			<div><button>Save</button> <button>Cancel</button></div>';
+			<div class="g2"><label><input type="checkbox" data-ehd-setting="enable-multi-threading"> Enable Multi-Threading Download</label></div>\
+			<div class="g2"><label>Multi-Threading Download Thread Count (<=5 is advised) <input type="number" data-ehd-setting="thread-count" min="1"></label></div>\
+			<div class="g2"><label>Set Floder Name As <input type="text" data-ehd-setting="dir-name"> (Default is "{gid}_{token}")</label></div>\
+			<div class="g2"><label>Set Zip File Name As <input type="text" data-ehd-setting="file-name"> (Default is "{title}")</label></div>\
+			<div class="g2">Enabled Tags: <span title="You can find GID and token at the address bar like this: exhentai.org/g/[GID]/[Token]/">{gid} Archive\'s GID</sapn> | <span title="You can find GID and token at the address bar like this: exhentai.org/g/[GID]/[Token]/">{token} Archive\'s Token</sapn> | <span title="This title is the English title or Latin transliteration, you can find it as the first line of the title.">{title} Archive\'s Title</span> | <span title="This title is the original language title, you can find it as the second line of the title.">{subtitle} Archive\'s Sub-Title</span> | <span title="This tag means the sort name of the archive, and its output string is upper.">{tag} Archive\'s Tag</span> | <span title="You can find it at the left of the archive page.">{uploader} Archive\'s Uploader</a></div>\
+			<div style="text-align: center"><button>Save</button> <button>Cancel</button></div>';
 	document.body.appendChild(ehDownloadSettingPanel);
 	for (var i in setting) {
 		var element = ehDownloadSettingPanel.querySelector('input[data-ehd-setting="' + i + '"]');
