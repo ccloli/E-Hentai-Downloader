@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.8
+// @version      1.8.1
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -9456,7 +9456,7 @@ var setting = GM_getValue('ehD-setting') ? JSON.parse(GM_getValue('ehD-setting')
 var fetchCount = 0;
 var downloadedCount = 0;
 var fetchThread = [];
-var dirName = (!setting['dir-name'] || setting['dir-name'] != '') ? 
+var dirName = (!setting['dir-name'] || setting['dir-name'] == '') ? 
 	unsafeWindow.gid + '_' + unsafeWindow.token 
 	: 
 	setting['dir-name'].replace(/\{gid\}/gi, unsafeWindow.gid)
@@ -9465,7 +9465,7 @@ var dirName = (!setting['dir-name'] || setting['dir-name'] != '') ?
 		.replace(/\{subtitle\}/gi, document.getElementById('gj').textContent ? document.getElementById('gj').textContent.replace(/[:"*?|<>\/\\\n]/gi, '-') : document.getElementById('gn').textContent.replace(/[:"*?|<>\/\\\n]/gi, '-'))
 		.replace(/\{tag\}/gi, document.querySelector('.ic').getAttribute('alt').toUpperCase())
 		.replace(/\{uploader\}/gi, document.querySelector('#gdn a').textContent.replace(/[:"*?|<>\/\\\n]/gi, '-'));
-var fileName = (!setting['file-name'] || setting['file-name'] != '') ? 
+var fileName = (!setting['file-name'] || setting['file-name'] == '') ? 
 	document.getElementById('gn').textContent 
 	: 
 	setting['file-name'].replace(/\{gid\}/gi, unsafeWindow.gid)
