@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.8.1
+// @version      1.8.2
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -9510,7 +9510,7 @@ function storeRes(res, index) {
 		for (var i = 0; i < retryCount[index - 1]; i++) preStr += 'Failed! Retrying... ';
 		pushDialog(preStr, 'Succeed!');
 		if (downloadedCount + failedCount < imageList.length) {
-			for (var i = fetchCount; i < (setting['thread-count'] != null ? setting['thread-count'] : 1); i++) {
+			for (var i = fetchCount; i < (setting['thread-count'] != null ? setting['thread-count'] : 5); i++) {
 				for (var j = 0; j < imageList.length; j++) {
 					if (imageData[j] == null) {
 						imageData[j] = 'Fetching';
@@ -9534,7 +9534,7 @@ function storeRes(res, index) {
 							//console.log(j);
 						}
 					}
-					for (var i = fetchCount; i < (setting['thread-count'] != null ? setting['thread-count'] : 1); i++) {
+					for (var i = fetchCount; i < (setting['thread-count'] != null ? setting['thread-count'] : 5); i++) {
 						for (var j = 0; j < imageList.length; j++) {
 							if (imageData[j] == null) {
 								imageData[j] = 'Fetching';
@@ -9626,7 +9626,7 @@ function failedFetching(index){
 							//console.log(j);
 						}
 					}
-					for (var i = fetchCount; i < (setting['thread-count'] != null ? setting['thread-count'] : 1); i++) {
+					for (var i = fetchCount; i < (setting['thread-count'] != null ? setting['thread-count'] : 5); i++) {
 						for (var j = 0; j < imageList.length; j++) {
 							if (imageData[j] == null) {
 								imageData[j] = 'Fetching';
@@ -9657,7 +9657,7 @@ function failedFetching(index){
 			}
 			else {
 				if (downloadedCount + failedCount < imageList.length) {
-					for (var i = fetchCount; i < (setting['thread-count'] != null ? setting['thread-count'] : 1); i++) {
+					for (var i = fetchCount; i < (setting['thread-count'] != null ? setting['thread-count'] : 5); i++) {
 						for (var j = 0; j < imageList.length; j++) {
 							if (imageData[j] == null) {
 								imageData[j] = 'Fetching';
