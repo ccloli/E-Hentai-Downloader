@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.9
+// @version      1.10
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -9482,8 +9482,8 @@ function getReplacedName(str) {
 		.replace(/\{uploader\}/gi, document.querySelector('#gdn a').textContent.replace(/[:"*?|<>\/\\\n]/gi, '-'));
 }
 
-function PageData(pageURL, imageURL, imageName) {
-	this.pageURL = pageURL;
+function PageData(pageURL, imageURL, imageName, nextNL) {
+	this.pageURL = pageURL.split('?')[0];
 	this.imageURL = imageURL;
 	imageList.some(function(elem) {
 		if (elem != null && elem.imageName == imageName) {
@@ -9495,6 +9495,7 @@ function PageData(pageURL, imageURL, imageName) {
 	});
 	this.imageName = imageName;
 	this.equalCount = 1;
+	this.nextNL = nextNL;
 }
 /*
 function storePageData(content) {
@@ -9738,6 +9739,8 @@ function retryAllFailed(){
 			if (xhr.status == 200) {
 				var imageURL = (unsafeWindow.apiuid != -1 && xhr.responseText.indexOf('fullimg.php') >= 0) ? xhr.responseText.match(RegExp('<a href="(' + origin.replace(/\./gi, '\\.') + '\/fullimg\\.php\\?\\S+?)"'))[1].replace(/&amp;/gi, '&') : xhr.responseText.indexOf('id="img"') > -1 ? xhr.responseText.match(/<img id="img" src="(\S+?)"/)[1] : xhr.responseText.split('href="' + nextFetchURL + '"><img', 1)[2].split('src="', 2)[1].split('"', 1)[0]; // Sometimes preview image may not have id="img", thanks to 8qwe24657913
 				imageList[index]['imageURL'] = imageURL;
+				var nextNL = /return nl\('[\d-]+'\)/.test(xhr.responseText) ? xhr.responseText.match(/return nl\('([\d-]+)'\)/)[1] : null;
+				imageList[index]['nextNL'] = nextNL;
 				failedCount--;
 				pushDialog('Succeed!\nImage ' + (index + 1) + ': ' + imageURL + '\n');
 				if (failedCount == 0) {
@@ -9759,8 +9762,9 @@ function retryAllFailed(){
 							imageData[index] = null;
 							retryCount[index] = 0;
 							if (imageList.indexOf('fullimg.php') < 0) {
-								pushDialog('Fetching Page ' + (index + 1) + ': ' + imageList[index]['pageURL'] + ' ... ');
-								xhr.open('GET', imageList[index]['pageURL']);
+								var _fetchURL = imageList[index]['pageURL'] + (imageList[index]['nextNL'] ? '?nl=' + imageList[index]['nextNL'] : '');
+								pushDialog('Fetching Page ' + (index + 1) + ': ' + _fetchURL + ' ... ');
+								xhr.open('GET', _fetchURL);
 								xhr.send();
 							}
 							break;
@@ -9787,8 +9791,9 @@ function retryAllFailed(){
 			imageData[index] = null;
 			retryCount[index] = 0;
 			if (imageList.indexOf('fullimg.php') < 0) {
-				pushDialog('Fetching Page ' + (index + 1) + ': ' + imageList[index]['pageURL'] + ' ... ');
-				xhr.open('GET', imageList[index]['pageURL']);
+				var _fetchURL = imageList[index]['pageURL'] + (imageList[index]['nextNL'] ? '?nl=' + imageList[index]['nextNL'] : '');
+				pushDialog('Fetching Page ' + (index + 1) + ': ' + _fetchURL + ' ... ');
+				xhr.open('GET', _fetchURL);
 				xhr.send();
 				refetch = 1;
 			}
@@ -9868,7 +9873,8 @@ function ehDownload() {
 				//storePageData(xhr.responseText);
 				var imageURL = (unsafeWindow.apiuid != -1 && xhr.responseText.indexOf('fullimg.php') >= 0) ? xhr.responseText.match(RegExp('<a href="(' + origin.replace(/\./gi, '\\.') + '\/fullimg\\.php\\?\\S+?)"'))[1].replace(/&amp;/gi, '&') : xhr.responseText.indexOf('id="img"') > -1 ? xhr.responseText.match(/<img id="img" src="(\S+?)"/)[1] : xhr.responseText.split('href="' + nextFetchURL + '"><img', 1)[2].split('src="', 2)[1].split('"', 1)[0]; // Sometimes preview image may not have id="img", thanks to 8qwe24657913
 				var fileName = xhr.responseText.match(/g\/l.png" \/><\/a><\/div><div>([\s\S]+?) :: /)[1];
-				imageList.push(new PageData(fetchURL, imageURL, fileName));
+				var nextNL = /return nl\('[\d-]+'\)/.test(xhr.responseText) ? xhr.responseText.match(/return nl\('([\d-]+)'\)/)[1] : null;
+				imageList.push(new PageData(fetchURL, imageURL, fileName, nextNL));
 				pushDialog('Succeed!\nImage ' + index + ': ' + imageURL + '\n');
 				var nextFetchURL = xhr.responseText.match(RegExp('<a id="next"[\\s\\S]+?href="(' + origin.replace(/\./gi, '\\.') + '\\/s\\/\\S+?)"'))[1];
 				if (nextFetchURL != fetchURL) {
