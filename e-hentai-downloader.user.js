@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.10
+// @version      1.11
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -15,9 +15,14 @@
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_xmlhttpRequest
+// @grant        GM_info
 // ==/UserScript==
 
 // This script using JSZip & FileSaver.js
+
+console.log('[EHD] E-Hentai Downloader is running.');
+console.log('[EHD] Bugs Report >', 'https://github.com/ccloli/E-Hentai-Downloader/issues | https://greasyfork.org/scripts/10379-e-hentai-downloader/feedback');
+console.log('[EHD] To report a bug, showing all the "[EHD]" logs is wonderful. =w=');
 
 // ==========---------- JSZip Begin ----------========== //
 /*!
@@ -9181,7 +9186,7 @@ module.exports = ZStream;
 
 /* FileSaver.js
  * A saveAs() FileSaver implementation.
- * 2015-05-07.2
+ * 1.1.20150716
  *
  * By Eli Grey, http://eligrey.com
  * License: X11/MIT
@@ -9208,11 +9213,7 @@ var saveAs = saveAs || (function(view) {
 		, save_link = doc.createElementNS("http://www.w3.org/1999/xhtml", "a")
 		, can_use_save_link = "download" in save_link
 		, click = function(node) {
-			var event = doc.createEvent("MouseEvents");
-			event.initMouseEvent(
-				"click", true, false, view, 0, 0, 0, 0, 0
-				, false, false, false, false, 0, null
-			);
+			var event = new MouseEvent("click");
 			node.dispatchEvent(event);
 		}
 		, webkit_req_fs = view.webkitRequestFileSystem
@@ -9263,8 +9264,10 @@ var saveAs = saveAs || (function(view) {
 			}
 			return blob;
 		}
-		, FileSaver = function(blob, name) {
-			blob = auto_bom(blob);
+		, FileSaver = function(blob, name, no_auto_bom) {
+			if (!no_auto_bom) {
+				blob = auto_bom(blob);
+			}
 			// First try a.download, then web filesystem, then object URLs
 			var
 				  filesaver = this
@@ -9312,10 +9315,12 @@ var saveAs = saveAs || (function(view) {
 				object_url = get_URL().createObjectURL(blob);
 				save_link.href = object_url;
 				save_link.download = name;
-				click(save_link);
-				filesaver.readyState = filesaver.DONE;
-				dispatch_all();
-				revoke(object_url);
+				setTimeout(function() {
+					click(save_link);
+					dispatch_all();
+					revoke(object_url);
+					filesaver.readyState = filesaver.DONE;
+				});
 				return;
 			}
 			// Object and web filesystem URLs have a problem saving in Google Chrome when
@@ -9386,14 +9391,17 @@ var saveAs = saveAs || (function(view) {
 			}), fs_error);
 		}
 		, FS_proto = FileSaver.prototype
-		, saveAs = function(blob, name) {
-			return new FileSaver(blob, name);
+		, saveAs = function(blob, name, no_auto_bom) {
+			return new FileSaver(blob, name, no_auto_bom);
 		}
 	;
 	// IE 10+ (native saveAs)
 	if (typeof navigator !== "undefined" && navigator.msSaveOrOpenBlob) {
-		return function(blob, name) {
-			return navigator.msSaveOrOpenBlob(auto_bom(blob), name);
+		return function(blob, name, no_auto_bom) {
+			if (!no_auto_bom) {
+				blob = auto_bom(blob);
+			}
+			return navigator.msSaveOrOpenBlob(blob, name || "download");
 		};
 	}
 
@@ -9461,7 +9469,327 @@ var dirName;
 var fileName;
 var failedCount = 0;
 
-console.log(setting);
+console.log('[EHD] UserAgent >', navigator.userAgent);
+console.log('[EHD] Script Handler >', GM_info.scriptHandler || 'GreaseMonkey'); // (Only Tampermonkey supports GM_info.scriptHandler)
+console.log('[EHD] GreaseMonkey / Tampermonkey Version >', GM_info.version);
+console.log('[EHD] E-Hentai Downloader Version >', GM_info.script.version);
+console.log('[EHD] E-Hentai Downloader Setting >', JSON.stringify(setting));
+console.log('[EHD] Current URL >', window.location.href);
+console.log('[EHD] Is Logged In >', unsafeWindow.apiuid != -1);
+
+String.prototype.replaceHTMLEntites = function() {
+	var matchEntity = function(entity) {
+		switch (entity) {
+			case 'euro':
+				return '€';
+				break;
+			case 'nbsp':
+				return ' ';
+				break;
+			case 'quot':
+				return '"';
+				break;
+			case 'amp':
+				return '&';
+				break;
+			case 'lt':
+				return '<';
+				break;
+			case 'gt':
+				return '>';
+				break;
+			case 'iexcl':
+				return '¡';
+				break;
+			case 'cent':
+				return '¢';
+				break;
+			case 'pound':
+				return '£';
+				break;
+			case 'curren':
+				return '¤';
+				break;
+			case 'yen':
+				return '¥';
+				break;
+			case 'brvbar':
+				return '¦';
+				break;
+			case 'sect':
+				return '§';
+				break;
+			case 'uml':
+				return '¨';
+				break;
+			case 'copy':
+				return '©';
+				break;
+			case 'ordf':
+				return 'ª';
+				break;
+			case 'not':
+				return '¬';
+				break;
+			case 'shy':
+				return String.fromCharCode(173);
+				break;
+			case 'reg':
+				return '®';
+				break;
+			case 'macr':
+				return '¯';
+				break;
+			case 'deg':
+				return '°';
+				break;
+			case 'plusmn':
+				return '±';
+				break;
+			case 'sup2':
+				return '²';
+				break;
+			case 'sup3':
+				return '³';
+				break;
+			case 'acute':
+				return '´';
+				break;
+			case 'micro':
+				return 'µ';
+				break;
+			case 'para':
+				return '¶';
+				break;
+			case 'middot':
+				return '·';
+				break;
+			case 'cedil':
+				return '¸';
+				break;
+			case 'sup1':
+				return '¹';
+				break;
+			case 'ordm':
+				return 'º';
+				break;
+			case 'raquo':
+				return '»';
+				break;
+			case 'frac14':
+				return '¼';
+				break;
+			case 'frac12':
+				return '½';
+				break;
+			case 'frac34':
+				return '¾';
+				break;
+			case 'iquest':
+				return '¿';
+				break;
+			case 'Agrave':
+				return 'À';
+				break;
+			case 'Aacute':
+				return 'Á';
+				break;
+			case 'Acirc':
+				return 'Â';
+				break;
+			case 'Atilde':
+				return 'Ã';
+				break;
+			case 'Auml':
+				return 'Ä';
+				break;
+			case 'Aring':
+				return 'Å';
+				break;
+			case 'AElig':
+				return 'Æ';
+				break;
+			case 'Ccedil':
+				return 'Ç';
+				break;
+			case 'Egrave':
+				return 'È';
+				break;
+			case 'Eacute':
+				return 'É';
+				break;
+			case 'Ecirc':
+				return 'Ê';
+				break;
+			case 'Euml':
+				return 'Ë';
+				break;
+			case 'Igrave':
+				return 'Ì';
+				break;
+			case 'Iacute':
+				return 'Í';
+				break;
+			case 'Icirc':
+				return 'Î';
+				break;
+			case 'Iuml':
+				return 'Ï';
+				break;
+			case 'ETH':
+				return 'Ð';
+				break;
+			case 'Ntilde':
+				return 'Ñ';
+				break;
+			case 'Ograve':
+				return 'Ò';
+				break;
+			case 'Oacute':
+				return 'Ó';
+				break;
+			case 'Ocirc':
+				return 'Ô';
+				break;
+			case 'Otilde':
+				return 'Õ';
+				break;
+			case 'Ouml':
+				return 'Ö';
+				break;
+			case 'times':
+				return '×';
+				break;
+			case 'Oslash':
+				return 'Ø';
+				break;
+			case 'Ugrave':
+				return 'Ù';
+				break;
+			case 'Uacute':
+				return 'Ú';
+				break;
+			case 'Ucirc':
+				return 'Û';
+				break;
+			case 'Uuml':
+				return 'Ü';
+				break;
+			case 'Yacute':
+				return 'Ý';
+				break;
+			case 'THORN':
+				return 'Þ';
+				break;
+			case 'szlig':
+				return 'ß';
+				break;
+			case 'agrave':
+				return 'à';
+				break;
+			case 'aacute':
+				return 'á';
+				break;
+			case 'acirc':
+				return 'â';
+				break;
+			case 'atilde':
+				return 'ã';
+				break;
+			case 'auml':
+				return 'ä';
+				break;
+			case 'aring':
+				return 'å';
+				break;
+			case 'aelig':
+				return 'æ';
+				break;
+			case 'ccedil':
+				return 'ç';
+				break;
+			case 'egrave':
+				return 'è';
+				break;
+			case 'eacute':
+				return 'é';
+				break;
+			case 'ecirc':
+				return 'ê';
+				break;
+			case 'euml':
+				return 'ë';
+				break;
+			case 'igrave':
+				return 'ì';
+				break;
+			case 'iacute':
+				return 'í';
+				break;
+			case 'icirc':
+				return 'î';
+				break;
+			case 'iuml':
+				return 'ï';
+				break;
+			case 'eth':
+				return 'ð';
+				break;
+			case 'ntilde':
+				return 'ñ';
+				break;
+			case 'ograve':
+				return 'ò';
+				break;
+			case 'oacute':
+				return 'ó';
+				break;
+			case 'ocirc':
+				return 'ô';
+				break;
+			case 'otilde':
+				return 'õ';
+				break;
+			case 'ouml':
+				return 'ö';
+				break;
+			case 'divide':
+				return '÷';
+				break;
+			case 'oslash':
+				return 'ø';
+				break;
+			case 'ugrave':
+				return 'ù';
+				break;
+			case 'uacute':
+				return 'ú';
+				break;
+			case 'ucirc':
+				return 'û';
+				break;
+			case 'uuml':
+				return 'ü';
+				break;
+			case 'yacute':
+				return 'ý';
+				break;
+			case 'thorn':
+				return 'þ';
+				break;
+			default:
+				if (entity.match(/#\d+/)) {
+					var charCode = entity.match(/#(\d+)/)[1] - 0;
+					return String.fromCharCode(charCode);
+				}
+				else return '&' + entity + ';';
+		}
+	}
+	var result = this.replace(/&(#\d+|[a-zA-Z]+);/g, function(match, entity) {
+		return matchEntity(entity);
+	});
+	return result;
+}
 
 function pushDialog(str, str2) {
 	if (str2 == null) logStr += str;
@@ -9479,7 +9807,8 @@ function getReplacedName(str) {
 		.replace(/\{title\}/gi, document.getElementById('gn').textContent.replace(/[:"*?|<>\/\\\n]/gi, '-'))
 		.replace(/\{subtitle\}/gi, document.getElementById('gj').textContent ? document.getElementById('gj').textContent.replace(/[:"*?|<>\/\\\n]/gi, '-') : document.getElementById('gn').textContent.replace(/[:"*?|<>\/\\\n]/gi, '-'))
 		.replace(/\{tag\}/gi, document.querySelector('.ic').getAttribute('alt').toUpperCase())
-		.replace(/\{uploader\}/gi, document.querySelector('#gdn a').textContent.replace(/[:"*?|<>\/\\\n]/gi, '-'));
+		.replace(/\{uploader\}/gi, document.querySelector('#gdn a').textContent.replace(/[:"*?|<>\/\\\n]/gi, '-'))
+		.replaceHTMLEntites();
 }
 
 function PageData(pageURL, imageURL, imageName, nextNL) {
@@ -9521,7 +9850,7 @@ function storeRes(res, index) {
 	else {
 		imageData[index - 1] = res.response;
 		downloadedCount++;
-		console.log(index, downloadedCount, fetchCount);
+		console.log('[EHD] Index >', index, ' | DownloadedCount >', downloadedCount, ' | FetchCount >', fetchCount);
 		fetchCount--;
 		var preStr = 'Fetching Image ' + (index) + ': ' + imageList[index - 1]['imageName'] + ' ... ';
 		for (var i = 0; i < retryCount[index - 1]; i++) preStr += 'Failed! Retrying... ';
@@ -9602,7 +9931,7 @@ function failedFetching(index){
 		}
 	}
 	else {
-		console.error(index, imageList[index - 1]['imageName'], retryCount[index - 1], downloadedCount, fetchCount, failedCount);
+		console.error('[EHD] Index >', index, ' | Name >', imageList[index - 1]['imageName'], ' | RetryCount >', retryCount[index - 1], ' | DownloadedCount >', downloadedCount, ' | FetchCount >', fetchCount, ' | FailedCount >', failedCount);
 		if (retryCount[index - 1] < (setting['retry-count'] != null ? setting['retry-count'] : 3)) {
 			var preStr = 'Fetching Image ' + index + ': ' + imageList[index - 1]['imageName'] + ' ... ';
 			for (var i = 0; i < retryCount[index - 1]; i++) preStr += 'Failed! Retrying... ';
@@ -9669,6 +9998,12 @@ function fetchOriginalImage(index) {
 		overrideMimeType: window.MSBlobBuilder ? 'text/plain; charset=x-user-defined' : undefined,
 		// timeout is failed in Chrome Tampermonkey
 		timeout: setting['timeout'] != null ? Number(setting['timeout']) * 1000 : 0,
+		headers: {
+			/*'Upgrade-Insecure-Requests': 1,
+			'Cache-Control': 'max-age=0'*/
+			'Referer': imageList[index - 1]['pageURL'],
+			'X-Alt-Referer': imageList[index - 1]['pageURL']
+		},
 		onload: function(res) {
 			if (!res.response) {
 				var data = {
@@ -9683,10 +10018,14 @@ function fetchOriginalImage(index) {
 			if (res.response.byteLength == 925) { // '403 Access Denied' Image Byte Size
 				//fetchThread[index - 1].dispatchEvent(new Event('error'));
 				// GM_xhr only support abort()
+				console.log('[EHD] #' + index + ': 403 Access Denied');
+				console.log('[EHD] #' + index + ': ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
 				return failedFetching(index);
 			}
 			else if (res.response.byteLength == 141) { // Image Viewing Limits String Byte Size
 				for (var i = 0; i < fetchThread.length; i++) fetchThread[i].abort();
+				console.log('[EHD] #' + index + ': Exceed Image Viewing Limits');
+				console.log('[EHD] #' + index + ': ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
 				pushDialog('\nYou have exceeded your image viewing limits.');
 				if (confirm('You have exceeded your image viewing limits. You can reset these limits at home page.\n\nWould you like to save downloaded images?')) {
 					for (var j = 0; j < imageData.length; j++) {
@@ -9704,6 +10043,8 @@ function fetchOriginalImage(index) {
 			}
 			else if (res.response.byteLength == 28658) { // '509 Bandwidth Exceeded' Image Byte Size
 				for (var i = 0; i < fetchThread.length; i++) fetchThread[i].abort();
+				console.log('[EHD] #' + index + ': 509 Bandwidth Exceeded');
+				console.log('[EHD] #' + index + ': ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
 				pushDialog('\nYou have exceeded your bandwidth limits.');
 				if (confirm('You have temporarily reached the limit for how many images you can browse. You can\n- Sign up/in E-Hentai account at E-Hentai Forums to get double daily quota if you are not sign in.\n- Run the Hentai@Home to support E-Hentai and get more points to increase your limit.\n- Check back in a few hours, and you will be able to download more.\n\nWould you like to save downloaded images?')) {
 					for (var j = 0; j < imageData.length; j++) {
@@ -9721,10 +10062,14 @@ function fetchOriginalImage(index) {
 			}
 			storeRes(res, index);
 		},
-		onerror: function(){
+		onerror: function(res){
+			console.log('[EHD] #' + index + ': An Error Occur');
+			console.log('[EHD] #' + index + ': ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
 			failedFetching(index);
 		},
-		ontimeout: function(){
+		ontimeout: function(res){
+			console.log('[EHD] #' + index + ': Time Out');
+			console.log('[EHD] #' + index + ': ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
 			failedFetching(index);
 		}
 	});
@@ -9737,7 +10082,7 @@ function retryAllFailed(){
 	xhr.onreadystatechange = function() {
 		if (xhr.readyState == 4) {
 			if (xhr.status == 200) {
-				var imageURL = (unsafeWindow.apiuid != -1 && xhr.responseText.indexOf('fullimg.php') >= 0) ? xhr.responseText.match(RegExp('<a href="(' + origin.replace(/\./gi, '\\.') + '\/fullimg\\.php\\?\\S+?)"'))[1].replace(/&amp;/gi, '&') : xhr.responseText.indexOf('id="img"') > -1 ? xhr.responseText.match(/<img id="img" src="(\S+?)"/)[1] : xhr.responseText.split('href="' + nextFetchURL + '"><img', 1)[2].split('src="', 2)[1].split('"', 1)[0]; // Sometimes preview image may not have id="img", thanks to 8qwe24657913
+				var imageURL = (unsafeWindow.apiuid != -1 && xhr.responseText.indexOf('fullimg.php') >= 0) ? xhr.responseText.match(RegExp('<a href="(' + origin.replace(/\./gi, '\\.') + '\/fullimg\\.php\\?\\S+?)"'))[1].replaceHTMLEntites() : xhr.responseText.indexOf('id="img"') > -1 ? xhr.responseText.match(/<img id="img" src="(\S+?)"/)[1].replaceHTMLEntites() : xhr.responseText.match(/<\/iframe><a[\s\S]+?><img src="(\S+?)"/)[1].replaceHTMLEntites(); // Sometimes preview image may not have id="img"
 				imageList[index]['imageURL'] = imageURL;
 				var nextNL = /return nl\('[\d-]+'\)/.test(xhr.responseText) ? xhr.responseText.match(/return nl\('([\d-]+)'\)/)[1] : null;
 				imageList[index]['nextNL'] = nextNL;
@@ -9762,7 +10107,8 @@ function retryAllFailed(){
 							imageData[index] = null;
 							retryCount[index] = 0;
 							if (imageList.indexOf('fullimg.php') < 0) {
-								var _fetchURL = imageList[index]['pageURL'] + (imageList[index]['nextNL'] ? '?nl=' + imageList[index]['nextNL'] : '');
+								var _fetchURL = (imageList[index]['pageURL'] + (imageList[index]['nextNL'] ? (imageList[index]['pageURL'].indexOf('?') >= 0 ? '&' : '?') + 'nl=' + imageList[index]['nextNL'] : '')).replaceHTMLEntites();
+								imageList[index]['pageURL'] = _fetchURL;
 								pushDialog('Fetching Page ' + (index + 1) + ': ' + _fetchURL + ' ... ');
 								xhr.open('GET', _fetchURL);
 								xhr.send();
@@ -9791,7 +10137,8 @@ function retryAllFailed(){
 			imageData[index] = null;
 			retryCount[index] = 0;
 			if (imageList.indexOf('fullimg.php') < 0) {
-				var _fetchURL = imageList[index]['pageURL'] + (imageList[index]['nextNL'] ? '?nl=' + imageList[index]['nextNL'] : '');
+				var _fetchURL = (imageList[index]['pageURL'] + (imageList[index]['nextNL'] ? (imageList[index]['pageURL'].indexOf('?') >= 0 ? '&' : '?') + 'nl=' + imageList[index]['nextNL'] : '')).replaceHTMLEntites();
+				imageList[index]['pageURL'] = _fetchURL;
 				pushDialog('Fetching Page ' + (index + 1) + ': ' + _fetchURL + ' ... ');
 				xhr.open('GET', _fetchURL);
 				xhr.send();
@@ -9836,30 +10183,31 @@ function ehDownload() {
 	var index = 0;
 	dirName = getReplacedName((!setting['dir-name'] || setting['dir-name'] == '') ? '{gid}_{token}' : setting['dir-name']);
 	fileName = getReplacedName((!setting['dir-name'] || setting['dir-name'] == '') ? '{title}' : setting['file-name']);
+	if (dirName == '/') dirName = '';
 	retryCount = downloadedCount = fetchCount = failedCount = 0;
 	ehDownloadDialog.style.display = 'block';
-	logStr = document.getElementById('gn').textContent + '\n' 
-		   + document.getElementById('gj').textContent + '\n' 
-		   + window.location.href + '\n\n'
+	logStr = document.getElementById('gn').textContent.replaceHTMLEntites() + '\n' 
+		   + document.getElementById('gj').textContent.replaceHTMLEntites() + '\n' 
+		   + window.location.href.replaceHTMLEntites() + '\n\n'
 		   + 'Category: ' + document.getElementsByClassName('ic')[0].getAttribute('alt').toUpperCase() + '\n' 
-		   + 'Uploader: ' + document.querySelector('#gdn a').textContent + '\n';
+		   + 'Uploader: ' + document.querySelector('#gdn a').textContent.replaceHTMLEntites() + '\n';
 	var metaNodes = document.querySelectorAll('#gdd tr');
 	for (var i = 0; i < metaNodes.length; i++) {
-		logStr += metaNodes[i].getElementsByClassName('gdt1')[0].textContent + ' ' + metaNodes[i].getElementsByClassName('gdt2')[0].textContent + '\n';
+		logStr += metaNodes[i].getElementsByClassName('gdt1')[0].textContent.replaceHTMLEntites() + ' ' + metaNodes[i].getElementsByClassName('gdt2')[0].textContent.replaceHTMLEntites() + '\n';
 	}
 	pushDialog('Rating: ' + unsafeWindow.original_rating + '\n\n');
 	imageList = [];
 	imageData = [];
 	for (var i = 0; i < fetchThread.length; i++) fetchThread[i].abort();
 	fetchThread = [];
-	var fetchURL = document.querySelector('#gdt a').getAttribute('href');
+	var fetchURL = document.querySelector('#gdt a').getAttribute('href').replaceHTMLEntites();
 	var xhr = new XMLHttpRequest();
 	xhr.onreadystatechange = function() {
 		if (xhr.readyState == 4) {
 			if (xhr.status == 200) {
 				if (index == 0) {
 					index = 1;
-					var firstURL = xhr.responseText.match(RegExp('<div class="sn"><a[\\s\\S]+?href="(' + origin.replace(/\./gi, '\\.') + '\\/s\\/\\S+?)"'))[1];
+					var firstURL = xhr.responseText.match(RegExp('<div class="sn"><a[\\s\\S]+?href="(' + origin.replace(/\./gi, '\\.') + '\\/s\\/\\S+?)"'))[1].replaceHTMLEntites();
 					if (firstURL != fetchURL) {
 						pushDialog('Error! This is not the first page!\n');
 						pushDialog('Fetching Page 1: ' + firstURL + ' ... ');
@@ -9871,12 +10219,13 @@ function ehDownload() {
 				}
 				retryCount = 0;
 				//storePageData(xhr.responseText);
-				var imageURL = (unsafeWindow.apiuid != -1 && xhr.responseText.indexOf('fullimg.php') >= 0) ? xhr.responseText.match(RegExp('<a href="(' + origin.replace(/\./gi, '\\.') + '\/fullimg\\.php\\?\\S+?)"'))[1].replace(/&amp;/gi, '&') : xhr.responseText.indexOf('id="img"') > -1 ? xhr.responseText.match(/<img id="img" src="(\S+?)"/)[1] : xhr.responseText.split('href="' + nextFetchURL + '"><img', 1)[2].split('src="', 2)[1].split('"', 1)[0]; // Sometimes preview image may not have id="img", thanks to 8qwe24657913
-				var fileName = xhr.responseText.match(/g\/l.png" \/><\/a><\/div><div>([\s\S]+?) :: /)[1];
+				var nextFetchURL = xhr.responseText.match(RegExp('<a id="next"[\\s\\S]+?href="(' + origin.replace(/\./gi, '\\.') + '\\/s\\/\\S+?)"'))[1];
+				var imageURL = (unsafeWindow.apiuid != -1 && xhr.responseText.indexOf('fullimg.php') >= 0) ? xhr.responseText.match(RegExp('<a href="(' + origin.replace(/\./gi, '\\.') + '\/fullimg\\.php\\?\\S+?)"'))[1].replaceHTMLEntites() : xhr.responseText.indexOf('id="img"') > -1 ? xhr.responseText.match(/<img id="img" src="(\S+?)"/)[1].replaceHTMLEntites() : xhr.responseText.match(/<\/iframe><a[\s\S]+?><img src="(\S+?)"/)[1].replaceHTMLEntites(); // Sometimes preview image may not have id="img"
+				var fileName = xhr.responseText.match(/g\/l.png" \/><\/a><\/div><div>([\s\S]+?) :: /)[1].replaceHTMLEntites();
 				var nextNL = /return nl\('[\d-]+'\)/.test(xhr.responseText) ? xhr.responseText.match(/return nl\('([\d-]+)'\)/)[1] : null;
 				imageList.push(new PageData(fetchURL, imageURL, fileName, nextNL));
 				pushDialog('Succeed!\nImage ' + index + ': ' + imageURL + '\n');
-				var nextFetchURL = xhr.responseText.match(RegExp('<a id="next"[\\s\\S]+?href="(' + origin.replace(/\./gi, '\\.') + '\\/s\\/\\S+?)"'))[1];
+				nextFetchURL = nextFetchURL.replaceHTMLEntites();
 				if (nextFetchURL != fetchURL) {
 					fetchURL = nextFetchURL;
 					pushDialog('Fetching Page ' + (++index) + ': ' + nextFetchURL + ' ... ');
