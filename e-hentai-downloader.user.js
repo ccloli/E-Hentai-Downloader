@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.11
+// @version      1.12
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -19,6 +19,8 @@
 // ==/UserScript==
 
 // This script using JSZip & FileSaver.js
+
+'use strict';
 
 console.log('[EHD] E-Hentai Downloader is running.');
 console.log('[EHD] Bugs Report >', 'https://github.com/ccloli/E-Hentai-Downloader/issues | https://greasyfork.org/scripts/10379-e-hentai-downloader/feedback');
@@ -9477,313 +9479,118 @@ console.log('[EHD] E-Hentai Downloader Setting >', JSON.stringify(setting));
 console.log('[EHD] Current URL >', window.location.href);
 console.log('[EHD] Is Logged In >', unsafeWindow.apiuid != -1);
 
+// 不知道是哪里出问题干脆直接设置默认值了 orz
+if (setting['enable-multi-threading'] === undefined) setting['enable-multi-threading'] = true;
+
 String.prototype.replaceHTMLEntites = function() {
 	var matchEntity = function(entity) {
-		switch (entity) {
-			case 'euro':
-				return '€';
-				break;
-			case 'nbsp':
-				return ' ';
-				break;
-			case 'quot':
-				return '"';
-				break;
-			case 'amp':
-				return '&';
-				break;
-			case 'lt':
-				return '<';
-				break;
-			case 'gt':
-				return '>';
-				break;
-			case 'iexcl':
-				return '¡';
-				break;
-			case 'cent':
-				return '¢';
-				break;
-			case 'pound':
-				return '£';
-				break;
-			case 'curren':
-				return '¤';
-				break;
-			case 'yen':
-				return '¥';
-				break;
-			case 'brvbar':
-				return '¦';
-				break;
-			case 'sect':
-				return '§';
-				break;
-			case 'uml':
-				return '¨';
-				break;
-			case 'copy':
-				return '©';
-				break;
-			case 'ordf':
-				return 'ª';
-				break;
-			case 'not':
-				return '¬';
-				break;
-			case 'shy':
-				return String.fromCharCode(173);
-				break;
-			case 'reg':
-				return '®';
-				break;
-			case 'macr':
-				return '¯';
-				break;
-			case 'deg':
-				return '°';
-				break;
-			case 'plusmn':
-				return '±';
-				break;
-			case 'sup2':
-				return '²';
-				break;
-			case 'sup3':
-				return '³';
-				break;
-			case 'acute':
-				return '´';
-				break;
-			case 'micro':
-				return 'µ';
-				break;
-			case 'para':
-				return '¶';
-				break;
-			case 'middot':
-				return '·';
-				break;
-			case 'cedil':
-				return '¸';
-				break;
-			case 'sup1':
-				return '¹';
-				break;
-			case 'ordm':
-				return 'º';
-				break;
-			case 'raquo':
-				return '»';
-				break;
-			case 'frac14':
-				return '¼';
-				break;
-			case 'frac12':
-				return '½';
-				break;
-			case 'frac34':
-				return '¾';
-				break;
-			case 'iquest':
-				return '¿';
-				break;
-			case 'Agrave':
-				return 'À';
-				break;
-			case 'Aacute':
-				return 'Á';
-				break;
-			case 'Acirc':
-				return 'Â';
-				break;
-			case 'Atilde':
-				return 'Ã';
-				break;
-			case 'Auml':
-				return 'Ä';
-				break;
-			case 'Aring':
-				return 'Å';
-				break;
-			case 'AElig':
-				return 'Æ';
-				break;
-			case 'Ccedil':
-				return 'Ç';
-				break;
-			case 'Egrave':
-				return 'È';
-				break;
-			case 'Eacute':
-				return 'É';
-				break;
-			case 'Ecirc':
-				return 'Ê';
-				break;
-			case 'Euml':
-				return 'Ë';
-				break;
-			case 'Igrave':
-				return 'Ì';
-				break;
-			case 'Iacute':
-				return 'Í';
-				break;
-			case 'Icirc':
-				return 'Î';
-				break;
-			case 'Iuml':
-				return 'Ï';
-				break;
-			case 'ETH':
-				return 'Ð';
-				break;
-			case 'Ntilde':
-				return 'Ñ';
-				break;
-			case 'Ograve':
-				return 'Ò';
-				break;
-			case 'Oacute':
-				return 'Ó';
-				break;
-			case 'Ocirc':
-				return 'Ô';
-				break;
-			case 'Otilde':
-				return 'Õ';
-				break;
-			case 'Ouml':
-				return 'Ö';
-				break;
-			case 'times':
-				return '×';
-				break;
-			case 'Oslash':
-				return 'Ø';
-				break;
-			case 'Ugrave':
-				return 'Ù';
-				break;
-			case 'Uacute':
-				return 'Ú';
-				break;
-			case 'Ucirc':
-				return 'Û';
-				break;
-			case 'Uuml':
-				return 'Ü';
-				break;
-			case 'Yacute':
-				return 'Ý';
-				break;
-			case 'THORN':
-				return 'Þ';
-				break;
-			case 'szlig':
-				return 'ß';
-				break;
-			case 'agrave':
-				return 'à';
-				break;
-			case 'aacute':
-				return 'á';
-				break;
-			case 'acirc':
-				return 'â';
-				break;
-			case 'atilde':
-				return 'ã';
-				break;
-			case 'auml':
-				return 'ä';
-				break;
-			case 'aring':
-				return 'å';
-				break;
-			case 'aelig':
-				return 'æ';
-				break;
-			case 'ccedil':
-				return 'ç';
-				break;
-			case 'egrave':
-				return 'è';
-				break;
-			case 'eacute':
-				return 'é';
-				break;
-			case 'ecirc':
-				return 'ê';
-				break;
-			case 'euml':
-				return 'ë';
-				break;
-			case 'igrave':
-				return 'ì';
-				break;
-			case 'iacute':
-				return 'í';
-				break;
-			case 'icirc':
-				return 'î';
-				break;
-			case 'iuml':
-				return 'ï';
-				break;
-			case 'eth':
-				return 'ð';
-				break;
-			case 'ntilde':
-				return 'ñ';
-				break;
-			case 'ograve':
-				return 'ò';
-				break;
-			case 'oacute':
-				return 'ó';
-				break;
-			case 'ocirc':
-				return 'ô';
-				break;
-			case 'otilde':
-				return 'õ';
-				break;
-			case 'ouml':
-				return 'ö';
-				break;
-			case 'divide':
-				return '÷';
-				break;
-			case 'oslash':
-				return 'ø';
-				break;
-			case 'ugrave':
-				return 'ù';
-				break;
-			case 'uacute':
-				return 'ú';
-				break;
-			case 'ucirc':
-				return 'û';
-				break;
-			case 'uuml':
-				return 'ü';
-				break;
-			case 'yacute':
-				return 'ý';
-				break;
-			case 'thorn':
-				return 'þ';
-				break;
-			default:
-				if (entity.match(/#\d+/)) {
-					var charCode = entity.match(/#(\d+)/)[1] - 0;
-					return String.fromCharCode(charCode);
-				}
-				else return '&' + entity + ';';
+		var entitesList = {
+			'euro': '€',
+			'nbsp': ' ',
+			'quot': '"',
+			'amp': '&',
+			'lt': '<',
+			'gt': '>',
+			'iexcl': '¡',
+			'cent': '¢',
+			'pound': '£',
+			'curren': '¤',
+			'yen': '¥',
+			'brvbar': '¦',
+			'sect': '§',
+			'uml': '¨',
+			'copy': '©',
+			'ordf': 'ª',
+			'not': '¬',
+			'shy': String.fromCharCode(173),
+			'reg': '®',
+			'macr': '¯',
+			'deg': '°',
+			'plusmn': '±',
+			'sup2': '²',
+			'sup3': '³',
+			'acute': '´',
+			'micro': 'µ',
+			'para': '¶',
+			'middot': '·',
+			'cedil': '¸',
+			'sup1': '¹',
+			'ordm': 'º',
+			'raquo': '»',
+			'frac14': '¼',
+			'frac12': '½',
+			'frac34': '¾',
+			'iquest': '¿',
+			'Agrave': 'À',
+			'Aacute': 'Á',
+			'Acirc': 'Â',
+			'Atilde': 'Ã',
+			'Auml': 'Ä',
+			'Aring': 'Å',
+			'AElig': 'Æ',
+			'Ccedil': 'Ç',
+			'Egrave': 'È',
+			'Eacute': 'É',
+			'Ecirc': 'Ê',
+			'Euml': 'Ë',
+			'Igrave': 'Ì',
+			'Iacute': 'Í',
+			'Icirc': 'Î',
+			'Iuml': 'Ï',
+			'ETH': 'Ð',
+			'Ntilde': 'Ñ',
+			'Ograve': 'Ò',
+			'Oacute': 'Ó',
+			'Ocirc': 'Ô',
+			'Otilde': 'Õ',
+			'Ouml': 'Ö',
+			'times': '×',
+			'Oslash': 'Ø',
+			'Ugrave': 'Ù',
+			'Uacute': 'Ú',
+			'Ucirc': 'Û',
+			'Uuml': 'Ü',
+			'Yacute': 'Ý',
+			'THORN': 'Þ',
+			'szlig': 'ß',
+			'agrave': 'à',
+			'aacute': 'á',
+			'acirc': 'â',
+			'atilde': 'ã',
+			'auml': 'ä',
+			'aring': 'å',
+			'aelig': 'æ',
+			'ccedil': 'ç',
+			'egrave': 'è',
+			'eacute': 'é',
+			'ecirc': 'ê',
+			'euml': 'ë',
+			'igrave': 'ì',
+			'iacute': 'í',
+			'icirc': 'î',
+			'iuml': 'ï',
+			'eth': 'ð',
+			'ntilde': 'ñ',
+			'ograve': 'ò',
+			'oacute': 'ó',
+			'ocirc': 'ô',
+			'otilde': 'õ',
+			'ouml': 'ö',
+			'divide': '÷',
+			'oslash': 'ø',
+			'ugrave': 'ù',
+			'uacute': 'ú',
+			'ucirc': 'û',
+			'uuml': 'ü',
+			'yacute': 'ý',
+			'thorn': 'þ'
 		}
+		if (entitesList[entity]) return entitesList[entity];
+		else if (entity.match(/#\d+/)) {
+			var charCode = entity.match(/#(\d+)/)[1] - 0;
+			return String.fromCharCode(charCode);
+		}
+		else return '&' + entity + ';';
 	}
 	var result = this.replace(/&(#\d+|[a-zA-Z]+);/g, function(match, entity) {
 		return matchEntity(entity);
@@ -9814,7 +9621,7 @@ function getReplacedName(str) {
 function PageData(pageURL, imageURL, imageName, nextNL) {
 	this.pageURL = pageURL.split('?')[0];
 	this.imageURL = imageURL;
-	imageList.some(function(elem) {
+	if (!setting['number-images']) imageList.some(function(elem) {
 		if (elem != null && elem.imageName == imageName) {
 			var nameParts = imageName.split('.');
 			nameParts[nameParts.length - 2] += ' (' + (++elem.equalCount) + ')';
@@ -9941,6 +9748,7 @@ function failedFetching(index){
 		}
 		else {
 			pushDialog('Fetching Image ' + index + ': ' + imageList[index - 1]['imageName'] + ' ... Failed! Retrying... Failed! Retrying... Failed! Retrying... ', 'Failed!');
+			imageList[index - 1]['imageFinalURL'] = null;
 			failedCount++;
 			fetchCount--;
 			if (fetchCount == 0) {
@@ -9993,7 +9801,7 @@ function fetchOriginalImage(index) {
 	//console.log(retryCount);
 	fetchThread[index - 1] = GM_xmlhttpRequest({
 		method: 'GET',
-		url: imageList[index - 1]['imageURL'],
+		url: imageList[index - 1]['imageFinalURL'] || imageList[index - 1]['imageURL'],
 		responseType: 'arraybuffer',
 		overrideMimeType: window.MSBlobBuilder ? 'text/plain; charset=x-user-defined' : undefined,
 		// timeout is failed in Chrome Tampermonkey
@@ -10005,6 +9813,7 @@ function fetchOriginalImage(index) {
 			'X-Alt-Referer': imageList[index - 1]['pageURL']
 		},
 		onload: function(res) {
+			//console.log(res);
 			if (!res.response) {
 				var data = {
 					response: new ArrayBuffer(res.responseText.length)
@@ -10060,16 +9869,19 @@ function fetchOriginalImage(index) {
 				insertCloseButton();
 				return;
 			}
+			// if (imageList.indexOf('fullimg.php') >= 0) imageList[index - 1]['imageFinalURL'] = res.finalUrl; // 看起来没什么用
 			storeRes(res, index);
 		},
 		onerror: function(res){
 			console.log('[EHD] #' + index + ': An Error Occur');
 			console.log('[EHD] #' + index + ': ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
+			if (imageList.indexOf('fullimg.php') >= 0) imageList[index - 1]['imageFinalURL'] = res.finalUrl;
 			failedFetching(index);
 		},
 		ontimeout: function(res){
 			console.log('[EHD] #' + index + ': Time Out');
 			console.log('[EHD] #' + index + ': ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
+			if (imageList.indexOf('fullimg.php') >= 0) imageList[index - 1]['imageFinalURL'] = res.finalUrl;
 			failedFetching(index);
 		}
 	});
@@ -10077,57 +9889,89 @@ function fetchOriginalImage(index) {
 
 function retryAllFailed(){
 	//failedCount = 0;
-	var xhr = new XMLHttpRequest();
 	var index, refetch = 0;
-	xhr.onreadystatechange = function() {
-		if (xhr.readyState == 4) {
-			if (xhr.status == 200) {
-				var imageURL = (unsafeWindow.apiuid != -1 && xhr.responseText.indexOf('fullimg.php') >= 0) ? xhr.responseText.match(RegExp('<a href="(' + origin.replace(/\./gi, '\\.') + '\/fullimg\\.php\\?\\S+?)"'))[1].replaceHTMLEntites() : xhr.responseText.indexOf('id="img"') > -1 ? xhr.responseText.match(/<img id="img" src="(\S+?)"/)[1].replaceHTMLEntites() : xhr.responseText.match(/<\/iframe><a[\s\S]+?><img src="(\S+?)"/)[1].replaceHTMLEntites(); // Sometimes preview image may not have id="img"
-				imageList[index]['imageURL'] = imageURL;
-				var nextNL = /return nl\('[\d-]+'\)/.test(xhr.responseText) ? xhr.responseText.match(/return nl\('([\d-]+)'\)/)[1] : null;
-				imageList[index]['nextNL'] = nextNL;
-				failedCount--;
-				pushDialog('Succeed!\nImage ' + (index + 1) + ': ' + imageURL + '\n');
-				if (failedCount == 0) {
-					for (var i = fetchCount; i < (setting['thread-count'] != null ? setting['thread-count'] : 5); i++) {
-						for (var j = 0; j < imageList.length; j++) {
-							if (imageData[j] == null) {
-								imageData[j] = 'Fetching';
-								pushDialog('Fetching Image ' + (j + 1) + ': ' + imageList[j]['imageName'] + ' ... \n');
-								fetchOriginalImage(j + 1);
-								fetchCount++;
+	if (!setting['never-new-url']) {
+		var xhr = new XMLHttpRequest();
+		xhr.onreadystatechange = function() {
+			if (xhr.readyState == 4) {
+				if (xhr.status == 200) {
+					var imageURL = (unsafeWindow.apiuid != -1 && xhr.responseText.indexOf('fullimg.php') >= 0 && !setting['force-resized']) ? xhr.responseText.match(RegExp('<a href="(' + origin.replace(/\./gi, '\\.') + '\/fullimg\\.php\\?\\S+?)"'))[1].replaceHTMLEntites() : xhr.responseText.indexOf('id="img"') > -1 ? xhr.responseText.match(/<img id="img" src="(\S+?)"/)[1].replaceHTMLEntites() : xhr.responseText.match(/<\/iframe><a[\s\S]+?><img src="(\S+?)"/)[1].replaceHTMLEntites(); // Sometimes preview image may not have id="img"
+					imageList[index]['imageURL'] = imageURL;
+					var nextNL = /return nl\('[\d-]+'\)/.test(xhr.responseText) ? xhr.responseText.match(/return nl\('([\d-]+)'\)/)[1] : null;
+					imageList[index]['nextNL'] = nextNL;
+					failedCount--;
+					pushDialog('Succeed!\nImage ' + (index + 1) + ': ' + imageURL + '\n');
+					if (failedCount == 0) {
+						for (var i = fetchCount; i < (setting['thread-count'] != null ? setting['thread-count'] : 5); i++) {
+							for (var j = 0; j < imageList.length; j++) {
+								if (imageData[j] == null) {
+									imageData[j] = 'Fetching';
+									pushDialog('Fetching Image ' + (j + 1) + ': ' + imageList[j]['imageName'] + ' ... \n');
+									fetchOriginalImage(j + 1);
+									fetchCount++;
+									break;
+								}
+							}
+						}
+					}
+					else {
+						for (; index < imageData.length; index++) {
+							if (imageData[index] == 'Fetching') {
+								imageData[index] = null;
+								retryCount[index] = 0;
+								if (imageList.indexOf('fullimg.php') < 0) {
+									var _fetchURL = (imageList[index]['pageURL'] + ((!setting['never-send-nl'] && imageList[index]['nextNL']) ? (imageList[index]['pageURL'].indexOf('?') >= 0 ? '&' : '?') + 'nl=' + imageList[index]['nextNL'] : '')).replaceHTMLEntites();
+									imageList[index]['pageURL'] = _fetchURL;
+									pushDialog('Fetching Page ' + (index + 1) + ': ' + _fetchURL + ' ... ');
+									xhr.open('GET', _fetchURL);
+									xhr.send();
+								}
 								break;
+								//console.log(j);
 							}
 						}
 					}
 				}
 				else {
-					for (; index < imageData.length; index++) {
-						if (imageData[index] == 'Fetching') {
-							imageData[index] = null;
-							retryCount[index] = 0;
-							if (imageList.indexOf('fullimg.php') < 0) {
-								var _fetchURL = (imageList[index]['pageURL'] + (imageList[index]['nextNL'] ? (imageList[index]['pageURL'].indexOf('?') >= 0 ? '&' : '?') + 'nl=' + imageList[index]['nextNL'] : '')).replaceHTMLEntites();
-								imageList[index]['pageURL'] = _fetchURL;
-								pushDialog('Fetching Page ' + (index + 1) + ': ' + _fetchURL + ' ... ');
-								xhr.open('GET', _fetchURL);
-								xhr.send();
+					if (retryCount < (setting['retry-count'] != null ? setting['retry-count'] : 3)) {
+						pushDialog('Failed! Retrying... ');
+						retryCount++;
+						xhr.open('GET', fetchURL);
+						xhr.send();
+					}
+					else {
+						pushDialog('Failed! Skip and continue...');
+						refetch = 0;
+						for (; index < imageData.length; index++) {
+							if (imageData[index] == 'Fetching') {
+								imageData[index] = null;
+								retryCount[index] = 0;
+								if (imageList.indexOf('fullimg.php') < 0) {
+									var _fetchURL = (imageList[index]['pageURL'] + ((!setting['never-send-nl'] && imageList[index]['nextNL']) ? (imageList[index]['pageURL'].indexOf('?') >= 0 ? '&' : '?') + 'nl=' + imageList[index]['nextNL'] : '')).replaceHTMLEntites();
+									imageList[index]['pageURL'] = _fetchURL;
+									pushDialog('Fetching Page ' + (index + 1) + ': ' + _fetchURL + ' ... ');
+									xhr.open('GET', _fetchURL);
+									xhr.send();
+									refetch = 1;
+								}
+								break;
+								//console.log(j);
 							}
-							break;
-							//console.log(j);
+						}
+						if (!refetch) {
+							for (var i = fetchCount; i < (setting['thread-count'] != null ? setting['thread-count'] : 5); i++) {
+								for (var j = 0; j < imageList.length; j++) {
+									if (imageData[j] == null) {
+										imageData[j] = 'Fetching';
+										pushDialog('Fetching Image ' + (j + 1) + ': ' + imageList[j]['imageName'] + ' ... \n');
+										fetchOriginalImage(j + 1);
+										fetchCount++;
+										break;
+									}
+								}
+							}
 						}
 					}
-				}
-			}
-			else {
-				if (retryCount < (setting['retry-count'] != null ? setting['retry-count'] : 3)) {
-					pushDialog('Failed! Retrying... ');
-					retryCount++;
-					xhr.open('GET', fetchURL);
-					xhr.send();
-				}
-				else {
-					pushDialog('Failed! Skip and continue...');
 				}
 			}
 		}
@@ -10136,15 +9980,17 @@ function retryAllFailed(){
 		if (imageData[index] == 'Fetching') {
 			imageData[index] = null;
 			retryCount[index] = 0;
-			if (imageList.indexOf('fullimg.php') < 0) {
-				var _fetchURL = (imageList[index]['pageURL'] + (imageList[index]['nextNL'] ? (imageList[index]['pageURL'].indexOf('?') >= 0 ? '&' : '?') + 'nl=' + imageList[index]['nextNL'] : '')).replaceHTMLEntites();
-				imageList[index]['pageURL'] = _fetchURL;
-				pushDialog('Fetching Page ' + (index + 1) + ': ' + _fetchURL + ' ... ');
-				xhr.open('GET', _fetchURL);
-				xhr.send();
-				refetch = 1;
+			if (!setting['never-new-url']) {
+				if (imageList.indexOf('fullimg.php') < 0) {
+					var _fetchURL = (imageList[index]['pageURL'] + ((!setting['never-send-nl'] && imageList[index]['nextNL']) ? (imageList[index]['pageURL'].indexOf('?') >= 0 ? '&' : '?') + 'nl=' + imageList[index]['nextNL'] : '')).replaceHTMLEntites();
+					imageList[index]['pageURL'] = _fetchURL;
+					pushDialog('Fetching Page ' + (index + 1) + ': ' + _fetchURL + ' ... ');
+					xhr.open('GET', _fetchURL);
+					xhr.send();
+					refetch = 1;
+				}
+				break;
 			}
-			break;
 			/*retryCount[j] = 0;*/
 			//console.log(j);
 		}
@@ -10178,7 +10024,11 @@ function insertCloseButton() {
 }
 
 function ehDownload() {
-	if (unsafeWindow.apiuid == -1 && !confirm('You are not log in to E-Hentai Forums, so that you can\'t download original image. Would you like to continue?')) return;
+	if (unsafeWindow.apiuid == -1 && !confirm('You are not log in to E-Hentai Forums, so you can\'t download original image. Continue?')) return;
+	for (var i = 0; i < fetchThread.length; i++) fetchThread[i].abort();
+	imageList = [];
+	imageData = [];
+	fetchThread = [];
 	zip = new JSZip();
 	var index = 0;
 	dirName = getReplacedName((!setting['dir-name'] || setting['dir-name'] == '') ? '{gid}_{token}' : setting['dir-name']);
@@ -10196,10 +10046,9 @@ function ehDownload() {
 		logStr += metaNodes[i].getElementsByClassName('gdt1')[0].textContent.replaceHTMLEntites() + ' ' + metaNodes[i].getElementsByClassName('gdt2')[0].textContent.replaceHTMLEntites() + '\n';
 	}
 	pushDialog('Rating: ' + unsafeWindow.original_rating + '\n\n');
-	imageList = [];
-	imageData = [];
-	for (var i = 0; i < fetchThread.length; i++) fetchThread[i].abort();
-	fetchThread = [];
+	if (document.getElementById("comment_0")) {
+		pushDialog('Uploader Comment:\n' + document.getElementById("comment_0").innerHTML.replace(/<br>|<br \/>/gi, '\n') + '\n\n');
+	}
 	var fetchURL = document.querySelector('#gdt a').getAttribute('href').replaceHTMLEntites();
 	var xhr = new XMLHttpRequest();
 	xhr.onreadystatechange = function() {
@@ -10220,7 +10069,7 @@ function ehDownload() {
 				retryCount = 0;
 				//storePageData(xhr.responseText);
 				var nextFetchURL = xhr.responseText.match(RegExp('<a id="next"[\\s\\S]+?href="(' + origin.replace(/\./gi, '\\.') + '\\/s\\/\\S+?)"'))[1];
-				var imageURL = (unsafeWindow.apiuid != -1 && xhr.responseText.indexOf('fullimg.php') >= 0) ? xhr.responseText.match(RegExp('<a href="(' + origin.replace(/\./gi, '\\.') + '\/fullimg\\.php\\?\\S+?)"'))[1].replaceHTMLEntites() : xhr.responseText.indexOf('id="img"') > -1 ? xhr.responseText.match(/<img id="img" src="(\S+?)"/)[1].replaceHTMLEntites() : xhr.responseText.match(/<\/iframe><a[\s\S]+?><img src="(\S+?)"/)[1].replaceHTMLEntites(); // Sometimes preview image may not have id="img"
+				var imageURL = (unsafeWindow.apiuid != -1 && xhr.responseText.indexOf('fullimg.php') >= 0 && !setting['force-resized']) ? xhr.responseText.match(RegExp('<a href="(' + origin.replace(/\./gi, '\\.') + '\/fullimg\\.php\\?\\S+?)"'))[1].replaceHTMLEntites() : xhr.responseText.indexOf('id="img"') > -1 ? xhr.responseText.match(/<img id="img" src="(\S+?)"/)[1].replaceHTMLEntites() : xhr.responseText.match(/<\/iframe><a[\s\S]+?><img src="(\S+?)"/)[1].replaceHTMLEntites(); // Sometimes preview image may not have id="img"
 				var fileName = xhr.responseText.match(/g\/l.png" \/><\/a><\/div><div>([\s\S]+?) :: /)[1].replaceHTMLEntites();
 				var nextNL = /return nl\('[\d-]+'\)/.test(xhr.responseText) ? xhr.responseText.match(/return nl\('([\d-]+)'\)/)[1] : null;
 				imageList.push(new PageData(fetchURL, imageURL, fileName, nextNL));
@@ -10234,6 +10083,17 @@ function ehDownload() {
 				}
 				else {
 					index = 1;
+					if (setting['number-images']) {
+						// Number images, thanks to JingJang@GitHub, source: https://github.com/JingJang/E-Hentai-Downloader
+						var len = imageList.length.toString().length + 1,
+							padding = new Array(len + 1).join('0');
+						/*for (var j = 0; j < imageList.length; j++) {
+							imageList[j]['imageName'] = (padding + imageList[j].pageURL.match(/\d+$/)[0]).slice(0 - len) + (setting['number-separator'] ? setting['number-separator'] : '>') + imageList[j]['imageName'];
+						}*/
+						imageList.forEach(function(elem, index) {
+							return elem['imageName'] = (padding + (index + 1)).slice(0 - len) + (setting['number-separator'] ? setting['number-separator'] : '>') + elem['imageName'];
+						});
+				 	}
 					if ('enable-multi-threading' in setting && !setting['enable-multi-threading']) {
 						pushDialog('\nFetching Image 1: ' + imageList[0]['imageName'] + ' ... ');
 						fetchOriginalImage(index);
@@ -10281,16 +10141,31 @@ function ehDownload() {
 
 function ehDownloadSet() {
 	var ehDownloadSettingPanel = document.createElement('div');
-	ehDownloadSettingPanel.style.cssText = 'position: fixed; left: 0; right: 0; top: 0; bottom: 0; padding: 5px; border: 1px solid #000000; background: #34353b; color: #dddddd; width: 500px; height: 320px; margin: auto; z-index: 999; text-align: left;';
+	ehDownloadSettingPanel.style.cssText = 'position: fixed; left: 0; right: 0; top: 0; bottom: 0; padding: 5px; border: 1px solid #000000; background: #34353b; color: #dddddd; width: 680px; height: 520px; max-width: 100%; max-height: 100%; overflow: auto; box-sizing: border-box; margin: auto; z-index: 999; text-align: left; font-size: 12px;';
 	ehDownloadSettingPanel.innerHTML = '\
-			<div class="g2"><label><input type="checkbox" data-ehd-setting="enable-multi-threading"> Enable multi-thread download (recommended)</label></div>\
-			<div class="g2"><label>Multi-thread download threads count <input type="number" data-ehd-setting="thread-count" min="1" placeholder="5" style="width: 51px;"> (<=5 is advised)</label></div>\
-			<div class="g2"><label>Abort fetching current image after <input type="number" data-ehd-setting="timeout" min="0" placeholder="0" style="width: 51px;"> second(s) (0 is never abort)</label></div>\
-			<div class="g2"><label>Skip current image when retried <input type="number" data-ehd-setting="retry-count" min="1" placeholder="3" style="width: 51px;"> time(s)</label></div>\
-			<div class="g2"><label>Set floder name as <input type="text" data-ehd-setting="dir-name" placeholder="{gid}_{token}"> *</label></div>\
-			<div class="g2"><label>Set Zip file name as <input type="text" data-ehd-setting="file-name" placeholder="{title}"> *</label></div>\
-			<div class="g2"><label>Set compression level as <input type="number" data-ehd-setting="compression-level" min="0" max="9" placeholder="0"> (0 ~ 9, 0 is only store, not recommended to enable)</label></div>\
-			<div class="g2">* Enabled tags: <span title="You can find GID and token at the address bar like this: exhentai.org/g/[GID]/[Token]/">{gid} Archive\'s GID</sapn> | <span title="You can find GID and token at the address bar like this: exhentai.org/g/[GID]/[Token]/">{token} Archive\'s token</sapn> | <span title="This title is the English title or Latin transliteration, you can find it as the first line of the title.">{title} Archive\'s title</span> | <span title="This title is the original language title, you can find it as the second line of the title.">{subtitle} Archive\'s sub-title</span> | <span title="This tag means the sort name of the archive, and its output string is upper.">{tag} Archive\'s tag</span> | <span title="You can find it at the left of the archive page.">{uploader} Archive\'s uploader</a></div>\
+			<div class="g2"><label><input type="checkbox" data-ehd-setting="enable-multi-threading" style="vertical-align: middle;"> Enable multi-thread download (recommended)</label></div>\
+			<div class="g2"><label>Multi-thread download threads count <input type="number" data-ehd-setting="thread-count" min="1" placeholder="5" style="width: 51px; vertical-align: middle;"> (<=5 is advised)</label></div>\
+			<div class="g2"><label>Abort fetching current image after <input type="number" data-ehd-setting="timeout" min="0" placeholder="0" style="width: 51px; vertical-align: middle;"> second(s) (0 is never abort)</label></div>\
+			<div class="g2"><label>Skip current image when retried <input type="number" data-ehd-setting="retry-count" min="1" placeholder="3" style="width: 51px; vertical-align: middle;"> time(s)</label></div>\
+			<div class="g2"><label>Set folder name as <input type="text" data-ehd-setting="dir-name" placeholder="{gid}_{token}" style="vertical-align: middle;"> (if you don\'t want to create folder, use "/") *</label></div>\
+			<div class="g2"><label>Set Zip file name as <input type="text" data-ehd-setting="file-name" placeholder="{title}" style="vertical-align: middle;"> *</label></div>\
+			<div class="g2"><label>Set compression level as <input type="number" data-ehd-setting="compression-level" min="0" max="9" placeholder="0" style="width: 51px; vertical-align: middle;"> (0 ~ 9, 0 is only store, not recommended to enable)</label></div>\
+			<div class="g2"><label><input type="checkbox" data-ehd-setting="number-images" style="vertical-align: middle;"> Number images (001>01.jpg, 002>01_theme.jpg, 003>02.jpg...) (Separator <input type="text" data-ehd-setting="number-separator" style="width: 51px; vertical-align: middle;" placeholder="&gt;">)</label></label></div>\
+			<div class="g2"><label><input type="checkbox" data-ehd-setting="force-resized" style="vertical-align: middle;"> Force download resized image (never download original image) **</label></div>\
+			<div class="g2"><label><input type="checkbox" data-ehd-setting="never-new-url" style="vertical-align: middle;"> Never get new image URL when failed downloading image **</label></div>\
+			<div class="g2"><label><input type="checkbox" data-ehd-setting="never-send-nl" style="vertical-align: middle;"> Never send "nl" GET parameter when getting new image URL **</label></div>\
+			<div class="g2">\
+				* Enabled tags: \
+				<span title="You can find GID and token at the address bar like this: exhentai.org/g/[GID]/[Token]/">{gid} Archive\'s GID</sapn> | \
+				<span title="You can find GID and token at the address bar like this: exhentai.org/g/[GID]/[Token]/">{token} Archive\'s token</sapn> | \
+				<span title="This title is the English title or Latin transliteration, you can find it as the first line of the title.">{title} Archive\'s title</span> | \
+				<span title="This title is the original language title, you can find it as the second line of the title.">{subtitle} Archive\'s sub-title</span> | \
+				<span title="This tag means the sort name of the archive, and its output string is upper.">{tag} Archive\'s tag</span> | \
+				<span title="You can find it at the left of the archive page.">{uploader} Archive\'s uploader</span>\
+			</div>\
+			<div class="g2">\
+				** Enable these options may save your image viewing limits <a href="https://github.com/ccloli/E-Hentai-Downloader/wiki/E%E2%88%92Hentai-Image-Viewing-Limits" target="_blank" style="text-decoration: underline; color: #ffffff;">(See wiki)</a>, but may also cause some download problems.\
+			</div>\
 			<div style="text-align: center"><button>Save</button> <button>Cancel</button></div>';
 	document.body.appendChild(ehDownloadSettingPanel);
 	for (var i in setting) {
@@ -10315,24 +10190,34 @@ function ehDownloadSet() {
 	});
 }
 
+// EHD Box, thanks to JingJang@GitHub, source: https://github.com/JingJang/E-Hentai-Downloader
+var ehDownloadBox = document.createElement('fieldset');
+ehDownloadBox.style.border = '1px groove #000000';
+ehDownloadBox.innerHTML = '<legend style="' + (origin == "http://exhentai.org" ? 'color: #ffff00; ' : '') + 'font-weight: 700;">E-Hentai Downloader</legend>';
+
 var ehDownloadAction = document.createElement('p');
 ehDownloadAction.className = 'g2 gsp';
-ehDownloadAction.innerHTML = '<img src="data:image/gif;base64,R0lGODlhBQAHALMAAK6vr7OztK+urra2tkJCQsDAwEZGRrKyskdHR0FBQUhISP///wAAAAAAAAAAAAAAACH5BAEAAAsALAAAAAAFAAcAAAQUUI1FlREVpbOUSkTgbZ0CUEhBLREAOw=="> <a href="#">Download This Archive</a>';
+ehDownloadAction.innerHTML = '<img src="data:image/gif;base64,R0lGODlhBQAHALMAAK6vr7OztK+urra2tkJCQsDAwEZGRrKyskdHR0FBQUhISP///wAAAAAAAAAAAAAAACH5BAEAAAsALAAAAAAFAAcAAAQUUI1FlREVpbOUSkTgbZ0CUEhBLREAOw=="> <a href="#">Download Archive</a>';
 ehDownloadAction.addEventListener('click', function(event){
 	event.preventDefault();
 	ehDownload();
 });
-document.getElementById('gd5').appendChild(ehDownloadAction);
+/*document.getElementById('gd5')*/ehDownloadBox.appendChild(ehDownloadAction);
 
 var ehDownloadSetting = document.createElement('p');
 ehDownloadSetting.className = 'g2';
-ehDownloadSetting.innerHTML = '<img src="data:image/gif;base64,R0lGODlhBQAHALMAAK6vr7OztK+urra2tkJCQsDAwEZGRrKyskdHR0FBQUhISP///wAAAAAAAAAAAAAAACH5BAEAAAsALAAAAAAFAAcAAAQUUI1FlREVpbOUSkTgbZ0CUEhBLREAOw=="> <a href="#">E-Hentai Downloader Setting</a>';
+ehDownloadSetting.innerHTML = '<img src="data:image/gif;base64,R0lGODlhBQAHALMAAK6vr7OztK+urra2tkJCQsDAwEZGRrKyskdHR0FBQUhISP///wAAAAAAAAAAAAAAACH5BAEAAAsALAAAAAAFAAcAAAQUUI1FlREVpbOUSkTgbZ0CUEhBLREAOw=="> <a href="#">Setting</a>';
 ehDownloadSetting.addEventListener('click', function(event){
 	event.preventDefault();
 	ehDownloadSet();
 });
-document.getElementById('gd5').appendChild(ehDownloadSetting);
+/*document.getElementById('gd5')*/ehDownloadBox.appendChild(ehDownloadSetting);
+
+document.getElementById('gd5').appendChild(ehDownloadBox);
+
+// Fixed overflow in g.e-hentai.org
+document.getElementById('gright').style.height = 'auto';
 
 var ehDownloadDialog = document.createElement('div');
-ehDownloadDialog.style.cssText = 'position: fixed; right: 0; bottom: 0; display: none; padding: 5px; border: 1px solid #000000; background: #34353b; color: #dddddd; max-width: 500px; max-height: 300px; overflow: auto; z-index: 999;';
+ehDownloadDialog.style.cssText = 'position: fixed; right: 0; bottom: 0; display: none; padding: 5px; border: 1px solid #000000; background: #34353b; color: #dddddd; width: 500px; height: 300px; overflow: auto; z-index: 999;';
 document.body.appendChild(ehDownloadDialog);
