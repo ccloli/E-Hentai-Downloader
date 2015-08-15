@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.12
+// @version      1.12.1
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -10091,7 +10091,7 @@ function ehDownload() {
 							imageList[j]['imageName'] = (padding + imageList[j].pageURL.match(/\d+$/)[0]).slice(0 - len) + (setting['number-separator'] ? setting['number-separator'] : '>') + imageList[j]['imageName'];
 						}*/
 						imageList.forEach(function(elem, index) {
-							return elem['imageName'] = (padding + (index + 1)).slice(0 - len) + (setting['number-separator'] ? setting['number-separator'] : '>') + elem['imageName'];
+							return elem['imageName'] = (padding + (index + 1)).slice(0 - len) + (setting['number-separator'] ? setting['number-separator'] : '：') + elem['imageName'];
 						});
 				 	}
 					if ('enable-multi-threading' in setting && !setting['enable-multi-threading']) {
@@ -10150,7 +10150,7 @@ function ehDownloadSet() {
 			<div class="g2"><label>Set folder name as <input type="text" data-ehd-setting="dir-name" placeholder="{gid}_{token}" style="vertical-align: middle;"> (if you don\'t want to create folder, use "/") *</label></div>\
 			<div class="g2"><label>Set Zip file name as <input type="text" data-ehd-setting="file-name" placeholder="{title}" style="vertical-align: middle;"> *</label></div>\
 			<div class="g2"><label>Set compression level as <input type="number" data-ehd-setting="compression-level" min="0" max="9" placeholder="0" style="width: 51px; vertical-align: middle;"> (0 ~ 9, 0 is only store, not recommended to enable)</label></div>\
-			<div class="g2"><label><input type="checkbox" data-ehd-setting="number-images" style="vertical-align: middle;"> Number images (001>01.jpg, 002>01_theme.jpg, 003>02.jpg...) (Separator <input type="text" data-ehd-setting="number-separator" style="width: 51px; vertical-align: middle;" placeholder="&gt;">)</label></label></div>\
+			<div class="g2"><label><input type="checkbox" data-ehd-setting="number-images" style="vertical-align: middle;"> Number images (001：01.jpg, 002：01_theme.jpg, 003：02.jpg...) (Separator <input type="text" data-ehd-setting="number-separator" style="width: 51px; vertical-align: middle;" placeholder="：">)</label></label></div>\
 			<div class="g2"><label><input type="checkbox" data-ehd-setting="force-resized" style="vertical-align: middle;"> Force download resized image (never download original image) **</label></div>\
 			<div class="g2"><label><input type="checkbox" data-ehd-setting="never-new-url" style="vertical-align: middle;"> Never get new image URL when failed downloading image **</label></div>\
 			<div class="g2"><label><input type="checkbox" data-ehd-setting="never-send-nl" style="vertical-align: middle;"> Never send "nl" GET parameter when getting new image URL **</label></div>\
