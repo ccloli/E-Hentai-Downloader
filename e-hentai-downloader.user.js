@@ -1,13 +1,15 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.13
+// @version      1.14
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
 // @match        http://exhentai.org/g/*
 // @match        http://g.e-hentai.org/g/*
+// @match        http://r.e-hentai.org/g/*
 // @include      http://exhentai.org/g/*
 // @include      http://g.e-hentai.org/g/*
+// @include      http://r.e-hentai.org/g/*
 // @namespace    http://ext.ccloli.com
 // @updateURL    https://github.com/ccloli/E-Hentai-Downloader/raw/master/e-hentai-downloader.user.js
 // @downloadURL  https://github.com/ccloli/E-Hentai-Downloader/raw/master/e-hentai-downloader.user.js
@@ -9453,6 +9455,7 @@ if (navigator.userAgent.indexOf('Trident') >= 0) {
 	var GM_setValue = function(i, j) {
 		return localStorage.setItem(i, j);
 	}
+	var GM_info = {script: {}};
 	var unsafeWindow = window;
 }
 
@@ -9471,6 +9474,7 @@ var dirName;
 var fileName;
 var failedCount = 0;
 var progressTable = null;
+var isREH = false;
 
 console.log('[EHD] UserAgent >', navigator.userAgent);
 console.log('[EHD] Script Handler >', GM_info.scriptHandler || 'GreaseMonkey'); // (Only Tampermonkey supports GM_info.scriptHandler)
@@ -9482,6 +9486,11 @@ console.log('[EHD] Is Logged In >', unsafeWindow.apiuid != -1);
 
 // 不知道是哪里出问题干脆直接设置默认值了 orz
 if (setting['enable-multi-threading'] === undefined) setting['enable-multi-threading'] = true;
+
+if (origin == 'http://r.e-hentai.org') {
+	origin = 'http://g.e-hentai.org';
+	isREH = true;
+}
 
 String.prototype.replaceHTMLEntites = function() {
 	var matchEntity = function(entity) {
@@ -9598,6 +9607,13 @@ String.prototype.replaceHTMLEntites = function() {
 	});
 	return result;
 }
+
+// Fixed cross origin in r.e-hentai.org
+// 发现 prototype 好方便 _(:3
+String.prototype.replaceOrigin = function() {
+	return isREH ? this.replace('g.e-hentai.org', 'r.e-hentai.org').toString() : this.toString();
+}
+
 /*
 function pushDialog(str, str2) {
 	if (str2 == null) logStr += str;
@@ -9617,10 +9633,10 @@ function pushDialog(str) {
 function getReplacedName(str) {
 	return str.replace(/\{gid\}/gi, unsafeWindow.gid)
 		.replace(/\{token\}/gi, unsafeWindow.token)
-		.replace(/\{title\}/gi, document.getElementById('gn').textContent.replace(/[:"*?|<>\/\\\n]/gi, '-'))
-		.replace(/\{subtitle\}/gi, document.getElementById('gj').textContent ? document.getElementById('gj').textContent.replace(/[:"*?|<>\/\\\n]/gi, '-') : document.getElementById('gn').textContent.replace(/[:"*?|<>\/\\\n]/gi, '-'))
+		.replace(/\{title\}/gi, document.getElementById('gn').textContent.replace(/[:"*?|<>\/\\\n]/g, '-'))
+		.replace(/\{subtitle\}/gi, document.getElementById('gj').textContent ? document.getElementById('gj').textContent.replace(/[:"*?|<>\/\\\n]/g, '-') : document.getElementById('gn').textContent.replace(/[:"*?|<>\/\\\n]/g, '-'))
 		.replace(/\{tag\}/gi, document.querySelector('.ic').getAttribute('alt').toUpperCase())
-		.replace(/\{uploader\}/gi, document.querySelector('#gdn a').textContent.replace(/[:"*?|<>\/\\\n]/gi, '-'))
+		.replace(/\{uploader\}/gi, document.querySelector('#gdn a').textContent.replace(/[:"*?|<>\/\\\n]/g, '-'))
 		.replaceHTMLEntites();
 }
 
@@ -9635,7 +9651,7 @@ function PageData(pageURL, imageURL, imageName, nextNL) {
 			return 1;
 		}
 	});*/
-	this.imageName = imageName;
+	this.imageName = imageName.trim().replace(/[:"*?|<>\/\\\n]/g, '-');
 	this.equalCount = 1;
 	this.nextNL = nextNL;
 	this.imageNumber = '';
@@ -9645,7 +9661,7 @@ function renameImages() {
 	imageList.forEach(function(elem, index) {
 		if (!setting['number-images']) {
 			for (var i = 0; i < index; i++) {
-				if (elem != null && elem.imageName == imageList[i]['imageName']) {
+				if (elem != null && elem.imageName.toLowerCase() == imageList[i]['imageName'].toLowerCase()) {
 					var nameParts = elem.imageName.split('.');
 					nameParts[nameParts.length - 2] += ' (' + (++imageList[i].equalCount) + ')';
 					elem.imageName = nameParts.join('.');
@@ -9669,7 +9685,7 @@ function storeRes(res, index) {
 		if (!setting['number-images']) {
 			for (var i = 0; i < imageList.length, i < index - 1; i++) {
 				var elem = imageList[i];
-				if (elem != null && elem.imageName == imageList[index - 1]['imageName']) {
+				if (elem != null && elem.imageName.toLowerCase() == imageList[index - 1]['imageName'].toLowerCase()) {
 					var nameParts = imageName.split('.');
 					nameParts[nameParts.length - 2] += ' (' + (++elem.equalCount) + ')';
 					imageName = nameParts.join('.');
@@ -9688,7 +9704,7 @@ function storeRes(res, index) {
 			pushDialog('Fetch images successful!');
 			generateZip();
 		}
-	} 
+	}
 	else {
 		imageData[index - 1] = res.response;
 		downloadedCount++;
@@ -9931,7 +9947,7 @@ function fetchOriginalImage(index, node) {
 				return;
 			}
 			// if (imageList.indexOf('fullimg.php') >= 0) imageList[index - 1]['imageFinalURL'] = res.finalUrl; // 看起来没什么用
-			imageList[index - 1]['imageName'] = res.responseHeaders.match(/filename=([\s\S]+?)\n/) ? res.responseHeaders.match(/filename=([\s\S]+?)\n/)[1].trim() : imageList[index - 1]['imageName'];
+			imageList[index - 1]['imageName'] = res.responseHeaders.match(/filename=([\s\S]+?)\n/) ? res.responseHeaders.match(/filename=([\s\S]+?)\n/)[1].trim().replace(/[:"*?|<>\/\\\n]/g, '-') : imageList[index - 1]['imageName'];
 			node.innerHTML = '<td>#' + index + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="1"></progress></td><td>Succeed!</td>';
 			storeRes(res, index);
 		},
@@ -9939,14 +9955,14 @@ function fetchOriginalImage(index, node) {
 			console.log('[EHD] #' + index + ': An Error Occur');
 			console.log('[EHD] #' + index + ': ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
 			node.innerHTML = '<td>#' + index + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="0"></progress></td><td>Failed! (Network Error)</td>';
-			if (imageList.indexOf('fullimg.php') >= 0) imageList[index - 1]['imageFinalURL'] = res.finalUrl;
+			if (imageList[index - 1]['imageURL'].indexOf('fullimg.php') >= 0) imageList[index - 1]['imageFinalURL'] = res.finalUrl;
 			failedFetching(index, node);
 		},
 		ontimeout: function(res){
 			console.log('[EHD] #' + index + ': Timed Out');
 			console.log('[EHD] #' + index + ': ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
 			node.innerHTML = '<td>#' + index + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="0"></progress></td><td>Failed! (Timed out)</td>';
-			if (imageList.indexOf('fullimg.php') >= 0) imageList[index - 1]['imageFinalURL'] = res.finalUrl;
+			if (imageList[index - 1]['imageURL'].indexOf('fullimg.php') >= 0) imageList[index - 1]['imageFinalURL'] = res.finalUrl;
 			failedFetching(index, node);
 		}
 	});
@@ -9987,7 +10003,7 @@ function retryAllFailed(){
 							if (imageData[index] == 'Fetching') {
 								imageData[index] = null;
 								retryCount[index] = 0;
-								if (imageList.indexOf('fullimg.php') < 0) {
+								if (imageList[index - 1]['imageURL'].indexOf('fullimg.php') < 0) {
 									var _fetchURL = (imageList[index]['pageURL'] + ((!setting['never-send-nl'] && imageList[index]['nextNL']) ? (imageList[index]['pageURL'].indexOf('?') >= 0 ? '&' : '?') + 'nl=' + imageList[index]['nextNL'] : '')).replaceHTMLEntites();
 									imageList[index]['pageURL'] = _fetchURL;
 									pushDialog('Fetching Page ' + (index + 1) + ': ' + _fetchURL + ' ... ');
@@ -10014,7 +10030,7 @@ function retryAllFailed(){
 							if (imageData[index] == 'Fetching') {
 								imageData[index] = null;
 								retryCount[index] = 0;
-								if (imageList.indexOf('fullimg.php') < 0) {
+								if (imageList[index - 1]['imageURL'].indexOf('fullimg.php') < 0) {
 									var _fetchURL = (imageList[index]['pageURL'] + ((!setting['never-send-nl'] && imageList[index]['nextNL']) ? (imageList[index]['pageURL'].indexOf('?') >= 0 ? '&' : '?') + 'nl=' + imageList[index]['nextNL'] : '')).replaceHTMLEntites();
 									imageList[index]['pageURL'] = _fetchURL;
 									pushDialog('Fetching Page ' + (index + 1) + ': ' + _fetchURL + ' ... ');
@@ -10050,7 +10066,7 @@ function retryAllFailed(){
 			imageData[index] = null;
 			retryCount[index] = 0;
 			if (!setting['never-new-url']) {
-				if (imageList.indexOf('fullimg.php') < 0) {
+				if (imageList[index]['imageURL'].indexOf('fullimg.php') < 0) {
 					var _fetchURL = (imageList[index]['pageURL'] + ((!setting['never-send-nl'] && imageList[index]['nextNL']) ? (imageList[index]['pageURL'].indexOf('?') >= 0 ? '&' : '?') + 'nl=' + imageList[index]['nextNL'] : '')).replaceHTMLEntites();
 					imageList[index]['pageURL'] = _fetchURL;
 					pushDialog('Fetching Page ' + (index + 1) + ': ' + _fetchURL + ' ... ');
@@ -10123,14 +10139,17 @@ function ehDownload() {
 		logStr += 'Uploader Comment:\n' + document.getElementById("comment_0").innerHTML.replace(/<br>|<br \/>/gi, '\n') + '\n\n';
 	}
 	pushDialog(logStr);
-	var fetchURL = document.querySelector('#gdt a').getAttribute('href').replaceHTMLEntites();
+	var fetchURL = document.querySelector('#gdt a').getAttribute('href').replaceHTMLEntites().replaceOrigin();
+	console.log(fetchURL);
 	var xhr = new XMLHttpRequest();
 	xhr.onreadystatechange = function() {
 		if (xhr.readyState == 4) {
 			if (xhr.status == 200) {
 				if (index == 0) {
 					index = 1;
-					var firstURL = xhr.responseText.match(RegExp('<div class="sn"><a[\\s\\S]+?href="(' + origin.replace(/\./gi, '\\.') + '\\/s\\/\\S+?)"'))[1].replaceHTMLEntites();
+					var firstURL = xhr.responseText.match(RegExp('<div class="sn"><a[\\s\\S]+?href="(' + origin.replace(/\./gi, '\\.') + '\\/s\\/\\S+?)"'))[1].replaceHTMLEntites().replaceOrigin();
+					console.log(firstURL);
+					console.log(fetchURL == firstURL)
 					if (firstURL != fetchURL) {
 						pushDialog('Error! This is not the first page!\n');
 						pushDialog('Fetching Page 1: ' + firstURL + ' ... ');
@@ -10142,13 +10161,12 @@ function ehDownload() {
 				}
 				retryCount = 0;
 				//storePageData(xhr.responseText);
-				var nextFetchURL = xhr.responseText.match(RegExp('<a id="next"[\\s\\S]+?href="(' + origin.replace(/\./gi, '\\.') + '\\/s\\/\\S+?)"'))[1];
-				var imageURL = (unsafeWindow.apiuid != -1 && xhr.responseText.indexOf('fullimg.php') >= 0 && !setting['force-resized']) ? xhr.responseText.match(RegExp('<a href="(' + origin.replace(/\./gi, '\\.') + '\/fullimg\\.php\\?\\S+?)"'))[1].replaceHTMLEntites() : xhr.responseText.indexOf('id="img"') > -1 ? xhr.responseText.match(/<img id="img" src="(\S+?)"/)[1].replaceHTMLEntites() : xhr.responseText.match(/<\/iframe><a[\s\S]+?><img src="(\S+?)"/)[1].replaceHTMLEntites(); // Sometimes preview image may not have id="img"
+				var nextFetchURL = xhr.responseText.match(RegExp('<a id="next"[\\s\\S]+?href="(' + origin.replace(/\./gi, '\\.') + '\\/s\\/\\S+?)"'))[1].replaceHTMLEntites().replaceOrigin();
+				var imageURL = (unsafeWindow.apiuid != -1 && xhr.responseText.indexOf('fullimg.php') >= 0 && !setting['force-resized']) ? xhr.responseText.match(RegExp('<a href="(' + origin.replace(/\./gi, '\\.') + '\/fullimg\\.php\\?\\S+?)"'))[1].replaceHTMLEntites().replaceOrigin() : xhr.responseText.indexOf('id="img"') > -1 ? xhr.responseText.match(/<img id="img" src="(\S+?)"/)[1].replaceHTMLEntites() : xhr.responseText.match(/<\/iframe><a[\s\S]+?><img src="(\S+?)"/)[1].replaceHTMLEntites(); // Sometimes preview image may not have id="img"
 				var fileName = xhr.responseText.match(/g\/l.png" \/><\/a><\/div><div>([\s\S]+?) :: /)[1].replaceHTMLEntites();
 				var nextNL = /return nl\('[\d-]+'\)/.test(xhr.responseText) ? xhr.responseText.match(/return nl\('([\d-]+)'\)/)[1] : null;
 				imageList.push(new PageData(fetchURL, imageURL, fileName, nextNL));
 				pushDialog('Succeed!\nImage ' + index + ': ' + imageURL + '\n');
-				nextFetchURL = nextFetchURL.replaceHTMLEntites();
 				if (nextFetchURL != fetchURL) {
 					fetchURL = nextFetchURL;
 					pushDialog('Fetching Page ' + (++index) + ': ' + nextFetchURL + ' ... ');
