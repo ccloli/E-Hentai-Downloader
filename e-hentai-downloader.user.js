@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.14
+// @version      1.14.1
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -10118,7 +10118,7 @@ function ehDownload() {
 	zip = new JSZip();
 	var index = 0;
 	dirName = getReplacedName((!setting['dir-name'] || setting['dir-name'] == '') ? '{gid}_{token}' : setting['dir-name']);
-	fileName = getReplacedName((!setting['dir-name'] || setting['dir-name'] == '') ? '{title}' : setting['file-name']);
+	fileName = getReplacedName((!setting['file-name'] || setting['file-name'] == '') ? '{title}' : setting['file-name']);
 	if (dirName == '/') dirName = '';
 	retryCount = downloadedCount = fetchCount = failedCount = 0;
 	ehDownloadDialog.innerHTML = '';
