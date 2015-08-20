@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.15.1
+// @version      1.15.2
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -10002,15 +10002,16 @@ function retryAllFailed(){
 				}
 			}
 			else {
-				var _index = index;
+				/*var _index = ++index;
 				for (; index < imageData.length; index++) {
 					if (imageData[index] == 'Fetching') {
 						imageData[index] = null;
 						retryCount[index] = 0;
 						//console.log(j);
 					}
-				}
-				for (index = _index; index < imageData.length; index++) {
+				}*/
+				++index;
+				for (/*index = _index*/; index < imageData.length; index++) {
 					if (imageData[index] == null) {
 						if (!setting['never-new-url']) {
 							if (imageList[index]['imageURL'].indexOf('fullimg.php') < 0) {
@@ -10040,15 +10041,16 @@ function retryAllFailed(){
 			else {
 				pushDialog('Failed! Skip and continue...');
 				refetch = 0;
-				var _index = index;
+				++index;
+				/*var _index = ++index;
 				for (; index < imageData.length; index++) {
 					if (imageData[index] == 'Fetching') {
 						imageData[index] = null;
 						retryCount[index] = 0;
 						//console.log(j);
 					}
-				}
-				for (index = _index; index < imageData.length; index++) {
+				}*/
+				for (/*index = _index*/; index < imageData.length; index++) {
 					if (imageData[index] == null) {
 						if (!setting['never-new-url']) {
 							if (imageList[index]['imageURL'].indexOf('fullimg.php') < 0) {
