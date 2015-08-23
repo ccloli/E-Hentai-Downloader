@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.15.2
+// @version      1.15.3
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -9475,6 +9475,7 @@ var fileName;
 var failedCount = 0;
 var progressTable = null;
 var isREH = false;
+var needNumberImages = setting['number-images'];
 
 console.log('[EHD] UserAgent >', navigator.userAgent);
 console.log('[EHD] Script Handler >', GM_info.scriptHandler || 'GreaseMonkey'); // (Only Tampermonkey supports GM_info.scriptHandler)
@@ -9659,7 +9660,7 @@ function PageData(pageURL, imageURL, imageName, nextNL) {
 
 function renameImages() {
 	imageList.forEach(function(elem, index) {
-		if (!setting['number-images']) {
+		if (!needNumberImages) {
 			for (var i = 0; i < index; i++) {
 				if (elem != null && elem.imageName.toLowerCase() == imageList[i]['imageName'].toLowerCase()) {
 					var nameParts = elem.imageName.split('.');
@@ -9682,7 +9683,7 @@ function storePageData(content) {
 */
 function storeRes(res, index) {
 	if (!setting['enable-multi-threading']) {
-		if (!setting['number-images']) {
+		if (!needNumberImages) {
 			for (var i = 0; i < imageList.length, i < index - 1; i++) {
 				var elem = imageList[i];
 				if (elem != null && elem.imageName.toLowerCase() == imageList[index - 1]['imageName'].toLowerCase()) {
@@ -9909,6 +9910,12 @@ function fetchOriginalImage(index, node) {
 				node.innerHTML = '<td>#' + index + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="0"></progress></td><td style="color: #ffff00;">Failed! (Error 403)</td>';
 				return failedFetching(index, node);
 			}
+			else if (res.response.byteLength == 28) { // 'An error has occurred. (403)' Length
+				console.log('[EHD] #' + index + ': An error has occurred. (403)');
+				console.log('[EHD] #' + index + ': ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
+				node.innerHTML = '<td>#' + index + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="0"></progress></td><td style="color: #ffff00;">Failed! (Error 403)</td>';
+				return failedFetching(index, node);
+			}
 			else if (res.response.byteLength == 141) { // Image Viewing Limits String Byte Size
 				for (var i = 0; i < fetchThread.length; i++) fetchThread[i].abort();
 				console.log('[EHD] #' + index + ': Exceed Image Viewing Limits');
@@ -9957,7 +9964,7 @@ function fetchOriginalImage(index, node) {
 			storeRes(res, index);
 		},
 		onerror: function(res){
-			console.log('[EHD] #' + index + ': An Error Occur');
+			console.log('[EHD] #' + index + ': Network Error');
 			console.log('[EHD] #' + index + ': ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
 			node.innerHTML = '<td>#' + index + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="0"></progress></td><td style="color: #ffff00;">Failed! (Network Error)</td>';
 			if (imageList[index - 1]['imageURL'].indexOf('fullimg.php') >= 0) imageList[index - 1]['imageFinalURL'] = res.finalUrl;
@@ -10150,6 +10157,8 @@ function ehDownload() {
 	fileName = getReplacedName((!setting['file-name'] || setting['file-name'] == '') ? '{title}' : setting['file-name']);
 	if (dirName == '/') dirName = '';
 	retryCount = downloadedCount = fetchCount = failedCount = 0;
+	needNumberImages = ehDownloadNumberInput.querySelector('input').checked;
+	//console.log(needNumberImages);
 	ehDownloadDialog.innerHTML = '';
 	logStr = document.getElementById('gn').textContent.replaceHTMLEntites() + '\n' 
 		   + document.getElementById('gj').textContent.replaceHTMLEntites() + '\n' 
@@ -10209,7 +10218,7 @@ function ehDownload() {
 		}
 		else {
 			index = 1;
-			if (setting['number-images']) {
+			if (needNumberImages) {
 				// Number images, thanks to JingJang@GitHub, source: https://github.com/JingJang/E-Hentai-Downloader
 				var len = imageList.length.toString().length + 1,
 					padding = new Array(len + 1).join('0');
@@ -10321,7 +10330,12 @@ function ehDownloadSet() {
 // EHD Box, thanks to JingJang@GitHub, source: https://github.com/JingJang/E-Hentai-Downloader
 var ehDownloadBox = document.createElement('fieldset');
 ehDownloadBox.style.border = '1px groove #000000';
-ehDownloadBox.innerHTML = '<legend style="' + (origin == "http://exhentai.org" ? 'color: #ffff00; ' : '') + 'font-weight: 700;">E-Hentai Downloader</legend>';
+ehDownloadBox.innerHTML = '<legend style="' + (origin == "http://exhentai.org" ? 'color: #ffff00; ' : '') + 'font-weight: 700;">E-Hentai Downloader</legend>\
+	<style>\
+	fieldset > .g2.gsp + .g2 { display: none; }\
+	fieldset > .g2.gsp:hover + .g2, fieldset > .g2.gsp + .g2:hover { display: block; }\
+	fieldset > .g2.gsp:hover + .g2 + .g2, fieldset > .g2.gsp + .g2:hover + .g2 { display: none; }\
+	</style>';
 
 var ehDownloadAction = document.createElement('p');
 ehDownloadAction.className = 'g2 gsp';
@@ -10331,6 +10345,11 @@ ehDownloadAction.addEventListener('click', function(event){
 	ehDownload();
 });
 /*document.getElementById('gd5')*/ehDownloadBox.appendChild(ehDownloadAction);
+
+var ehDownloadNumberInput = document.createElement('p');
+ehDownloadNumberInput.className = 'g2';
+ehDownloadNumberInput.innerHTML = '<img src="data:image/gif;base64,R0lGODlhBQAHALMAAK6vr7OztK+urra2tkJCQsDAwEZGRrKyskdHR0FBQUhISP///wAAAAAAAAAAAAAAACH5BAEAAAsALAAAAAAFAAcAAAQUUI1FlREVpbOUSkTgbZ0CUEhBLREAOw=="> <a href="#"><label><input type="checkbox" style="vertical-align: middle; margin: 0;"' + (needNumberImages ? ' checked="checked' : '') + '"> Number Images<label></a>';
+ehDownloadBox.appendChild(ehDownloadNumberInput);
 
 var ehDownloadSetting = document.createElement('p');
 ehDownloadSetting.className = 'g2';
