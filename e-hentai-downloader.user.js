@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.16
+// @version      1.16.1
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -27,6 +27,22 @@
 console.log('[EHD] E-Hentai Downloader is running.');
 console.log('[EHD] Bugs Report >', 'https://github.com/ccloli/E-Hentai-Downloader/issues | https://greasyfork.org/scripts/10379-e-hentai-downloader/feedback');
 console.log('[EHD] To report a bug, showing all the "[EHD]" logs is wonderful. =w=');
+
+// GreaseMonkey 3.2 beta 1 and older version can't load content of GM_xhr.response, and this can't be fix.
+if (
+	GM_info.version != null && (
+		GM_info.version.split('.')[0] - 0 < 3 || (
+			GM_info.version.split('.')[0] - 0 == 3 && (
+				GM_info.version.split('.')[1].split('beta')[0] - 0 <= 2 &&
+				GM_info.version.indexOf('beta') >= 0 && 
+				GM_info.version.split('beta')[1] - 0 < 2
+			)
+		)
+	)
+) {
+	alert('Your GreaseMonkey doesn\'t support E-Hentai Downloader. The first supported version is GreaseMonkey 3.2 beta 2. Please update your GreaseMonkey to enjoy. =w=');
+	throw console.log('[EHD] GreaseMonkey doesn\'t support E-Hentai Downloader. GreaseMonkey Version > ' + GM_info.version);
+}
 
 // ==========---------- JSZip Begin ----------========== //
 /*!
@@ -9885,7 +9901,7 @@ function fetchOriginalImage(index, node) {
 		method: 'GET',
 		url: imageList[index - 1]['imageFinalURL'] || imageList[index - 1]['imageURL'],
 		responseType: 'arraybuffer',
-		overrideMimeType: (window.MSBlobBuilder || (GM_info.version != null && (GM_info.version.split('.')[0] - 0 <= 2) && (GM_info.version.split('.')[1] - 0 <= 4))) ? 'text/plain; charset=x-user-defined' : undefined,
+		overrideMimeType: window.MSBlobBuilder ? 'text/plain; charset=x-user-defined' : undefined,
 		// timeout is failed in Chrome Tampermonkey
 		timeout: setting['timeout'] != null ? Number(setting['timeout']) * 1000 : 300000,
 		headers: {
@@ -10476,7 +10492,10 @@ ehDownloadAction.addEventListener('click', function(event){
 	if (isDownloading && !confirm('E-Hentai Downloader is working now, are you sure to stop downloading and start a new download?')) return;
 	if (unsafeWindow.apiuid == -1 && !confirm('You are not log in to E-Hentai Forums, so you can\'t download original image. Continue?')) return;
 	ehDownloadDialog.innerHTML = '';
-	if (ehDownloadRange.querySelector('input').value.trim() == '') ehDownload();
+	if (ehDownloadRange.querySelector('input').value.trim() == '') {
+		if (pagesRange.length) pagesRange = [];
+		ehDownload();
+	}
 	else getAllPagesURL();
 });
 /*document.getElementById('gd5')*/ehDownloadBox.appendChild(ehDownloadAction);
