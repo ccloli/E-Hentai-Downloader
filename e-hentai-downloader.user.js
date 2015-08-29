@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.17.1
+// @version      1.17.2
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -28,9 +28,33 @@ console.log('[EHD] E-Hentai Downloader is running.');
 console.log('[EHD] Bugs Report >', 'https://github.com/ccloli/E-Hentai-Downloader/issues | https://greasyfork.org/scripts/10379-e-hentai-downloader/feedback');
 console.log('[EHD] To report a bug, showing all the "[EHD]" logs is wonderful. =w=');
 
+// Opera 12- (Presto) doesn't support generating blob url, and if generate as data url, it may cause crashes.
+if (navigator.userAgent.indexOf('Presto') >= 0) {
+	alert('Your Opera doesn\'t support E-Hentai Downloader. You need to update it to Opera 15+.');
+	throw console.error('[EHD] Opera 12- (Presto) doesn\'t support E-Hentai Downloader. UserAgent > ' + navigator.userAgent);
+}
+
+// Remove IE support
+else if (navigator.userAgent.indexOf('Trident') >= 0) {
+	alert('Your browser doesn\'t support E-Hentai Downloader. You need to switch to other browsers.');
+	throw console.error('[EHD] IE doesn\'t support E-Hentai Downloader. UserAgent > ' + navigator.userAgent);
+}
+
+// Simple fixed not working on ViolentMonkey
+else if ((navigator.userAgent.indexOf('OPR') >= 0 || navigator.userAgent.indexOf('Maxthon') >= 0) && !GM_info) {
+	var GM_getValue = GM_getValue || function(i) {
+		return localStorage.getItem(i);
+	}
+	var GM_setValue = GM_setValue || function(i, j) {
+		return localStorage.setItem(i, j);
+	}
+	var GM_info = GM_info || {script: {}, scriptHandler: 'ViolentMonkey'};
+	//var unsafeWindow = window;
+}
+
 // GreaseMonkey 3.2 beta 1 and older version can't load content of GM_xhr.response, and this can't be fix.
-if (
-	GM_info.scriptHandler && GM_info.scriptHandler.indexOf('Tampermonkey') < 0 && GM_info.version != null && (
+else if (
+	(!GM_info.scriptHandler || GM_info.scriptHandler.indexOf('GreaseMonkey') >= 0) && GM_info.version != null && (
 		GM_info.version.split('.')[0] - 0 < 3 || (
 			GM_info.version.split('.')[0] - 0 == 3 && (
 				GM_info.version.split('.')[1].split('beta')[0] - 0 <= 2 &&
@@ -41,7 +65,7 @@ if (
 	)
 ) {
 	alert('Your GreaseMonkey doesn\'t support E-Hentai Downloader. The first supported version is GreaseMonkey 3.2 beta 2. Please update your GreaseMonkey to enjoy. =w=');
-	throw console.log('[EHD] GreaseMonkey doesn\'t support E-Hentai Downloader. GreaseMonkey Version > ' + GM_info.version);
+	throw console.error('[EHD] GreaseMonkey doesn\'t support E-Hentai Downloader. GreaseMonkey Version > ' + GM_info.version);
 }
 
 // ==========---------- JSZip Begin ----------========== //
@@ -9464,7 +9488,7 @@ if (typeof module !== "undefined" && module.exports) {
 // ==========---------- FileSaver.js End ----------========== //
 
 /* TrixIE Fix. Because of GM_xhr bug in TrixIE, there is no way to make this script compatible with IE */
-if (navigator.userAgent.indexOf('Trident') >= 0) {
+/*if (navigator.userAgent.indexOf('Trident') >= 0) {
 	var GM_getValue = function(i) {
 		return localStorage.getItem(i);
 	}
@@ -9473,7 +9497,7 @@ if (navigator.userAgent.indexOf('Trident') >= 0) {
 	}
 	var GM_info = {script: {}};
 	var unsafeWindow = window;
-}
+}*/
 
 var zip;
 //var index = 1;
@@ -9499,7 +9523,7 @@ var getAllPagesURLFin = false;
 var xhr = new XMLHttpRequest();
 
 console.log('[EHD] UserAgent >', navigator.userAgent);
-console.log('[EHD] Script Handler >', GM_info.scriptHandler || 'GreaseMonkey'); // (Only Tampermonkey supports GM_info.scriptHandler)
+console.log('[EHD] Script Handler >', GM_info.scriptHandler || (navigator.userAgent.indexOf('Firefox') >= 0 ? 'GreaseMonkey' : undefined)); // (Only Tampermonkey supports GM_info.scriptHandler)
 console.log('[EHD] GreaseMonkey / Tampermonkey Version >', GM_info.version);
 console.log('[EHD] E-Hentai Downloader Version >', GM_info.script.version);
 console.log('[EHD] E-Hentai Downloader Setting >', JSON.stringify(setting));
@@ -9902,7 +9926,7 @@ function fetchOriginalImage(index, node) {
 		method: 'GET',
 		url: imageList[index - 1]['imageFinalURL'] || imageList[index - 1]['imageURL'],
 		responseType: 'arraybuffer',
-		overrideMimeType: window.MSBlobBuilder ? 'text/plain; charset=x-user-defined' : undefined,
+		//overrideMimeType: window.MSBlobBuilder ? 'text/plain; charset=x-user-defined' : undefined,
 		// timeout is failed in Chrome Tampermonkey
 		timeout: setting['timeout'] != null ? Number(setting['timeout']) * 1000 : 300000,
 		headers: {
@@ -10434,7 +10458,7 @@ function ehDownloadSet() {
 			<div class="g2"><label><input type="checkbox" data-ehd-setting="enable-multi-threading"> Enable multi-thread download (recommended)</label></div>\
 			<div class="g2"><label>Multi-thread download threads count <input type="number" data-ehd-setting="thread-count" min="1" placeholder="5" style="width: 51px;"> (<=5 is advised)</label></div>\
 			<div class="g2"><label>Abort fetching current image after <input type="number" data-ehd-setting="timeout" min="0" placeholder="300" style="width: 51px;"> second(s) (0 is never abort)</label></div>\
-			<div class="g2"><label>Skip current image when retried <input type="number" data-ehd-setting="retry-count" min="1" placeholder="3" style="width: 51px;"> time(s)</label></div>\
+			<div class="g2"' + (GM_info.scriptHandler && GM_info.scriptHandler == 'ViolentMonkey' && ' style="opacity: 0.75;" title="ViolentMonkey may not support this feature"') + '><label>Skip current image when retried <input type="number" data-ehd-setting="retry-count" min="1" placeholder="3" style="width: 51px;"> time(s)</label></div>\
 			<div class="g2"><label>Set folder name as <input type="text" data-ehd-setting="dir-name" placeholder="{gid}_{token}"> (if you don\'t want to create folder, use "/") *</label></div>\
 			<div class="g2"><label>Set Zip file name as <input type="text" data-ehd-setting="file-name" placeholder="{title}"> *</label></div>\
 			<div class="g2"><label>Set compression level as <input type="number" data-ehd-setting="compression-level" min="0" max="9" placeholder="0" style="width: 51px;"> (0 ~ 9, 0 is only store, not recommended to enable)</label></div>\
