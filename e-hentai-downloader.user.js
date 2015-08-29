@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.16.1
+// @version      1.17
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -30,7 +30,7 @@ console.log('[EHD] To report a bug, showing all the "[EHD]" logs is wonderful. =
 
 // GreaseMonkey 3.2 beta 1 and older version can't load content of GM_xhr.response, and this can't be fix.
 if (
-	GM_info.version != null && (
+	GM_info.scriptHandler.indexOf('Tampermonkey') < 0 && GM_info.version != null && (
 		GM_info.version.split('.')[0] - 0 < 3 || (
 			GM_info.version.split('.')[0] - 0 == 3 && (
 				GM_info.version.split('.')[1].split('beta')[0] - 0 <= 2 &&
@@ -9802,6 +9802,7 @@ function generateZip(){
 	zip.folder(dirName).file('info.txt', logStr.replace(/\n/gi, '\r\n'));
 	var data = zip.generate({type: 'blob', compression: setting['compression-level'] ? 'DEFLATE' : 'STORE', compressionOptions: {level: setting['compression-level'] > 0 ? (setting['compression-level'] < 10 ? setting['compression-level'] : 9) : 1}});
 	saveAs(data, fileName + '.zip');
+	pushDialog('\n\nNot download? <a href="' + window.URL.createObjectURL(data) + '" download="' + fileName + '.zip" style="color: #ffffff; font-weight: bold;">Click here to download</a>\n\n');
 }
 
 function failedFetching(index, node){
@@ -9915,6 +9916,12 @@ function fetchOriginalImage(index, node) {
 		},
 		onload: function(res) {
 			//console.log(res);
+			if (res.responseHeaders.split('Content-Type:')[1].split('\n')[0].split('/')[0].trim() != 'image') {
+				console.log('[EHD] #' + index + ': Wrong Content-Type');
+				console.log('[EHD] #' + index + ': RealIndex >', imageList[index - 1]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
+				node.innerHTML = '<td>#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="0"></progress></td><td style="color: #ffff00;">Failed! (Wrong MIME)</td>';
+				return failedFetching(index, node);
+			}
 			if (!res.response) {
 				var data = {
 					response: new ArrayBuffer(res.responseText.length),
@@ -10176,7 +10183,7 @@ function insertCloseButton() {
 
 function getAllPagesURL() {
 	pagesRange = [];
-	var pagesRangeText = ehDownloadRange.querySelector('input').value.trim();
+	var pagesRangeText = ehDownloadRange.querySelector('input').value.replace(/，/g, ',').trim();
 	console.log('[EHD] Pages Range >', pagesRangeText);
 	if (!/^(\d+(-\d+)?\s*?,\s*?)*\d+(-\d+)?$/.test(pagesRangeText)) return alert('Pages Range is not correct.');
 	var pagesRangeScale = pagesRangeText.match(/\d+-\d+|\d+/g);
@@ -10334,7 +10341,7 @@ function ehDownload() {
 		}
 		else {
 			pageURLsList.push(fetchURL);
-			var nextFetchURL = xhr.responseText.match(RegExp('<a id="next"[\\s\\S]+?href="(' + origin.replace(/\./gi, '\\.') + '\\/s\\/\\S+?)"'))[1].replaceHTMLEntites().replaceOrigin();
+			var nextFetchURL = xhr.responseText.indexOf('<a id="next"') >= 0 ? xhr.responseText.match(RegExp('<a id="next"[\\s\\S]+?href="(' + origin.replace(/\./gi, '\\.') + '\\/s\\/\\S+?)"'))[1].replaceHTMLEntites().replaceOrigin() : xhr.responseText.match(RegExp('<a href="(' + origin.replace(/\./gi, '\\.') + '\\/s\\/\\S+?)"><img src="http://ehgt.org/g/n.png"'))[1].replaceHTMLEntites().replaceOrigin();
 		}
 		var imageURL = (unsafeWindow.apiuid != -1 && xhr.responseText.indexOf('fullimg.php') >= 0 && !setting['force-resized']) ? xhr.responseText.match(RegExp('<a href="(' + origin.replace(/\./gi, '\\.') + '\/fullimg\\.php\\?\\S+?)"'))[1].replaceHTMLEntites().replaceOrigin() : xhr.responseText.indexOf('id="img"') > -1 ? xhr.responseText.match(/<img id="img" src="(\S+?)"/)[1].replaceHTMLEntites() : xhr.responseText.match(/<\/iframe><a[\s\S]+?><img src="(\S+?)"/)[1].replaceHTMLEntites(); // Sometimes preview image may not have id="img"
 		var fileName = xhr.responseText.match(/g\/l.png" \/><\/a><\/div><div>([\s\S]+?) :: /)[1].replaceHTMLEntites();
@@ -10422,20 +10429,20 @@ function ehDownload() {
 
 function ehDownloadSet() {
 	var ehDownloadSettingPanel = document.createElement('div');
-	ehDownloadSettingPanel.style.cssText = 'position: fixed; left: 0; right: 0; top: 0; bottom: 0; padding: 5px; border: 1px solid #000000; background: #34353b; color: #dddddd; width: 680px; height: 540px; max-width: 100%; max-height: 100%; overflow: auto; box-sizing: border-box; margin: auto; z-index: 999; text-align: left; font-size: 12px;';
+	ehDownloadSettingPanel.className = 'ehD-setting';
 	ehDownloadSettingPanel.innerHTML = '\
-			<div class="g2"><label><input type="checkbox" data-ehd-setting="enable-multi-threading" style="vertical-align: middle;"> Enable multi-thread download (recommended)</label></div>\
-			<div class="g2"><label>Multi-thread download threads count <input type="number" data-ehd-setting="thread-count" min="1" placeholder="5" style="width: 51px; vertical-align: middle;"> (<=5 is advised)</label></div>\
-			<div class="g2"><label>Abort fetching current image after <input type="number" data-ehd-setting="timeout" min="0" placeholder="300" style="width: 51px; vertical-align: middle;"> second(s) (0 is never abort)</label></div>\
-			<div class="g2"><label>Skip current image when retried <input type="number" data-ehd-setting="retry-count" min="1" placeholder="3" style="width: 51px; vertical-align: middle;"> time(s)</label></div>\
-			<div class="g2"><label>Set folder name as <input type="text" data-ehd-setting="dir-name" placeholder="{gid}_{token}" style="vertical-align: middle;"> (if you don\'t want to create folder, use "/") *</label></div>\
-			<div class="g2"><label>Set Zip file name as <input type="text" data-ehd-setting="file-name" placeholder="{title}" style="vertical-align: middle;"> *</label></div>\
-			<div class="g2"><label>Set compression level as <input type="number" data-ehd-setting="compression-level" min="0" max="9" placeholder="0" style="width: 51px; vertical-align: middle;"> (0 ~ 9, 0 is only store, not recommended to enable)</label></div>\
-			<div class="g2"><label><input type="checkbox" data-ehd-setting="number-images" style="vertical-align: middle;"> Number images (001：01.jpg, 002：01_theme.jpg, 003：02.jpg...) (Separator <input type="text" data-ehd-setting="number-separator" style="width: 51px; vertical-align: middle;" placeholder="：">)</label></div>\
-			<div class="g2"><label><input type="checkbox" data-ehd-setting="number-real-index" style="vertical-align: middle;"> Number images with original page number if pages range is set</label></div>\
-			<div class="g2"><label><input type="checkbox" data-ehd-setting="force-resized" style="vertical-align: middle;"> Force download resized image (never download original image) **</label></div>\
-			<div class="g2"><label><input type="checkbox" data-ehd-setting="never-new-url" style="vertical-align: middle;"> Never get new image URL when failed downloading image **</label></div>\
-			<div class="g2"><label><input type="checkbox" data-ehd-setting="never-send-nl" style="vertical-align: middle;"> Never send "nl" GET parameter when getting new image URL **</label></div>\
+			<div class="g2"><label><input type="checkbox" data-ehd-setting="enable-multi-threading"> Enable multi-thread download (recommended)</label></div>\
+			<div class="g2"><label>Multi-thread download threads count <input type="number" data-ehd-setting="thread-count" min="1" placeholder="5" style="width: 51px;"> (<=5 is advised)</label></div>\
+			<div class="g2"><label>Abort fetching current image after <input type="number" data-ehd-setting="timeout" min="0" placeholder="300" style="width: 51px;"> second(s) (0 is never abort)</label></div>\
+			<div class="g2"><label>Skip current image when retried <input type="number" data-ehd-setting="retry-count" min="1" placeholder="3" style="width: 51px;"> time(s)</label></div>\
+			<div class="g2"><label>Set folder name as <input type="text" data-ehd-setting="dir-name" placeholder="{gid}_{token}"> (if you don\'t want to create folder, use "/") *</label></div>\
+			<div class="g2"><label>Set Zip file name as <input type="text" data-ehd-setting="file-name" placeholder="{title}"> *</label></div>\
+			<div class="g2"><label>Set compression level as <input type="number" data-ehd-setting="compression-level" min="0" max="9" placeholder="0" style="width: 51px;"> (0 ~ 9, 0 is only store, not recommended to enable)</label></div>\
+			<div class="g2"><label><input type="checkbox" data-ehd-setting="number-images"> Number images (001：01.jpg, 002：01_theme.jpg, 003：02.jpg...) (Separator <input type="text" data-ehd-setting="number-separator" style="width: 51px;" placeholder="：">)</label></div>\
+			<div class="g2"><label><input type="checkbox" data-ehd-setting="number-real-index"> Number images with original page number if pages range is set</label></div>\
+			<div class="g2"><label><input type="checkbox" data-ehd-setting="force-resized"> Force download resized image (never download original image) **</label></div>\
+			<div class="g2"><label><input type="checkbox" data-ehd-setting="never-new-url"> Never get new image URL when failed downloading image **</label></div>\
+			<div class="g2"><label><input type="checkbox" data-ehd-setting="never-send-nl"> Never send "nl" GET parameter when getting new image URL **</label></div>\
 			<div class="g2">\
 				* Enabled tags: \
 				<span title="You can find GID and token at the address bar like this: exhentai.org/g/[GID]/[Token]/">{gid} Archive\'s GID</sapn> | \
@@ -10478,9 +10485,12 @@ ehDownloadBox.style.border = '1px groove #000000';
 ehDownloadBox.className = 'ehD-box';
 ehDownloadBox.innerHTML = '<legend style="' + (origin == "http://exhentai.org" ? 'color: #ffff00; ' : '') + 'font-weight: 700;">E-Hentai Downloader</legend>\
 	<style>\
-	.ehD-box { margin: 20px auto; width: 732px; box-sizing: border-box; }\
+	.ehD-box { margin: 20px auto; width: 732px; box-sizing: border-box; font-size: 12px; }\
 	.ehD-box a { cursor: pointer; }\
 	.ehD-box .g2 { display: inline-block; margin: 10px; padding: 0; }\
+	.ehD-setting { position: fixed; left: 0; right: 0; top: 0; bottom: 0; padding: 5px; border: 1px solid #000000; background: #34353b; color: #dddddd; width: 550px; height: 500px; max-width: 100%; max-height: 100%; overflow: auto; box-sizing: border-box; margin: auto; z-index: 999; text-align: left; font-size: 12px; }\
+	.ehD-setting .g2 { padding-bottom: 10px; }\
+	.ehD-setting input, .ehD-box input { vertical-align: middle; }\
 	</style>';
 // Use a lazy way to set stylesheet.
 
