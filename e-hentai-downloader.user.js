@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.17
+// @version      1.17.1
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -30,7 +30,7 @@ console.log('[EHD] To report a bug, showing all the "[EHD]" logs is wonderful. =
 
 // GreaseMonkey 3.2 beta 1 and older version can't load content of GM_xhr.response, and this can't be fix.
 if (
-	GM_info.scriptHandler.indexOf('Tampermonkey') < 0 && GM_info.version != null && (
+	GM_info.scriptHandler && GM_info.scriptHandler.indexOf('Tampermonkey') < 0 && GM_info.version != null && (
 		GM_info.version.split('.')[0] - 0 < 3 || (
 			GM_info.version.split('.')[0] - 0 == 3 && (
 				GM_info.version.split('.')[1].split('beta')[0] - 0 <= 2 &&
@@ -10279,7 +10279,6 @@ function ehDownload() {
 	retryCount = downloadedCount = fetchCount = failedCount = 0;
 	needNumberImages = ehDownloadNumberInput.querySelector('input').checked;
 	//console.log(needNumberImages);
-	isDownloading = true;
 	logStr = document.getElementById('gn').textContent.replaceHTMLEntites() + '\n' 
 		   + document.getElementById('gj').textContent.replaceHTMLEntites() + '\n' 
 		   + window.location.href.replaceHTMLEntites() + '\n\n'
@@ -10298,6 +10297,7 @@ function ehDownload() {
 	if (document.getElementById("comment_0")) {
 		logStr += 'Uploader Comment:\n' + document.getElementById("comment_0").innerHTML.replace(/<br>|<br \/>/gi, '\n') + '\n\n';
 	}
+	isDownloading = true;
 	progressTable = document.createElement('table');
 	progressTable.style.width = '100%';
 	ehDownloadDialog.style.display = 'block';
