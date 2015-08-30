@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.17.2
+// @version      1.17.3
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -40,7 +40,7 @@ else if (navigator.userAgent.indexOf('Trident') >= 0) {
 	throw console.error('[EHD] IE doesn\'t support E-Hentai Downloader. UserAgent > ' + navigator.userAgent);
 }
 
-// Simple fixed not working on ViolentMonkey
+// Simple fixed not working on Violentmonkey
 else if ((navigator.userAgent.indexOf('OPR') >= 0 || navigator.userAgent.indexOf('Maxthon') >= 0) && !GM_info) {
 	var GM_getValue = GM_getValue || function(i) {
 		return localStorage.getItem(i);
@@ -48,7 +48,7 @@ else if ((navigator.userAgent.indexOf('OPR') >= 0 || navigator.userAgent.indexOf
 	var GM_setValue = GM_setValue || function(i, j) {
 		return localStorage.setItem(i, j);
 	}
-	var GM_info = GM_info || {script: {}, scriptHandler: 'ViolentMonkey'};
+	var GM_info = GM_info || {script: {}, scriptHandler: 'Violentmonkey'};
 	//var unsafeWindow = window;
 }
 
@@ -10458,7 +10458,7 @@ function ehDownloadSet() {
 			<div class="g2"><label><input type="checkbox" data-ehd-setting="enable-multi-threading"> Enable multi-thread download (recommended)</label></div>\
 			<div class="g2"><label>Multi-thread download threads count <input type="number" data-ehd-setting="thread-count" min="1" placeholder="5" style="width: 51px;"> (<=5 is advised)</label></div>\
 			<div class="g2"><label>Abort fetching current image after <input type="number" data-ehd-setting="timeout" min="0" placeholder="300" style="width: 51px;"> second(s) (0 is never abort)</label></div>\
-			<div class="g2"' + (GM_info.scriptHandler && GM_info.scriptHandler == 'ViolentMonkey' && ' style="opacity: 0.75;" title="ViolentMonkey may not support this feature"') + '><label>Skip current image when retried <input type="number" data-ehd-setting="retry-count" min="1" placeholder="3" style="width: 51px;"> time(s)</label></div>\
+			<div class="g2"' + (GM_info.scriptHandler && GM_info.scriptHandler == 'Violentmonkey' && ' style="opacity: 0.75;" title="Violentmonkey may not support this feature"') + '><label>Skip current image when retried <input type="number" data-ehd-setting="retry-count" min="1" placeholder="3" style="width: 51px;"> time(s)</label></div>\
 			<div class="g2"><label>Set folder name as <input type="text" data-ehd-setting="dir-name" placeholder="{gid}_{token}"> (if you don\'t want to create folder, use "/") *</label></div>\
 			<div class="g2"><label>Set Zip file name as <input type="text" data-ehd-setting="file-name" placeholder="{title}"> *</label></div>\
 			<div class="g2"><label>Set compression level as <input type="number" data-ehd-setting="compression-level" min="0" max="9" placeholder="0" style="width: 51px;"> (0 ~ 9, 0 is only store, not recommended to enable)</label></div>\
