@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.17.3
+// @version      1.17.4
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -41,6 +41,8 @@ else if (navigator.userAgent.indexOf('Trident') >= 0) {
 }
 
 // Simple fixed not working on Violentmonkey
+// Not sure why these GM_* APIs are working now... OTL
+/*
 else if ((navigator.userAgent.indexOf('OPR') >= 0 || navigator.userAgent.indexOf('Maxthon') >= 0) && !GM_info) {
 	var GM_getValue = GM_getValue || function(i) {
 		return localStorage.getItem(i);
@@ -51,7 +53,7 @@ else if ((navigator.userAgent.indexOf('OPR') >= 0 || navigator.userAgent.indexOf
 	var GM_info = GM_info || {script: {}, scriptHandler: 'Violentmonkey'};
 	//var unsafeWindow = window;
 }
-
+*/
 // GreaseMonkey 3.2 beta 1 and older version can't load content of GM_xhr.response, and this can't be fix.
 else if (
 	(!GM_info.scriptHandler || GM_info.scriptHandler.indexOf('GreaseMonkey') >= 0) && GM_info.version != null && (
