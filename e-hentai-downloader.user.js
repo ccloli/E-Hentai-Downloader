@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.18
+// @version      1.18.1
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -10925,7 +10925,7 @@ ehDownloadFeedback.innerHTML = '<img src="data:image/gif;base64,R0lGODlhBQAHALMA
 /*document.getElementById('gd5')*/ehDownloadBox.appendChild(ehDownloadFeedback);
 
 //document.getElementById('gd5').appendChild(ehDownloadBox);
-document.body.insertBefore(ehDownloadBox, document.getElementById('asm'));
+document.body.insertBefore(ehDownloadBox, document.getElementById('asm') || document.querySelector('.gm').nextElementSibling);
 
 // Fixed overflow in g.e-hentai.org
 //document.getElementById('gright').style.height = 'auto';
