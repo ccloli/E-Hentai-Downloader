@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.18.1
+// @version      1.18.2
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -10641,7 +10641,7 @@ function ehDownload() {
 		if (c1 == 'File Size:' && (c2.indexOf('GB') > 0 || (c2.indexOf('MB') > 0 && parseFloat(c2) >= 200))) {
 			if ((!setting['store-in-fs'] || window.requestFileSystem == null) && (c2.indexOf('GB') > 0 || (c2.indexOf('MB') > 0 && parseFloat(c2) >= 450)) && !confirm('This archive is too large (original size), please consider downloading this archive in other way.\n\nMaximum allowed file size: Chrome / Opera 15+ 500MiB | IE 10+ 600 MiB | Firefox 20+ 800 MiB\n(From FileSaver.js introduction)\n\nAre you sure to continue downloading? Please also consider your operating system\'s free memory, it may takes about double size of archive file size when generating ZIP file.\n\n* If you are using Chrome, you can try enabling "Request File System to handle large Zip file" on settings page.\n\n* You can set Pages Range to download this archive into some parts. If you have already enabled it, please ignore this message.')) return;
 			/*\n\n* You can enable auto-scale archive feature in Settings, but this is an experimental feature and may cause bug, so please be notice. */
-			else {
+			else if (setting['store-in-fs'] && window.requestFileSystem != null) {
 				ehDownloadFS.needFileSystem = true;
 				//ehDownloadFS.requestFileSystem
 				var requiredBytes = parseInt(1024 * 1024 * ((c2.indexOf('MB') > 0 ? parseFloat(c2) : parseFloat(c2) * 1024) * 1.05));
