@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.18.3
+// @version      1.18.4
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -10118,7 +10118,7 @@ function fetchOriginalImage(index, node) {
 		node.innerHTML = '<td>#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;"></progress></td><td>Pending...</td>';
 		progressTable.appendChild(node);
 	}
-	var progress = node.getElementsByTagName('progress')[0];
+	//var progress = node.getElementsByTagName('progress')[0];
 	ehDownloadDialog.scrollTop = ehDownloadDialog.scrollHeight;
 	//console.log(retryCount);
 	fetchThread[index - 1] = GM_xmlhttpRequest({
@@ -10133,8 +10133,8 @@ function fetchOriginalImage(index, node) {
 			'X-Alt-Referer': imageList[index - 1]['pageURL']
 		},
 		onprogress: function(res) {
-			//node.innerHTML = '<td>#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="' + (res.lengthComputable ? res.loaded / res.total : '') + '"></progress></td><td>' + (retryCount[index - 1] == 0 ? 'Downloading...' : 'Retrying (' + retryCount[index - 1] + '/' + (setting['retry-count'] != null ? setting['retry-count'] : 3) +') ...') + '</td>';
-			progress.setAttribute('value', res.lengthComputable ? res.loaded / res.total : '');
+			node.innerHTML = '<td>#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="' + (res.lengthComputable ? res.loaded / res.total : '') + '"></progress></td><td>' + (retryCount[index - 1] == 0 ? 'Downloading...' : 'Retrying (' + retryCount[index - 1] + '/' + (setting['retry-count'] != null ? setting['retry-count'] : 3) +') ...') + '</td>';
+			//progress.setAttribute('value', res.lengthComputable ? res.loaded / res.total : '');
 			for (var i in res) {
 				delete res[i]; // trying to reduce memory usage
 				//delete res;
