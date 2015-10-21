@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.18.2
+// @version      1.18.3
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -9489,6 +9489,10 @@ if (typeof module !== "undefined" && module.exports) {
 
 // ==========---------- FileSaver.js End ----------========== //
 
+
+// ==========---------- Main Function Starts Here ----------========== //
+
+
 /* TrixIE Fix. Because of GM_xhr bug in TrixIE, there is no way to make this script compatible with IE */
 /*if (navigator.userAgent.indexOf('Trident') >= 0) {
 	var GM_getValue = function(i) {
@@ -9582,7 +9586,7 @@ var ehDownloadFS = {
 		console.error('[EHD] ' + errorMsg);
 		//alert(errorMsg);
 	},
-	saveAs: function(/*fileName*/ fs){
+	saveAs: function(fs){
 		/*if (ehDownloadFS.URL == null) {
 			// Most of File System API may be asynchronous API (FileEntry is asynchronous too :-P)
 			return ehDownloadFS.fs.root.getFile(unsafeWindow.gid, {}, function(fileEntry){
@@ -9594,7 +9598,7 @@ var ehDownloadFS = {
 		if (fs == null) return;
 		fs.root.getFile(unsafeWindow.gid + '.zip', {}, function (fileEntry) {
 			var url = fileEntry.toURL();
-			console.log('[EHD] File URL:', url);
+			console.log('[EHD] File URL >', url);
 			var a = document.createElement('a');
 			a.setAttribute('href', url);
 			a.setAttribute('download', fileName + '.zip');
@@ -9832,17 +9836,6 @@ String.prototype.replaceOrigin = function() {
 	return isREH ? this.replace('g.e-hentai.org', 'r.e-hentai.org').toString() : this.toString();
 }
 
-/*
-function pushDialog(str, str2) {
-	if (str2 == null) logStr += str;
-	else {
-		lastIndex = logStr.lastIndexOf(str);
-		logStr = logStr.substr(0, lastIndex) + str + str2 + logStr.substr(lastIndex + str.length);
-	}
-	ehDownloadDialog.innerHTML = logStr.replace(/\n/gi, '<br>');
-	ehDownloadDialog.scrollTop = ehDownloadDialog.scrollHeight;
-}
-*/
 function pushDialog(str) {
 	ehDownloadDialog.innerHTML += str.replace(/\n/gi, '<br>');
 	ehDownloadDialog.scrollTop = ehDownloadDialog.scrollHeight;
@@ -9891,102 +9884,60 @@ function renameImages() {
 		else elem['imageName'] = elem['imageNumber'] + (setting['number-separator'] ? setting['number-separator'] : '：') + elem['imageName'];
 	});
 }
-/*
-function storePageData(content) {
-	var imageURL = (unsafeWindow.apiuid != -1 && content.indexOf('fullimg.php') >= 0) ? content.match(RegExp('<a href="(' + origin.replace(/\./gi, '\\.') + '\/fullimg\\.php\\?\\S+?)"'))[1].replace(/&amp;/gi, '&') : content.indexOf('id="img"') > -1 ? content.match(/<img id="img" src="(\S+?)"/)[1] : content.split('href="' + nextFetchURL + '"><img', 1)[2].split('src="', 2)[1].split('"', 1)[0]; // Sometimes preview image may not have id="img", thanks to 8qwe24657913
-	var fileName = content.match(/g\/l.png" \/><\/a><\/div><div>([\s\S]+?) :: /)[1];
-	imageList.push(new PageData(fetchURL, imageURL, fileName));
-	pushDialog('Succeed!\nImage ' + index + ': ' + imageURL + '\n');
-}
-*/
+
 function storeRes(res, index) {
-	/*if (!setting['enable-multi-threading']) {
-		if (!needNumberImages) {
-			for (var i = 0; i < imageList.length, i < index - 1; i++) {
-				var elem = imageList[i];
-				if (elem != null && elem.imageName.toLowerCase() == imageList[index - 1]['imageName'].toLowerCase()) {
-					var nameParts = imageName.split('.');
-					nameParts[nameParts.length - 2] += ' (' + (++elem.equalCount) + ')';
-					imageName = nameParts.join('.');
+	imageData[index - 1] = res.response;
+	downloadedCount++;
+	console.log('[EHD] Index >', index, ' | RealIndex >', imageList[index - 1]['realIndex'], ' | Name >', imageList[index - 1]['imageName'], ' | RetryCount >', retryCount[index - 1], ' | DownloadedCount >', downloadedCount, ' | FetchCount >', fetchCount, ' | FailedCount >', failedCount);
+	fetchCount--;
+	/*var preStr = 'Fetching Image ' + (index) + ': ' + imageList[index - 1]['imageName'] + ' ... ';
+	for (var i = 0; i < retryCount[index - 1]; i++) preStr += 'Failed! Retrying... ';
+	pushDialog(preStr, 'Succeed!');*/
+	if (downloadedCount + failedCount < imageList.length) {
+		for (var i = fetchCount; i < (setting['thread-count'] != null ? setting['thread-count'] : 5); i++) {
+			for (var j = 0; j < imageList.length; j++) {
+				if (imageData[j] == null) {
+					imageData[j] = 'Fetching';
+					//pushDialog('Fetching Image ' + (j + 1) + ': ' + imageList[j]['imageName'] + ' ... \n');
+					fetchOriginalImage(j + 1);
+					fetchCount++;
 					break;
 				}
 			}
 		}
-		else imageList[index - 1]['imageName'] = imageList[index - 1]['imageNumber'] + (setting['number-separator'] ? setting['number-separator'] : '：') + imageList[index - 1]['imageName'];
-		zip.folder(dirName).file(imageList[index - 1]['imageName'], res.response);
-		//pushDialog('Succeed!\n');
-		if (index < imageList.length) {
-			//pushDialog('Fetching Image ' + (++index) + ': ' + imageList[index - 1]['imageName'] + ' ... ');
-			fetchOriginalImage(++index);
-		}
-		else {
-			pushDialog('Fetch images successful!');
-			generateZip();
-			zip.remove(dirName);
-			isDownloading = false;
-			//window.onbeforeunload = null;
-			//insertCloseButton();
+	}
+	else if (failedCount > 0) {
+		if (fetchCount == 0) {
+			for (var i = 0; i < fetchThread.length; i++) fetchThread[i].abort();
+			if (confirm('Some images were failed to download. Would you like to try them again?')) {
+				retryAllFailed();
+			}
+			else {
+				pushDialog('\nFetch images failed.');
+				if (confirm('Fetch images failed, Please try again later.\n\nWould you like to download downloaded images?')) {
+					renameImages();
+					for (var j = 0; j < imageData.length; j++) {
+						if (imageData[j] != null && imageData[j] != 'Fetching') {
+							zip.folder(dirName).file(imageList[j]['imageName'], imageData[j]);
+							imageData[j] = null;
+						}
+					}
+					generateZip();
+				}
+				zip.remove(dirName);
+				isDownloading = false;
+			}
 		}
 	}
-	else {*/
-		imageData[index - 1] = res.response;
-		downloadedCount++;
-		console.log('[EHD] Index >', index, ' | RealIndex >', imageList[index - 1]['realIndex'], ' | Name >', imageList[index - 1]['imageName'], ' | RetryCount >', retryCount[index - 1], ' | DownloadedCount >', downloadedCount, ' | FetchCount >', fetchCount, ' | FailedCount >', failedCount);
-		fetchCount--;
-		/*var preStr = 'Fetching Image ' + (index) + ': ' + imageList[index - 1]['imageName'] + ' ... ';
-		for (var i = 0; i < retryCount[index - 1]; i++) preStr += 'Failed! Retrying... ';
-		pushDialog(preStr, 'Succeed!');*/
-		if (downloadedCount + failedCount < imageList.length) {
-			for (var i = fetchCount; i < (setting['thread-count'] != null ? setting['thread-count'] : 5); i++) {
-				for (var j = 0; j < imageList.length; j++) {
-					if (imageData[j] == null) {
-						imageData[j] = 'Fetching';
-						//pushDialog('Fetching Image ' + (j + 1) + ': ' + imageList[j]['imageName'] + ' ... \n');
-						fetchOriginalImage(j + 1);
-						fetchCount++;
-						break;
-					}
-				}
-			}
+	else {
+		renameImages();
+		for (var j = 0; j < imageList.length; j++) {
+			zip.folder(dirName).file(imageList[j]['imageName'], imageData.shift());
 		}
-		else if (failedCount > 0) {
-			if (fetchCount == 0) {
-				for (var i = 0; i < fetchThread.length; i++) fetchThread[i].abort();
-				if (confirm('Some images were failed to download. Would you like to try them again?')) {
-					retryAllFailed();
-				}
-				else {
-					pushDialog('\nFetch images failed.');
-					if (confirm('Fetch images failed, Please try again later.\n\nWould you like to download downloaded images?')) {
-						//window.open('data:text/plain,' + logStr);
-						renameImages();
-						for (var j = 0; j < imageData.length; j++) {
-							if (imageData[j] != null && imageData[j] != 'Fetching') {
-								zip.folder(dirName).file(imageList[j]['imageName'], imageData[j]);
-								imageData[j] = null;
-							}
-						}
-						generateZip();
-					}
-					zip.remove(dirName);
-					isDownloading = false;
-					//window.onbeforeunload = null;
-					//insertCloseButton();
-				}
-			}
-		}
-		else {
-			renameImages();
-			for (var j = 0; j < imageList.length; j++) {
-				zip.folder(dirName).file(imageList[j]['imageName'], imageData.shift());
-			}
-			generateZip();
-			zip.remove(dirName);
-			isDownloading = false;
-			//window.onbeforeunload = null;
-			//insertCloseButton();
-		}
-	/*}*/
+		generateZip();
+		zip.remove(dirName);
+		isDownloading = false;
+	}
 	for (var i in res) {
 		delete res[i]; // trying to reduce memory usage
 		//delete res;
@@ -9996,7 +9947,7 @@ function storeRes(res, index) {
 function generateZip(isFromFS, fs){
 	if (!isFromFS) {
 		imageList.forEach(function(elem, index){
-			logStr += '\n\nPage ' + elem['realIndex'] + ': ' + elem['pageURL'] + '\nImage ' + elem['realIndex'] + ': ' + elem['imageName'] + '\nImage URL: ' + elem['imageURL'];
+			logStr += '\n\nPage ' + elem['realIndex'] + ': ' + elem['pageURL'] + '\nImage ' + elem['realIndex'] + ': ' + elem['imageName'] /*+ '\nImage URL: ' + elem['imageURL']*/; // Image URL may useless, see https://github.com/ccloli/E-Hentai-Downloader/issues/6
 		});
 		pushDialog('\n\nFinish downloading at ' + new Date());
 		logStr += '\n\nFinish downloading at ' + new Date() + '\n\nGenerated by E-Hentai Downloader. https://github.com/ccloli/E-Hentai-Downloader';
@@ -10094,7 +10045,7 @@ function generateZip(isFromFS, fs){
 		blobObj = zip.generate({type: 'blob', compression: setting['compression-level'] ? 'DEFLATE' : 'STORE', compressionOptions: {level: setting['compression-level'] > 0 ? (setting['compression-level'] < 10 ? setting['compression-level'] : 9) : 1}});
 		saveAs(blobObj, fileName + '.zip');
 		blobURL = window.URL.createObjectURL(blobObj);
-		console.log('[EHD] File URL:', blobURL);
+		console.log('[EHD] File URL >', blobURL);
 		pushDialog('\n\nNot download? <a href="' + blobURL + '" download="' + fileName + '.zip" style="color: #ffffff; font-weight: bold;">Click here to download</a>\n\n');
 		insertCloseButton();
 	}
@@ -10103,81 +10054,57 @@ function generateZip(isFromFS, fs){
 function failedFetching(index, node){
 	//console.log(downloadedCount, failedCount)
 	'abort' in fetchThread[index - 1] && fetchThread[index - 1].abort();
-	/*if (!setting['enable-multi-threading']) {
-		if (retryCount < (setting['retry-count'] != null ? setting['retry-count'] : 3)) {
-			//pushDialog('Failed! Retrying... ');
-			retryCount++;
-			fetchOriginalImage(index, node);
-		}
-		else {
-			node.innerHTML = '<td>#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="0"></progress></td><td style="color: #ff0000;">Failed!</td>';
-			pushDialog('\nFetch images failed.');
-			if (confirm('Fetch images failed, Please try again later.\n\nWould you like to download downloaded images?')) {
-				//window.open('data:text/plain,' + logStr);
-				generateZip();
-			}
-			zip.remove(dirName);
-			isDownloading = false;
-			//window.onbeforeunload = null;
-			//insertCloseButton();
-		}
+	console.error('[EHD] Index >', index, ' | RealIndex >', imageList[index - 1]['realIndex'], ' | Name >', imageList[index - 1]['imageName'], ' | RetryCount >', retryCount[index - 1], ' | DownloadedCount >', downloadedCount, ' | FetchCount >', fetchCount, ' | FailedCount >', failedCount);
+	if (retryCount[index - 1] < (setting['retry-count'] != null ? setting['retry-count'] : 3)) {
+		/*var preStr = 'Fetching Image ' + index + ': ' + imageList[index - 1]['imageName'] + ' ... ';
+		for (var i = 0; i < retryCount[index - 1]; i++) preStr += 'Failed! Retrying... ';
+		pushDialog(preStr, 'Failed! Retrying... ');*/
+		retryCount[index - 1]++;
+		fetchOriginalImage(index, node);
 	}
-	else {*/
-		console.error('[EHD] Index >', index, ' | RealIndex >', imageList[index - 1]['realIndex'], ' | Name >', imageList[index - 1]['imageName'], ' | RetryCount >', retryCount[index - 1], ' | DownloadedCount >', downloadedCount, ' | FetchCount >', fetchCount, ' | FailedCount >', failedCount);
-		if (retryCount[index - 1] < (setting['retry-count'] != null ? setting['retry-count'] : 3)) {
-			/*var preStr = 'Fetching Image ' + index + ': ' + imageList[index - 1]['imageName'] + ' ... ';
-			for (var i = 0; i < retryCount[index - 1]; i++) preStr += 'Failed! Retrying... ';
-			pushDialog(preStr, 'Failed! Retrying... ');*/
-			retryCount[index - 1]++;
-			fetchOriginalImage(index, node);
-		}
-		else {
-			//pushDialog('Fetching Image ' + index + ': ' + imageList[index - 1]['imageName'] + ' ... Failed! Retrying... Failed! Retrying... Failed! Retrying... ', 'Failed!');
-			node.innerHTML = '<td>#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="0"></progress></td><td style="color: #ff0000;">Failed!</td>';
-			imageList[index - 1]['imageFinalURL'] = null;
-			failedCount++;
-			fetchCount--;
-			if (fetchCount == 0) {
-				for (var i = 0; i < fetchThread.length; i++) fetchThread[i].abort();
-				if (confirm('Some images were failed to download. Would you like to try them again?')) {
-					retryAllFailed();
-				}
-				else {
-					pushDialog('\nFetch images failed.');
-					if (confirm('Fetch images failed, Please try again later.\n\nWould you like to download downloaded images?')) {
-						//window.open('data:text/plain,' + logStr);
-						renameImages();
-						for (var j = 0; j < imageData.length; j++) {
-							if (imageData[j] != null && imageData[j] != 'Fetching') {
-								zip.folder(dirName).file(imageList[j]['imageName'], imageData[j]);
-								imageData[j] = null;
-							}
-						}
-						generateZip();
-					}
-					zip.remove(dirName);
-					isDownloading = false;
-					//window.onbeforeunload = null;
-					//insertCloseButton();
-				}
+	else {
+		//pushDialog('Fetching Image ' + index + ': ' + imageList[index - 1]['imageName'] + ' ... Failed! Retrying... Failed! Retrying... Failed! Retrying... ', 'Failed!');
+		node.innerHTML = '<td>#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="0"></progress></td><td style="color: #ff0000;">Failed!</td>';
+		imageList[index - 1]['imageFinalURL'] = null;
+		failedCount++;
+		fetchCount--;
+		if (fetchCount == 0) {
+			for (var i = 0; i < fetchThread.length; i++) fetchThread[i].abort();
+			if (confirm('Some images were failed to download. Would you like to try them again?')) {
+				retryAllFailed();
 			}
 			else {
-				if (downloadedCount + failedCount < imageList.length) {
-					for (var i = fetchCount; i < (setting['thread-count'] != null ? setting['thread-count'] : 5); i++) {
-						for (var j = 0; j < imageList.length; j++) {
-							if (imageData[j] == null) {
-								imageData[j] = 'Fetching';
-								//pushDialog('Fetching Image ' + (j + 1) + ': ' + imageList[j]['imageName'] + ' ... \n');
-								fetchOriginalImage(j + 1);
-								fetchCount++;
-								break;
-							}
+				pushDialog('\nFetch images failed.');
+				if (confirm('Fetch images failed, Please try again later.\n\nWould you like to download downloaded images?')) {
+					renameImages();
+					for (var j = 0; j < imageData.length; j++) {
+						if (imageData[j] != null && imageData[j] != 'Fetching') {
+							zip.folder(dirName).file(imageList[j]['imageName'], imageData[j]);
+							imageData[j] = null;
+						}
+					}
+					generateZip();
+				}
+				zip.remove(dirName);
+				isDownloading = false;
+			}
+		}
+		else {
+			if (downloadedCount + failedCount < imageList.length) {
+				for (var i = fetchCount; i < (setting['thread-count'] != null ? setting['thread-count'] : 5); i++) {
+					for (var j = 0; j < imageList.length; j++) {
+						if (imageData[j] == null) {
+							imageData[j] = 'Fetching';
+							//pushDialog('Fetching Image ' + (j + 1) + ': ' + imageList[j]['imageName'] + ' ... \n');
+							fetchOriginalImage(j + 1);
+							fetchCount++;
+							break;
 						}
 					}
 				}
 			}
 		}
-	/*}*/
+	}
 }
 
 function fetchOriginalImage(index, node) {
@@ -10191,6 +10118,7 @@ function fetchOriginalImage(index, node) {
 		node.innerHTML = '<td>#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;"></progress></td><td>Pending...</td>';
 		progressTable.appendChild(node);
 	}
+	var progress = node.getElementsByTagName('progress')[0];
 	ehDownloadDialog.scrollTop = ehDownloadDialog.scrollHeight;
 	//console.log(retryCount);
 	fetchThread[index - 1] = GM_xmlhttpRequest({
@@ -10201,13 +10129,12 @@ function fetchOriginalImage(index, node) {
 		// timeout is failed in Chrome Tampermonkey
 		timeout: setting['timeout'] != null ? Number(setting['timeout']) * 1000 : 300000,
 		headers: {
-			/*'Upgrade-Insecure-Requests': 1,
-			'Cache-Control': 'max-age=0'*/
 			'Referer': imageList[index - 1]['pageURL'],
 			'X-Alt-Referer': imageList[index - 1]['pageURL']
 		},
 		onprogress: function(res) {
-			node.innerHTML = '<td>#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="' + (res.lengthComputable ? res.loaded / res.total : '') + '"></progress></td><td>' + (retryCount[index - 1] == 0 ? 'Downloading...' : 'Retrying (' + /*(!setting['enable-multi-threading'] ? retryCount :*/ retryCount[index - 1]/*)*/ + '/' + (setting['retry-count'] != null ? setting['retry-count'] : 3) +') ...') + '</td>';
+			//node.innerHTML = '<td>#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="' + (res.lengthComputable ? res.loaded / res.total : '') + '"></progress></td><td>' + (retryCount[index - 1] == 0 ? 'Downloading...' : 'Retrying (' + retryCount[index - 1] + '/' + (setting['retry-count'] != null ? setting['retry-count'] : 3) +') ...') + '</td>';
+			progress.setAttribute('value', res.lengthComputable ? res.loaded / res.total : '');
 			for (var i in res) {
 				delete res[i]; // trying to reduce memory usage
 				//delete res;
@@ -10218,18 +10145,6 @@ function fetchOriginalImage(index, node) {
 		},*/
 		onload: function(res) {
 			//console.log(res);
-			// GM_xhr doesn't support xhr.getResponseHeader() function
-			//if (res.getResponseHeader('Content-Type').split('/')[0] != 'image') {
-			if (res.responseHeaders.split('Content-Type:')[1].split('\n')[0].split('/')[0].trim() != 'image') {
-				console.log('[EHD] #' + index + ': Wrong Content-Type');
-				console.log('[EHD] #' + index + ': RealIndex >', imageList[index - 1]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
-				node.innerHTML = '<td>#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="0"></progress></td><td style="color: #ffff00;">Failed! (Wrong MIME)</td>';
-				for (var i in res) {
-					delete res[i]; // trying to reduce memory usage
-					//delete res;
-				}
-				return failedFetching(index, node);
-			}
 			if (!res.response) {
 				var data = {
 					response: new ArrayBuffer(res.responseText.length),
@@ -10249,7 +10164,6 @@ function fetchOriginalImage(index, node) {
 				var res = data;
 			}
 			if (res.response.byteLength == 925) { // '403 Access Denied' Image Byte Size
-				//fetchThread[index - 1].dispatchEvent(new Event('error'));
 				// GM_xhr only support abort()
 				console.log('[EHD] #' + index + ': 403 Access Denied');
 				console.log('[EHD] #' + index + ': RealIndex >', imageList[index - 1]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
@@ -10280,7 +10194,29 @@ function fetchOriginalImage(index, node) {
 					//delete res;
 				}
 				pushDialog('\nYou have exceeded your image viewing limits.');
-				if (confirm('You have exceeded your image viewing limits. You can reset these limits at home page.\n\nWould you like to save downloaded images?')) {
+				if (confirm('You have exceeded your image viewing limits. You can reset these limits at home page.\n\nYou can try reseting your image viewing limits to continue by paying your GPs. Reset now?') && (unsafeWindow.apiuid != -1 ? 1 : (alert('Sorry, you are not log in!'), 0))) {
+					window.open('http://g.e-hentai.org/home.php');
+					pushDialog('Please reset your viewing limits on opened window. If not shown, try this <a href="http://g.e-hentai.org/home.php" target="_blank">link</a>.\nAfter reseting your viewing limits, click the button below to continue.\n');
+					var continueButton = document.createElement('button');
+					continueButton.innerHTML = 'Continue Downloading';
+					continueButton.addEventListener('click', function(){
+						fetchCount = 0;
+						ehDownloadDialog.removeChild(continueButton);
+						for (var i = fetchCount; i < (setting['thread-count'] != null ? setting['thread-count'] : 5); i++) {
+							for (var j = 0; j < imageList.length; j++) {
+								if ((imageData[j] == null || imageData[j] == 'Fetching') && retryCount[j] != (setting['retry-count'] != null ? setting['retry-count'] : 3)) {
+									imageData[j] = 'Fetching';
+									fetchOriginalImage(j + 1);
+									fetchCount++;
+									break;
+								}
+							}
+						}
+					});
+					ehDownloadDialog.appendChild(continueButton);
+					return;
+				}
+				else if (confirm('Would you like to save downloaded images?')) {
 					renameImages();
 					for (var j = 0; j < imageData.length; j++) {
 						if (imageData[j] != null && imageData[j] != 'Fetching') {
@@ -10292,8 +10228,6 @@ function fetchOriginalImage(index, node) {
 				}
 				zip.remove(dirName);
 				isDownloading = false;
-				//window.onbeforeunload = null;
-				//insertCloseButton();
 				return;
 			}
 			else if (res.response.byteLength == 28658) { // '509 Bandwidth Exceeded' Image Byte Size
@@ -10306,7 +10240,29 @@ function fetchOriginalImage(index, node) {
 					delete res[i]; // trying to reduce memory usage
 					//delete res;
 				}
-				if (confirm('You have temporarily reached the limit for how many images you can browse. You can\n- Sign up/in E-Hentai account at E-Hentai Forums to get double daily quota if you are not sign in.\n- Run the Hentai@Home to support E-Hentai and get more points to increase your limit.\n- Check back in a few hours, and you will be able to download more.\n\nWould you like to save downloaded images?')) {
+				if (confirm('You have temporarily reached the limit for how many images you can browse. You can\n- Sign up/in E-Hentai account at E-Hentai Forums to get double daily quota if you are not sign in.\n- Run the Hentai@Home to support E-Hentai and get more points to increase your limit.\n- Check back in a few hours, and you will be able to download more.\n\nYou can try reseting your image viewing limits to continue by paying your GPs. Reset now?') && (unsafeWindow.apiuid != -1 ? 1 : (alert('Sorry, you are not log in!'), 0))) {
+					window.open('http://g.e-hentai.org/home.php');
+					pushDialog('Please reset your viewing limits on opened window. If not shown, try this <a href="http://g.e-hentai.org/home.php" target="_blank">link</a>.\nAfter reseting your viewing limits, click the button below to continue.\n');
+					var continueButton = document.createElement('button');
+					continueButton.innerHTML = 'Continue Downloading';
+					continueButton.addEventListener('click', function(){
+						fetchCount = 0;
+						ehDownloadDialog.removeChild(continueButton);
+						for (var i = fetchCount; i < (setting['thread-count'] != null ? setting['thread-count'] : 5); i++) {
+							for (var j = 0; j < imageList.length; j++) {
+								if ((imageData[j] == null || imageData[j] == 'Fetching') && retryCount[j] != (setting['retry-count'] != null ? setting['retry-count'] : 3)) {
+									imageData[j] = 'Fetching';
+									fetchOriginalImage(j + 1);
+									fetchCount++;
+									break;
+								}
+							}
+						}
+					});
+					ehDownloadDialog.appendChild(continueButton);
+					return;
+				}
+				else if (confirm('Would you like to save downloaded images?')) {
 					renameImages();
 					for (var j = 0; j < imageData.length; j++) {
 						if (imageData[j] != null && imageData[j] != 'Fetching') {
@@ -10318,9 +10274,19 @@ function fetchOriginalImage(index, node) {
 				}
 				zip.remove(dirName);
 				isDownloading = false;
-				//window.onbeforeunload = null;
-				//insertCloseButton();
 				return;
+			}
+			// GM_xhr doesn't support xhr.getResponseHeader() function
+			//if (res.getResponseHeader('Content-Type').split('/')[0] != 'image') {
+			else if (res.responseHeaders.split('Content-Type:')[1].split('\n')[0].split('/')[0].trim() != 'image') {
+				console.log('[EHD] #' + index + ': Wrong Content-Type');
+				console.log('[EHD] #' + index + ': RealIndex >', imageList[index - 1]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
+				node.innerHTML = '<td>#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="0"></progress></td><td style="color: #ffff00;">Failed! (Wrong MIME)</td>';
+				for (var i in res) {
+					delete res[i]; // trying to reduce memory usage
+					//delete res;
+				}
+				return failedFetching(index, node);
 			}
 			// if (imageList.indexOf('fullimg.php') >= 0) imageList[index - 1]['imageFinalURL'] = res.finalUrl; // 看起来没什么用
 			imageList[index - 1]['imageName'] = res.responseHeaders.match(/filename=([\s\S]+?)\n/) ? res.responseHeaders.match(/filename=([\s\S]+?)\n/)[1].trim().replace(/[:"*?|<>\/\\\n]/g, '-') : imageList[index - 1]['imageName'];
@@ -10385,14 +10351,6 @@ function retryAllFailed(){
 				}
 			}
 			else {
-				/*var _index = ++index;
-				for (; index < imageData.length; index++) {
-					if (imageData[index] == 'Fetching') {
-						imageData[index] = null;
-						retryCount[index] = 0;
-						//console.log(j);
-					}
-				}*/
 				++index;
 				for (/*index = _index*/; index < imageData.length; index++) {
 					if (imageData[index] == null) {
@@ -10425,14 +10383,6 @@ function retryAllFailed(){
 				pushDialog('Failed! Skip and continue...');
 				refetch = 0;
 				++index;
-				/*var _index = ++index;
-				for (; index < imageData.length; index++) {
-					if (imageData[index] == 'Fetching') {
-						imageData[index] = null;
-						retryCount[index] = 0;
-						//console.log(j);
-					}
-				}*/
 				for (/*index = _index*/; index < imageData.length; index++) {
 					if (imageData[index] == null) {
 						if (!setting['never-new-url']) {
@@ -10589,8 +10539,6 @@ function getAllPagesURL() {
 			else {
 				pushDialog('Failed!\nFetch Pages\' URL failed, Please try again later.');
 				isDownloading = false;
-				//window.onbeforeunload = null;
-				//insertCloseButton();
 				alert('Fetch Pages\' URL failed, Please try again later.');
 			}
 		}
@@ -10715,7 +10663,6 @@ function ehDownload() {
 		}
 		retryCount = 0;
 		var realIndex = (pagesRange.length != 0 ? pagesRange[Math.min(rangeIndex, pagesRange.length - 1)] : index);
-		//storePageData(xhr.responseText);
 		if (getAllPagesURLFin) {
 			rangeIndex++;
 			if (pagesRange.length == 0) var nextFetchURL = pageURLsList[Math.min(rangeIndex, pageURLsList.length - 1)];
@@ -10763,25 +10710,19 @@ function ehDownload() {
 		 	}
 		 	pushDialog('\n');
 		 	ehDownloadDialog.appendChild(progressTable);
-			/*if ('enable-multi-threading' in setting && !setting['enable-multi-threading']) {
-				//pushDialog('\nFetching Image 1: ' + imageList[0]['imageName'] + ' ... ');
-				fetchOriginalImage(index);
-			}
-			else {*/
-				retryCount = [];
-				//pushDialog('\n');
-				for (var i = fetchCount; i < (setting['thread-count'] != null ? setting['thread-count'] : 5); i++) {
-					for (var j = 0; j < imageList.length; j++) {
-						if (imageData[j] == null) {
-							imageData[j] = 'Fetching';
-							//pushDialog('Fetching Image ' + (j + 1) + ': ' + imageList[j]['imageName'] + ' ... \n');
-							fetchOriginalImage(j + 1);
-							fetchCount++;
-							break;
-						}
+			retryCount = [];
+			//pushDialog('\n');
+			for (var i = fetchCount; i < (setting['thread-count'] != null ? setting['thread-count'] : 5); i++) {
+				for (var j = 0; j < imageList.length; j++) {
+					if (imageData[j] == null) {
+						imageData[j] = 'Fetching';
+						//pushDialog('Fetching Image ' + (j + 1) + ': ' + imageList[j]['imageName'] + ' ... \n');
+						fetchOriginalImage(j + 1);
+						fetchCount++;
+						break;
 					}
 				}
-			/*}*/
+			}
 		}
 	}
 	xhr.onerror = xhr.ontimeout = function() {
@@ -10795,8 +10736,6 @@ function ehDownload() {
 		else {
 			pushDialog('Failed!\nFetch images\' URL failed, Please try again later.');
 			isDownloading = false;
-			//window.onbeforeunload = null;
-			//insertCloseButton();
 			alert('Fetch images\' URL failed, Please try again later.');
 		}
 	}
@@ -10804,9 +10743,6 @@ function ehDownload() {
 	xhr.open('GET', fetchURL);
 	xhr.timeout = 30000;
 	xhr.send();
-	/*window.onbeforeunload = function(){
-		return 'E-Hentai Downloader is still running, please don\'t close this tab before it finish downloading.\n\nE-Hentai Downloader 仍在工作中，在完成下载前请勿关闭此标签页。';
-	}*/
 }
 
 function ehDownloadSet() {
@@ -10898,7 +10834,7 @@ ehDownloadAction.addEventListener('click', function(event){
 	}
 	else getAllPagesURL();
 });
-/*document.getElementById('gd5')*/ehDownloadBox.appendChild(ehDownloadAction);
+ehDownloadBox.appendChild(ehDownloadAction);
 
 var ehDownloadNumberInput = document.createElement('div');
 ehDownloadNumberInput.className = 'g2';
@@ -10908,7 +10844,7 @@ ehDownloadBox.appendChild(ehDownloadNumberInput);
 var ehDownloadRange = document.createElement('div');
 ehDownloadRange.className = 'g2';
 ehDownloadRange.innerHTML = '<img src="data:image/gif;base64,R0lGODlhBQAHALMAAK6vr7OztK+urra2tkJCQsDAwEZGRrKyskdHR0FBQUhISP///wAAAAAAAAAAAAAAACH5BAEAAAsALAAAAAAFAAcAAAQUUI1FlREVpbOUSkTgbZ0CUEhBLREAOw=="> <a><label>Pages Range <input type="text" placeholder="eg. 1-10,12,14-20,27,30"></label></a>';
-/*document.getElementById('gd5')*/ehDownloadBox.appendChild(ehDownloadRange);
+ehDownloadBox.appendChild(ehDownloadRange);
 
 var ehDownloadSetting = document.createElement('div');
 ehDownloadSetting.className = 'g2';
@@ -10917,18 +10853,14 @@ ehDownloadSetting.addEventListener('click', function(event){
 	event.preventDefault();
 	ehDownloadSet();
 });
-/*document.getElementById('gd5')*/ehDownloadBox.appendChild(ehDownloadSetting);
+ehDownloadBox.appendChild(ehDownloadSetting);
 
 var ehDownloadFeedback = document.createElement('div');
 ehDownloadFeedback.className = 'g2';
 ehDownloadFeedback.innerHTML = '<img src="data:image/gif;base64,R0lGODlhBQAHALMAAK6vr7OztK+urra2tkJCQsDAwEZGRrKyskdHR0FBQUhISP///wAAAAAAAAAAAAAAACH5BAEAAAsALAAAAAAFAAcAAAQUUI1FlREVpbOUSkTgbZ0CUEhBLREAOw=="> <a href="https://github.com/ccloli/E-Hentai-Downloader/issues" target="_blank">Feedback</a>';
-/*document.getElementById('gd5')*/ehDownloadBox.appendChild(ehDownloadFeedback);
+ehDownloadBox.appendChild(ehDownloadFeedback);
 
-//document.getElementById('gd5').appendChild(ehDownloadBox);
 document.body.insertBefore(ehDownloadBox, document.getElementById('asm') || document.querySelector('.gm').nextElementSibling);
-
-// Fixed overflow in g.e-hentai.org
-//document.getElementById('gright').style.height = 'auto';
 
 var ehDownloadDialog = document.createElement('div');
 ehDownloadDialog.style.cssText = 'position: fixed; right: 0; bottom: 0; display: none; padding: 5px; border: 1px solid #000000; background: #34353b; color: #dddddd; width: 550px; height: 300px; overflow: auto; z-index: 999;';
