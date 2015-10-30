@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.18.4
+// @version      1.18.5
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -9824,7 +9824,7 @@ String.prototype.replaceHTMLEntites = function() {
 		}
 		else return '&' + entity + ';';
 	}
-	var result = this.replace(/&(#\d+|[a-zA-Z]+);/g, function(match, entity) {
+	var result = this.replace(/&(#x?\d+|[a-zA-Z]+);/g, function(match, entity) {
 		return matchEntity(entity);
 	});
 	return result;
@@ -10064,7 +10064,8 @@ function failedFetching(index, node){
 	}
 	else {
 		//pushDialog('Fetching Image ' + index + ': ' + imageList[index - 1]['imageName'] + ' ... Failed! Retrying... Failed! Retrying... Failed! Retrying... ', 'Failed!');
-		node.innerHTML = '<td>#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="0"></progress></td><td style="color: #ff0000;">Failed!</td>';
+		//node.innerHTML = '<td>#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="0"></progress></td><td style="color: #ff0000;">Failed!</td>';
+		node.innerHTML = '<td style="word-break: break-all;">#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210" style="position: relative;"><progress style="width: 200px;" value="0"></progress><span style="position: absolute; width: 100%; text-align: center; color: #34353b; left: 0; right: 0;"></span></td><td style="color: #ff0000;">Failed!</td>';
 		imageList[index - 1]['imageFinalURL'] = null;
 		failedCount++;
 		fetchCount--;
@@ -10115,10 +10116,15 @@ function fetchOriginalImage(index, node) {
 	if (retryCount[index - 1] == null) retryCount[index - 1] = 0;
 	if (node == null) {
 		var node = document.createElement('tr');
-		node.innerHTML = '<td>#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;"></progress></td><td>Pending...</td>';
+		node.innerHTML = '<td style="word-break: break-all;">#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210" style="position: relative;"><progress style="width: 200px;"></progress><span style="position: absolute; width: 100%; text-align: center; color: #34353b; left: 0; right: 0;"></span></td><td>Pending...</td>';
 		progressTable.appendChild(node);
 	}
-	//var progress = node.getElementsByTagName('progress')[0];
+	var nodeList = {
+		fileName: node.getElementsByTagName('td')[0],
+		status: node.getElementsByTagName('td')[2],
+		progress: node.getElementsByTagName('progress')[0],
+		progressText: node.getElementsByTagName('span')[0]
+	}
 	ehDownloadDialog.scrollTop = ehDownloadDialog.scrollHeight;
 	//console.log(retryCount);
 	fetchThread[index - 1] = GM_xmlhttpRequest({
@@ -10133,16 +10139,17 @@ function fetchOriginalImage(index, node) {
 			'X-Alt-Referer': imageList[index - 1]['pageURL']
 		},
 		onprogress: function(res) {
-			node.innerHTML = '<td>#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="' + (res.lengthComputable ? res.loaded / res.total : '') + '"></progress></td><td>' + (retryCount[index - 1] == 0 ? 'Downloading...' : 'Retrying (' + retryCount[index - 1] + '/' + (setting['retry-count'] != null ? setting['retry-count'] : 3) +') ...') + '</td>';
+			//node.innerHTML = '<td>#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="' + (res.lengthComputable ? res.loaded / res.total : '') + '"></progress></td><td>' + (retryCount[index - 1] == 0 ? 'Downloading...' : 'Retrying (' + retryCount[index - 1] + '/' + (setting['retry-count'] != null ? setting['retry-count'] : 3) +') ...') + '</td>';
 			//progress.setAttribute('value', res.lengthComputable ? res.loaded / res.total : '');
+			nodeList.progress.setAttribute('value', res.lengthComputable ? res.loaded / res.total : '');
+			nodeList.progressText.innerHTML = res.lengthComputable ? Number(res.loaded / res.total * 100).toFixed(2) + '%' : '';
+			nodeList.status.innerHTML = retryCount[index - 1] == 0 ? 'Downloading...' : 'Retrying (' + retryCount[index - 1] + '/' + (setting['retry-count'] != null ? setting['retry-count'] : 3) +') ...';
+			nodeList.status.style.cssText = '';
 			for (var i in res) {
 				delete res[i]; // trying to reduce memory usage
 				//delete res;
 			}
 		},
-		/*onreadystatechange: function(res) {
-			console.log(res);
-		},*/
 		onload: function(res) {
 			//console.log(res);
 			if (!res.response) {
@@ -10167,7 +10174,11 @@ function fetchOriginalImage(index, node) {
 				// GM_xhr only support abort()
 				console.log('[EHD] #' + index + ': 403 Access Denied');
 				console.log('[EHD] #' + index + ': RealIndex >', imageList[index - 1]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
-				node.innerHTML = '<td>#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="0"></progress></td><td style="color: #ffff00;">Failed! (Error 403)</td>';
+				//node.innerHTML = '<td>#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="0"></progress></td><td style="color: #ffff00;">Failed! (Error 403)</td>';
+				nodeList.progress.setAttribute('value', '0');
+				nodeList.progressText.innerHTML = '';
+				nodeList.status.innerHTML = 'Failed! (Error 403)';
+				nodeList.status.style.color = '#ffff00';
 				for (var i in res) {
 					delete res[i]; // trying to reduce memory usage
 					//delete res;
@@ -10177,7 +10188,11 @@ function fetchOriginalImage(index, node) {
 			else if (res.response.byteLength == 28) { // 'An error has occurred. (403)' Length
 				console.log('[EHD] #' + index + ': An error has occurred. (403)');
 				console.log('[EHD] #' + index + ': RealIndex >', imageList[index - 1]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
-				node.innerHTML = '<td>#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="0"></progress></td><td style="color: #ffff00;">Failed! (Error 403)</td>';
+				//node.innerHTML = '<td>#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="0"></progress></td><td style="color: #ffff00;">Failed! (Error 403)</td>';
+				nodeList.progress.setAttribute('value', '0');
+				nodeList.progressText.innerHTML = '';
+				nodeList.status.innerHTML = 'Failed! (Error 403)';
+				nodeList.status.style.color = '#ffff00';
 				for (var i in res) {
 					delete res[i]; // trying to reduce memory usage
 					//delete res;
@@ -10188,7 +10203,11 @@ function fetchOriginalImage(index, node) {
 				for (var i = 0; i < fetchThread.length; i++) fetchThread[i].abort();
 				console.log('[EHD] #' + index + ': Exceed Image Viewing Limits');
 				console.log('[EHD] #' + index + ': RealIndex >', imageList[index - 1]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
-				node.innerHTML = '<td>#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="0"></progress></td><td style="color: #ffff00;">Failed! (Exceed Limits)</td>';
+				//node.innerHTML = '<td>#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="0"></progress></td><td style="color: #ffff00;">Failed! (Exceed Limits)</td>';
+				nodeList.progress.setAttribute('value', '0');
+				nodeList.progressText.innerHTML = '';
+				nodeList.status.innerHTML = 'Failed! (Exceed Limits)';
+				nodeList.status.style.color = '#ffff00';
 				for (var i in res) {
 					delete res[i]; // trying to reduce memory usage
 					//delete res;
@@ -10234,7 +10253,11 @@ function fetchOriginalImage(index, node) {
 				for (var i = 0; i < fetchThread.length; i++) fetchThread[i].abort();
 				console.log('[EHD] #' + index + ': 509 Bandwidth Exceeded');
 				console.log('[EHD] #' + index + ': RealIndex >', imageList[index - 1]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
-				node.innerHTML = '<td>#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="0"></progress></td><td style="color: #ffff00;">Failed! (Error 509)</td>';
+				//node.innerHTML = '<td>#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="0"></progress></td><td style="color: #ffff00;">Failed! (Error 509)</td>';
+				nodeList.progress.setAttribute('value', '0');
+				nodeList.progressText.innerHTML = '';
+				nodeList.status.innerHTML = 'Failed! (Error 509)';
+				nodeList.status.style.color = '#ffff00';
 				pushDialog('\nYou have exceeded your bandwidth limits.');
 				for (var i in res) {
 					delete res[i]; // trying to reduce memory usage
@@ -10278,10 +10301,14 @@ function fetchOriginalImage(index, node) {
 			}
 			// GM_xhr doesn't support xhr.getResponseHeader() function
 			//if (res.getResponseHeader('Content-Type').split('/')[0] != 'image') {
-			else if (res.responseHeaders.split('Content-Type:')[1].split('\n')[0].split('/')[0].trim() != 'image') {
+			else if (res.responseHeaders.indexOf('Content-Type:') < 0 || res.responseHeaders.split('Content-Type:')[1].split('\n')[0].split('/')[0].trim() != 'image') {
 				console.log('[EHD] #' + index + ': Wrong Content-Type');
 				console.log('[EHD] #' + index + ': RealIndex >', imageList[index - 1]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
-				node.innerHTML = '<td>#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="0"></progress></td><td style="color: #ffff00;">Failed! (Wrong MIME)</td>';
+				//node.innerHTML = '<td>#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="0"></progress></td><td style="color: #ffff00;">Failed! (Wrong MIME)</td>';
+				nodeList.progress.setAttribute('value', '0');
+				nodeList.progressText.innerHTML = '';
+				nodeList.status.innerHTML = 'Failed! (Wrong MIME)';
+				nodeList.status.style.color = '#ffff00';
 				for (var i in res) {
 					delete res[i]; // trying to reduce memory usage
 					//delete res;
@@ -10290,7 +10317,12 @@ function fetchOriginalImage(index, node) {
 			}
 			// if (imageList.indexOf('fullimg.php') >= 0) imageList[index - 1]['imageFinalURL'] = res.finalUrl; // 看起来没什么用
 			imageList[index - 1]['imageName'] = res.responseHeaders.match(/filename=([\s\S]+?)\n/) ? res.responseHeaders.match(/filename=([\s\S]+?)\n/)[1].trim().replace(/[:"*?|<>\/\\\n]/g, '-') : imageList[index - 1]['imageName'];
-			node.innerHTML = '<td>#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="1"></progress></td><td style="color: #00ff00;">Succeed!</td>';
+			//node.innerHTML = '<td>#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="1"></progress></td><td style="color: #00ff00;">Succeed!</td>';
+			nodeList.fileName.innerHTML = '#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'];
+			nodeList.progress.setAttribute('value', '1');
+			nodeList.progressText.innerHTML = '100%';
+			nodeList.status.innerHTML = 'Succeed!';
+			nodeList.status.style.color = '#00ff00';
 			storeRes(res, index);
 			for (var i in res) {
 				delete res[i]; // trying to reduce memory usage
@@ -10300,7 +10332,11 @@ function fetchOriginalImage(index, node) {
 		onerror: function(res){
 			console.log('[EHD] #' + index + ': Network Error');
 			console.log('[EHD] #' + index + ': RealIndex >', imageList[index - 1]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
-			node.innerHTML = '<td>#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="0"></progress></td><td style="color: #ffff00;">Failed! (Network Error)</td>';
+			//node.innerHTML = '<td>#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="0"></progress></td><td style="color: #ffff00;">Failed! (Network Error)</td>';
+			nodeList.progress.setAttribute('value', '0');
+			nodeList.progressText.innerHTML = '';
+			nodeList.status.innerHTML = 'Failed! (Network Error)';
+			nodeList.status.style.color = '#ffff00';
 			if (imageList[index - 1]['imageURL'].indexOf('fullimg.php') >= 0) imageList[index - 1]['imageFinalURL'] = res.finalUrl;
 			failedFetching(index, node);
 			for (var i in res) {
@@ -10311,7 +10347,11 @@ function fetchOriginalImage(index, node) {
 		ontimeout: function(res){
 			console.log('[EHD] #' + index + ': Timed Out');
 			console.log('[EHD] #' + index + ': RealIndex >', imageList[index - 1]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
-			node.innerHTML = '<td>#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="0"></progress></td><td style="color: #ffff00;">Failed! (Timed out)</td>';
+			//node.innerHTML = '<td>#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="0"></progress></td><td style="color: #ffff00;">Failed! (Timed out)</td>';
+			nodeList.progress.setAttribute('value', '0');
+			nodeList.progressText.innerHTML = '';
+			nodeList.status.innerHTML = 'Failed! (Timed Out)';
+			nodeList.status.style.color = '#ffff00';
 			if (imageList[index - 1]['imageURL'].indexOf('fullimg.php') >= 0) imageList[index - 1]['imageFinalURL'] = res.finalUrl;
 			failedFetching(index, node);
 			for (var i in res) {
