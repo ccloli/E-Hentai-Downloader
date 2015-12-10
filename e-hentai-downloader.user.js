@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.18.5
+// @version      1.18.6
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -31,13 +31,13 @@ console.log('[EHD] To report a bug, showing all the "[EHD]" logs is wonderful. =
 // Opera 12- (Presto) doesn't support generating blob url, and if generate as data url, it may cause crashes.
 if (navigator.userAgent.indexOf('Presto') >= 0) {
 	alert('Your Opera doesn\'t support E-Hentai Downloader. You need to update it to Opera 15+.');
-	/*throw */console.error('[EHD] Opera 12- (Presto) doesn\'t support E-Hentai Downloader. UserAgent > ' + navigator.userAgent);
+	console.error('[EHD] Opera 12- (Presto) doesn\'t support E-Hentai Downloader. UserAgent > ' + navigator.userAgent);
 }
 
 // Remove IE support
 else if (navigator.userAgent.indexOf('Trident') >= 0) {
 	alert('Your browser doesn\'t support E-Hentai Downloader. You need to switch to other browsers.');
-	/*throw */console.error('[EHD] IE doesn\'t support E-Hentai Downloader. UserAgent > ' + navigator.userAgent);
+	console.error('[EHD] IE doesn\'t support E-Hentai Downloader. UserAgent > ' + navigator.userAgent);
 }
 
 // Simple fixed not working on Violentmonkey
@@ -54,6 +54,7 @@ else if ((navigator.userAgent.indexOf('OPR') >= 0 || navigator.userAgent.indexOf
 	//var unsafeWindow = window;
 }
 */
+
 // GreaseMonkey 3.2 beta 1 and older version can't load content of GM_xhr.response, and this can't be fix.
 else if (
 	(!GM_info.scriptHandler || GM_info.scriptHandler.indexOf('GreaseMonkey') >= 0) && GM_info.version != null && (
@@ -67,8 +68,10 @@ else if (
 	)
 ) {
 	alert('Your GreaseMonkey doesn\'t support E-Hentai Downloader. The first supported version is GreaseMonkey 3.2 beta 2. Please update your GreaseMonkey to enjoy. =w=');
-	/*throw */console.error('[EHD] GreaseMonkey doesn\'t support E-Hentai Downloader. GreaseMonkey Version > ' + GM_info.version);
+	console.error('[EHD] GreaseMonkey doesn\'t support E-Hentai Downloader. GreaseMonkey Version > ' + GM_info.version);
 }
+
+// GreasyFork doesn't allow obfuscated or minified script, so if you want to see the main function, please skip to line 9510
 
 // ==========---------- JSZip Begin ----------========== //
 /*!
@@ -9232,10 +9235,10 @@ module.exports = ZStream;
 
 /* FileSaver.js
  * A saveAs() FileSaver implementation.
- * 1.1.20150716
+ * 1.1.20151003
  *
  * By Eli Grey, http://eligrey.com
- * License: X11/MIT
+ * License: MIT
  *   See https://github.com/eligrey/FileSaver.js/blob/master/LICENSE.md
  */
 
@@ -9262,6 +9265,7 @@ var saveAs = saveAs || (function(view) {
 			var event = new MouseEvent("click");
 			node.dispatchEvent(event);
 		}
+		, is_safari = /Version\/[\d\.]+.*Safari/.test(navigator.userAgent)
 		, webkit_req_fs = view.webkitRequestFileSystem
 		, req_fs = view.requestFileSystem || webkit_req_fs || view.mozRequestFileSystem
 		, throw_outside = function(ex) {
@@ -9326,6 +9330,19 @@ var saveAs = saveAs || (function(view) {
 				}
 				// on any filesys errors revert to saving with object URLs
 				, fs_error = function() {
+					if (target_view && is_safari && typeof FileReader !== "undefined") {
+						// Safari doesn't allow downloading of blob urls
+						var reader = new FileReader();
+						reader.onloadend = function() {
+							var base64Data = reader.result;
+							target_view.location.href = "data:attachment/file" + base64Data.slice(base64Data.search(/[,;]/));
+							filesaver.readyState = filesaver.DONE;
+							dispatch_all();
+						};
+						reader.readAsDataURL(blob);
+						filesaver.readyState = filesaver.INIT;
+						return;
+					}
 					// don't create more object URLs than needed
 					if (blob_changed || !object_url) {
 						object_url = get_URL().createObjectURL(blob);
@@ -9334,7 +9351,7 @@ var saveAs = saveAs || (function(view) {
 						target_view.location.href = object_url;
 					} else {
 						var new_tab = view.open(object_url, "_blank");
-						if (new_tab == undefined && typeof safari !== "undefined") {
+						if (new_tab == undefined && is_safari) {
 							//Apple do not allow window.open, see http://bit.ly/1kZffRI
 							view.location.href = object_url
 						}
@@ -9359,9 +9376,9 @@ var saveAs = saveAs || (function(view) {
 			}
 			if (can_use_save_link) {
 				object_url = get_URL().createObjectURL(blob);
-				save_link.href = object_url;
-				save_link.download = name;
 				setTimeout(function() {
+					save_link.href = object_url;
+					save_link.download = name;
 					click(save_link);
 					dispatch_all();
 					revoke(object_url);
@@ -9492,21 +9509,7 @@ if (typeof module !== "undefined" && module.exports) {
 
 // ==========---------- Main Function Starts Here ----------========== //
 
-
-/* TrixIE Fix. Because of GM_xhr bug in TrixIE, there is no way to make this script compatible with IE */
-/*if (navigator.userAgent.indexOf('Trident') >= 0) {
-	var GM_getValue = function(i) {
-		return localStorage.getItem(i);
-	}
-	var GM_setValue = function(i, j) {
-		return localStorage.setItem(i, j);
-	}
-	var GM_info = {script: {}};
-	var unsafeWindow = window;
-}*/
-
 var zip;
-//var index = 1;
 var retryCount = 0;
 var imageList = [];
 var imageData = [];
@@ -9533,28 +9536,10 @@ window.requestFileSystem = window.requestFileSystem || window.webkitRequestFileS
 var ehDownloadFS = {
 	fs: null,
 	needFileSystem: false,
-	//requestFileSystem: window.requestFileSystem || window.webkitRequestFileSystem,
-	//requestQuota: window.webkitStorageInfo.requestQuota,
-	//URL: null,
 	initHandler: function(fs) {
 		ehDownloadFS.fs = fs;
 		console.log('[EHD] File System is opened! Name >', fs.name);
-		//ehDownloadFS.removeFile(fileName + '.zip');
 		ehDownloadFS.removeAllFiles(fs); // It's sure that user have downloaded or ignored temp archive
-		/*fs.root.getFile('config.txt', {create: false}, function(fileEntry){
-			fileEntry.file(function(file){
-				var fileReader = new FileReader();
-				fileReader.onloadend = function() {
-					var value = this.result;
-					if (value == '' || value == null) return;
-					var data = JSON.parse(value);
-					if (data && confirm('You have an undownload archive, download it?\n\nFile Name:' + data.fileName)) {
-						storeTempArchive(data);
-					}
-				};
-				fileReader.readAsText(file);
-			});
-		});*/
 	},
 	reinitHandler: function(fs) {
 		ehDownloadFS.fs = fs;
@@ -9584,16 +9569,8 @@ var ehDownloadFS = {
 				errorMsg += 'Unknown Error';
 		}
 		console.error('[EHD] ' + errorMsg);
-		//alert(errorMsg);
 	},
 	saveAs: function(fs){
-		/*if (ehDownloadFS.URL == null) {
-			// Most of File System API may be asynchronous API (FileEntry is asynchronous too :-P)
-			return ehDownloadFS.fs.root.getFile(unsafeWindow.gid, {}, function(fileEntry){
-				ehDownloadFS.URL = fileEntry.toURL();
-				ehDownloadFS.saveAs(fileName);
-			});
-		}*/
 		var fs = fs || ehDownloadFS.fs;
 		if (fs == null) return;
 		fs.root.getFile(unsafeWindow.gid + '.zip', {}, function (fileEntry) {
@@ -9617,7 +9594,7 @@ var ehDownloadFS = {
 			else fileEntry.removeRecursively(function() {
 				console.log('[EHD] Directory', fileName, 'is removed.');
 			}, ehDownloadFS.errorHandler);
-		}
+		};
 		if (isEntry) removeFunction(fileName);
 		else fs.root.getFile(fileName, {create: false}, removeFunction, ehDownloadFS.errorHandler);
 	},
@@ -9629,8 +9606,7 @@ var ehDownloadFS = {
 			if (entries.length == 0) return;
 			for (var i = 0; i < entries.length; i++) {
 				ehDownloadFS.removeFile(entries[i], fs, true);
-			};
-			//ehDownloadFS.removeAllFiles(fs); // again to make sure that all files are removed
+			}
 		}, ehDownloadFS.errorHandler); 
 	},
 	initCheckerHandler: function(fs) {
@@ -9686,7 +9662,7 @@ var ehDownloadFS = {
 							fileReader.readAsArrayBuffer(file);
 						});
 					});
-				}
+				};
 				addFile();
 			}, ehDownloadFS.errorHandler);
 		}, ehDownloadFS.errorHandler);
@@ -9694,21 +9670,21 @@ var ehDownloadFS = {
 };
 
 console.log('[EHD] UserAgent >', navigator.userAgent);
-console.log('[EHD] Script Handler >', GM_info.scriptHandler || (navigator.userAgent.indexOf('Firefox') >= 0 ? 'GreaseMonkey' : undefined)); // (Only Tampermonkey supports GM_info.scriptHandler)
+console.log('[EHD] Script Handler >', GM_info.scriptHandler || (navigator.userAgent.indexOf('Firefox') >= 0 ? 'GreaseMonkey' : (navigator.userAgent.indexOf('Opera') >= 0 || navigator.userAgent.indexOf('Maxthon') >= 0) ? 'Violentmonkey' : undefined)); // (Only Tampermonkey supports GM_info.scriptHandler)
 console.log('[EHD] GreaseMonkey / Tampermonkey Version >', GM_info.version);
 console.log('[EHD] E-Hentai Downloader Version >', GM_info.script.version);
 console.log('[EHD] E-Hentai Downloader Setting >', JSON.stringify(setting));
 console.log('[EHD] Current URL >', window.location.href);
 console.log('[EHD] Is Logged In >', unsafeWindow.apiuid != -1);
 
-// 不知道是哪里出问题干脆直接设置默认值了 orz
-//if (setting['enable-multi-threading'] === undefined) setting['enable-multi-threading'] = true;
+// disable single-thread download
 if (setting['enable-multi-threading'] === false) {
 	delete setting['enable-multi-threading'];
 	alert('Single-thread download is unavailable now, because its code is too old and it\'s hard to add new features on it.\n\nIf you still need it, please roll back to the last-supported version (1.17.4).\n\nYou can get it at:\n- GitHub: https://github.com/ccloli/E-Hentai-Downloader/releases\n- GreasyFork: https://greasyfork.org/scripts/10379-e-hentai-downloader/versions (requires log in and enable Adult content)\n- SleazyFork: https://sleazyfork.org/scripts/10379-e-hentai-downloader/versions');
 	GM_setValue('ehD-setting', JSON.stringify(setting));
 }
 
+// r.e-hentai.org points all links to g.e-hentai.org
 if (origin == 'http://r.e-hentai.org') {
 	origin = 'http://g.e-hentai.org';
 	isREH = true;
@@ -9734,7 +9710,7 @@ String.prototype.replaceHTMLEntites = function() {
 			'copy': '©',
 			'ordf': 'ª',
 			'not': '¬',
-			'shy': String.fromCharCode(173),
+			'shy': '',
 			'reg': '®',
 			'macr': '¯',
 			'deg': '°',
@@ -9816,28 +9792,29 @@ String.prototype.replaceHTMLEntites = function() {
 			'uuml': 'ü',
 			'yacute': 'ý',
 			'thorn': 'þ'
-		}
+		};
 		if (entitesList[entity]) return entitesList[entity];
 		else if (entity.match(/#\d+/)) {
 			var charCode = entity.match(/#(\d+)/)[1] - 0;
 			return String.fromCharCode(charCode);
 		}
 		else return '&' + entity + ';';
-	}
+	};
 	var result = this.replace(/&(#x?\d+|[a-zA-Z]+);/g, function(match, entity) {
 		return matchEntity(entity);
 	});
 	return result;
-}
+};
 
 // Fixed cross origin in r.e-hentai.org
 // 发现 prototype 好方便 _(:3
 String.prototype.replaceOrigin = function() {
 	return isREH ? this.replace('g.e-hentai.org', 'r.e-hentai.org').toString() : this.toString();
-}
+};
 
 function pushDialog(str) {
-	ehDownloadDialog.innerHTML += str.replace(/\n/gi, '<br>');
+	if (typeof str === 'string') ehDownloadDialog.innerHTML += str.replace(/\n/gi, '<br>');
+	else ehDownloadDialog.appendChild(str);
 	ehDownloadDialog.scrollTop = ehDownloadDialog.scrollHeight;
 }
 
@@ -9854,14 +9831,6 @@ function getReplacedName(str) {
 function PageData(pageURL, imageURL, imageName, nextNL, realIndex) {
 	this.pageURL = pageURL.split('?')[0];
 	this.imageURL = imageURL;
-	/*if (!setting['number-images']) imageList.some(function(elem) {
-		if (elem != null && elem.imageName == imageName) {
-			var nameParts = imageName.split('.');
-			nameParts[nameParts.length - 2] += ' (' + (++elem.equalCount) + ')';
-			imageName = nameParts.join('.');
-			return 1;
-		}
-	});*/
 	this.imageName = imageName.trim().replace(/[:"*?|<>\/\\\n]/g, '-');
 	this.equalCount = 1;
 	this.nextNL = nextNL;
@@ -9890,15 +9859,11 @@ function storeRes(res, index) {
 	downloadedCount++;
 	console.log('[EHD] Index >', index, ' | RealIndex >', imageList[index - 1]['realIndex'], ' | Name >', imageList[index - 1]['imageName'], ' | RetryCount >', retryCount[index - 1], ' | DownloadedCount >', downloadedCount, ' | FetchCount >', fetchCount, ' | FailedCount >', failedCount);
 	fetchCount--;
-	/*var preStr = 'Fetching Image ' + (index) + ': ' + imageList[index - 1]['imageName'] + ' ... ';
-	for (var i = 0; i < retryCount[index - 1]; i++) preStr += 'Failed! Retrying... ';
-	pushDialog(preStr, 'Succeed!');*/
-	if (downloadedCount + failedCount < imageList.length) {
+	if (downloadedCount + failedCount < imageList.length) { // download not finished, some files are not being called to download
 		for (var i = fetchCount; i < (setting['thread-count'] != null ? setting['thread-count'] : 5); i++) {
 			for (var j = 0; j < imageList.length; j++) {
 				if (imageData[j] == null) {
 					imageData[j] = 'Fetching';
-					//pushDialog('Fetching Image ' + (j + 1) + ': ' + imageList[j]['imageName'] + ' ... \n');
 					fetchOriginalImage(j + 1);
 					fetchCount++;
 					break;
@@ -9906,8 +9871,8 @@ function storeRes(res, index) {
 			}
 		}
 	}
-	else if (failedCount > 0) {
-		if (fetchCount == 0) {
+	else if (failedCount > 0) { // all files are called to download and some files can't be downloaded
+		if (fetchCount == 0) { // all files are finished downloading
 			for (var i = 0; i < fetchThread.length; i++) fetchThread[i].abort();
 			if (confirm('Some images were failed to download. Would you like to try them again?')) {
 				retryAllFailed();
@@ -9929,7 +9894,7 @@ function storeRes(res, index) {
 			}
 		}
 	}
-	else {
+	else { // all files are downloaded successfully
 		renameImages();
 		for (var j = 0; j < imageList.length; j++) {
 			zip.folder(dirName).file(imageList[j]['imageName'], imageData.shift());
@@ -9954,22 +9919,12 @@ function generateZip(isFromFS, fs){
 		zip.folder(dirName).file('info.txt', logStr.replace(/\n/gi, '\r\n'));
 	}
 	var fs = fs || ehDownloadFS.fs;
-	if ((isFromFS || ehDownloadFS.needFileSystem) && fs != null) {
+	if ((isFromFS || ehDownloadFS.needFileSystem) && fs != null) { // using filesystem to save file is needed
 		pushDialog('\n\nSlicing and storing Zip file...');
 		try {
 			var data = zip.generate({type: 'arraybuffer', compression: setting['compression-level'] ? 'DEFLATE' : 'STORE', compressionOptions: {level: setting['compression-level'] > 0 ? (setting['compression-level'] < 10 ? setting['compression-level'] : 9) : 1}});
-			//window.ehddata = data; // just for test
 			var dataIndex = 0;
 			var dataLength = data.byteLength;
-			/*var firstClear = function(fileEntry){
-				if (fileEntry.isFile == true) fileEntry.remove(function(){}, ehDownloadFS.errorHandler);
-				ehDownloadFS.fs.root.getFile(unsafeWindow.gid + '.zip', {create: true}, loopWrite, ehDownloadFS.errorHandler);
-				// NOT_FOUND_ERR
-				//loopWrite(fileEntry);
-			};*/
-			/*var initFS = function(fileEntry){
-				fileEntry.getDirectory('zip', {create: true}, loopWrite, ehDownloadFS.errorHandler);
-			};*/
 			var loopWrite = function(fileEntry){
 				fileEntry.createWriter(function(fileWriter){
 					//fileWriter.seek(fileWriter.length);
@@ -9981,7 +9936,7 @@ function generateZip(isFromFS, fs){
 					}
 					fileWriter.seek(dataIndex);
 					var dataLastIndex = dataIndex + 1024 * 1024 * 10;
-					// I tried setting it as 100MiB and some parts were still gone, so I have to make it smaller.
+					// I tried setting it as 100MiB but some parts were still gone, so I have to make it smaller.
 					console.log('[EHD] DataIndex >', dataIndex, '| DataLastIndex >', dataLastIndex, '| FileWriterLength >', fileWriter.length, '| DataLength >', dataLength);
 					pushDialog('\n' + dataIndex + '-' + dataLastIndex + '/' + dataLength);
 					var blob = new Blob([data.slice(dataIndex, dataLastIndex)], {type: 'application/zip'});
@@ -9989,25 +9944,15 @@ function generateZip(isFromFS, fs){
 					if ('close' in blob) blob.close(); // File Blob.close() API, not supported by all the browser now
 					blob = undefined;
 					setTimeout(loopWrite, 100, fileEntry);
-					//dataIndex = dataLastIndex; // Some parts are still gone.
-					//dataIndex = fileWriter.length;
-					/*if (dataIndex < dataLength) setTimeout(loopWrite, 100, fileEntry);
-					else {
-						setTimeout(function(){
-							ehDownloadFS.saveAs();
-						}, 1500); // wait to avoid downloading broken file
-					}*/
 				}, ehDownloadFS.errorHandler);
 			};
-			//ehDownloadFS.fs.root.getFile(unsafeWindow.gid + '.zip', {create: false}, firstClear, ehDownloadFS.errorHandler);
-			/*ehDownloadFS.*/fs.root.getFile(unsafeWindow.gid + '.zip', {create: true}, loopWrite, ehDownloadFS.errorHandler);
+			fs.root.getFile(unsafeWindow.gid + '.zip', {create: true}, loopWrite, ehDownloadFS.errorHandler);
 		}
 		catch (error) { // trying handling can't generate Zip as ArrayBuffer
 			pushDialog('Failed!\nStoring files into File System...');
 			var files = zip.file(/.*/);
 			var fileIndex = 0;
 			var filesLength = files.length;
-			//var fs;
 			var initFS = function(r){
 				fs = r;
 				fs.root.getDirectory('raw', {create: true}, loopWrite, ehDownloadFS.errorHandler);
@@ -10023,7 +9968,6 @@ function generateZip(isFromFS, fs){
 						fileIndex++; // some files may still gone in this way, I have no good way to solve it
 						if (fileIndex < filesLength) setTimeout(loopWrite, 100);
 						else {
-							//ehDownloadFS.saveAs(/*fileName + '.zip'*/);
 							fs.root.getFile('config.txt', {create: true}, function(fileEntry){
 								fileEntry.createWriter(function(fileWriter){
 									var t = JSON.stringify({fileName: fileName, dirName: dirName});
@@ -10041,7 +9985,7 @@ function generateZip(isFromFS, fs){
 			window.requestFileSystem(window.TEMPORARY, 1024 * 1024 * 1024 * 1024, initFS, ehDownloadFS.errorHandler);
 		}
 	}
-	else {
+	else { // or just using blob
 		blobObj = zip.generate({type: 'blob', compression: setting['compression-level'] ? 'DEFLATE' : 'STORE', compressionOptions: {level: setting['compression-level'] > 0 ? (setting['compression-level'] < 10 ? setting['compression-level'] : 9) : 1}});
 		saveAs(blobObj, fileName + '.zip');
 		blobURL = window.URL.createObjectURL(blobObj);
@@ -10052,19 +9996,13 @@ function generateZip(isFromFS, fs){
 }
 
 function failedFetching(index, node){
-	//console.log(downloadedCount, failedCount)
 	'abort' in fetchThread[index - 1] && fetchThread[index - 1].abort();
 	console.error('[EHD] Index >', index, ' | RealIndex >', imageList[index - 1]['realIndex'], ' | Name >', imageList[index - 1]['imageName'], ' | RetryCount >', retryCount[index - 1], ' | DownloadedCount >', downloadedCount, ' | FetchCount >', fetchCount, ' | FailedCount >', failedCount);
 	if (retryCount[index - 1] < (setting['retry-count'] != null ? setting['retry-count'] : 3)) {
-		/*var preStr = 'Fetching Image ' + index + ': ' + imageList[index - 1]['imageName'] + ' ... ';
-		for (var i = 0; i < retryCount[index - 1]; i++) preStr += 'Failed! Retrying... ';
-		pushDialog(preStr, 'Failed! Retrying... ');*/
 		retryCount[index - 1]++;
 		fetchOriginalImage(index, node);
 	}
 	else {
-		//pushDialog('Fetching Image ' + index + ': ' + imageList[index - 1]['imageName'] + ' ... Failed! Retrying... Failed! Retrying... Failed! Retrying... ', 'Failed!');
-		//node.innerHTML = '<td>#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="0"></progress></td><td style="color: #ff0000;">Failed!</td>';
 		node.innerHTML = '<td style="word-break: break-all;">#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210" style="position: relative;"><progress style="width: 200px;" value="0"></progress><span style="position: absolute; width: 100%; text-align: center; color: #34353b; left: 0; right: 0;"></span></td><td style="color: #ff0000;">Failed!</td>';
 		imageList[index - 1]['imageFinalURL'] = null;
 		failedCount++;
@@ -10096,7 +10034,6 @@ function failedFetching(index, node){
 					for (var j = 0; j < imageList.length; j++) {
 						if (imageData[j] == null) {
 							imageData[j] = 'Fetching';
-							//pushDialog('Fetching Image ' + (j + 1) + ': ' + imageList[j]['imageName'] + ' ... \n');
 							fetchOriginalImage(j + 1);
 							fetchCount++;
 							break;
@@ -10124,25 +10061,34 @@ function fetchOriginalImage(index, node) {
 		status: node.getElementsByTagName('td')[2],
 		progress: node.getElementsByTagName('progress')[0],
 		progressText: node.getElementsByTagName('span')[0]
-	}
+	};
+	var speedInfo = {
+		lastProgress: 0,
+		lastTimestamp: 0
+	};
 	ehDownloadDialog.scrollTop = ehDownloadDialog.scrollHeight;
-	//console.log(retryCount);
 	fetchThread[index - 1] = GM_xmlhttpRequest({
 		method: 'GET',
 		url: imageList[index - 1]['imageFinalURL'] || imageList[index - 1]['imageURL'],
 		responseType: 'arraybuffer',
-		//overrideMimeType: window.MSBlobBuilder ? 'text/plain; charset=x-user-defined' : undefined,
-		// timeout is failed in Chrome Tampermonkey
 		timeout: setting['timeout'] != null ? Number(setting['timeout']) * 1000 : 300000,
 		headers: {
 			'Referer': imageList[index - 1]['pageURL'],
 			'X-Alt-Referer': imageList[index - 1]['pageURL']
 		},
 		onprogress: function(res) {
-			//node.innerHTML = '<td>#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="' + (res.lengthComputable ? res.loaded / res.total : '') + '"></progress></td><td>' + (retryCount[index - 1] == 0 ? 'Downloading...' : 'Retrying (' + retryCount[index - 1] + '/' + (setting['retry-count'] != null ? setting['retry-count'] : 3) +') ...') + '</td>';
-			//progress.setAttribute('value', res.lengthComputable ? res.loaded / res.total : '');
+			var t = new Date().getTime();
+			if (speedInfo.lastTimestamp == 0) {
+				speedInfo.lastProgress = res.loaded;
+				speedInfo.lastTimestamp = t;
+			}
+			else if (t - speedInfo.lastTimestamp >= 1000) {
+				nodeList.progressText.innerHTML = res.lengthComputable ? Number((res.loaded - speedInfo.lastProgress) / (t - speedInfo.lastTimestamp) / 1.024).toFixed(2) + ' KB/s' : '';
+				speedInfo.lastProgress = res.loaded;
+				speedInfo.lastTimestamp = t;
+			}
 			nodeList.progress.setAttribute('value', res.lengthComputable ? res.loaded / res.total : '');
-			nodeList.progressText.innerHTML = res.lengthComputable ? Number(res.loaded / res.total * 100).toFixed(2) + '%' : '';
+			//nodeList.progressText.innerHTML = res.lengthComputable ? Number(res.loaded / res.total * 100).toFixed(2) + '%' : '';
 			nodeList.status.innerHTML = retryCount[index - 1] == 0 ? 'Downloading...' : 'Retrying (' + retryCount[index - 1] + '/' + (setting['retry-count'] != null ? setting['retry-count'] : 3) +') ...';
 			nodeList.status.style.cssText = '';
 			for (var i in res) {
@@ -10151,7 +10097,6 @@ function fetchOriginalImage(index, node) {
 			}
 		},
 		onload: function(res) {
-			//console.log(res);
 			if (!res.response) {
 				var data = {
 					response: new ArrayBuffer(res.responseText.length),
@@ -10174,7 +10119,6 @@ function fetchOriginalImage(index, node) {
 				// GM_xhr only support abort()
 				console.log('[EHD] #' + index + ': 403 Access Denied');
 				console.log('[EHD] #' + index + ': RealIndex >', imageList[index - 1]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
-				//node.innerHTML = '<td>#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="0"></progress></td><td style="color: #ffff00;">Failed! (Error 403)</td>';
 				nodeList.progress.setAttribute('value', '0');
 				nodeList.progressText.innerHTML = '';
 				nodeList.status.innerHTML = 'Failed! (Error 403)';
@@ -10188,7 +10132,6 @@ function fetchOriginalImage(index, node) {
 			else if (res.response.byteLength == 28) { // 'An error has occurred. (403)' Length
 				console.log('[EHD] #' + index + ': An error has occurred. (403)');
 				console.log('[EHD] #' + index + ': RealIndex >', imageList[index - 1]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
-				//node.innerHTML = '<td>#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="0"></progress></td><td style="color: #ffff00;">Failed! (Error 403)</td>';
 				nodeList.progress.setAttribute('value', '0');
 				nodeList.progressText.innerHTML = '';
 				nodeList.status.innerHTML = 'Failed! (Error 403)';
@@ -10203,7 +10146,6 @@ function fetchOriginalImage(index, node) {
 				for (var i = 0; i < fetchThread.length; i++) fetchThread[i].abort();
 				console.log('[EHD] #' + index + ': Exceed Image Viewing Limits');
 				console.log('[EHD] #' + index + ': RealIndex >', imageList[index - 1]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
-				//node.innerHTML = '<td>#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="0"></progress></td><td style="color: #ffff00;">Failed! (Exceed Limits)</td>';
 				nodeList.progress.setAttribute('value', '0');
 				nodeList.progressText.innerHTML = '';
 				nodeList.status.innerHTML = 'Failed! (Exceed Limits)';
@@ -10235,7 +10177,7 @@ function fetchOriginalImage(index, node) {
 					ehDownloadDialog.appendChild(continueButton);
 					return;
 				}
-				else if (confirm('Would you like to save downloaded images?')) {
+				else if (confirm('You have exceeded your image viewing limits. Would you like to save downloaded images?')) {
 					renameImages();
 					for (var j = 0; j < imageData.length; j++) {
 						if (imageData[j] != null && imageData[j] != 'Fetching') {
@@ -10253,7 +10195,6 @@ function fetchOriginalImage(index, node) {
 				for (var i = 0; i < fetchThread.length; i++) fetchThread[i].abort();
 				console.log('[EHD] #' + index + ': 509 Bandwidth Exceeded');
 				console.log('[EHD] #' + index + ': RealIndex >', imageList[index - 1]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
-				//node.innerHTML = '<td>#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="0"></progress></td><td style="color: #ffff00;">Failed! (Error 509)</td>';
 				nodeList.progress.setAttribute('value', '0');
 				nodeList.progressText.innerHTML = '';
 				nodeList.status.innerHTML = 'Failed! (Error 509)';
@@ -10285,7 +10226,7 @@ function fetchOriginalImage(index, node) {
 					ehDownloadDialog.appendChild(continueButton);
 					return;
 				}
-				else if (confirm('Would you like to save downloaded images?')) {
+				else if (confirm('You have exceeded your image viewing limits. Would you like to save downloaded images?')) {
 					renameImages();
 					for (var j = 0; j < imageData.length; j++) {
 						if (imageData[j] != null && imageData[j] != 'Fetching') {
@@ -10304,7 +10245,6 @@ function fetchOriginalImage(index, node) {
 			else if (res.responseHeaders.indexOf('Content-Type:') < 0 || res.responseHeaders.split('Content-Type:')[1].split('\n')[0].split('/')[0].trim() != 'image') {
 				console.log('[EHD] #' + index + ': Wrong Content-Type');
 				console.log('[EHD] #' + index + ': RealIndex >', imageList[index - 1]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
-				//node.innerHTML = '<td>#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="0"></progress></td><td style="color: #ffff00;">Failed! (Wrong MIME)</td>';
 				nodeList.progress.setAttribute('value', '0');
 				nodeList.progressText.innerHTML = '';
 				nodeList.status.innerHTML = 'Failed! (Wrong MIME)';
@@ -10315,9 +10255,7 @@ function fetchOriginalImage(index, node) {
 				}
 				return failedFetching(index, node);
 			}
-			// if (imageList.indexOf('fullimg.php') >= 0) imageList[index - 1]['imageFinalURL'] = res.finalUrl; // 看起来没什么用
 			imageList[index - 1]['imageName'] = res.responseHeaders.match(/filename=([\s\S]+?)\n/) ? res.responseHeaders.match(/filename=([\s\S]+?)\n/)[1].trim().replace(/[:"*?|<>\/\\\n]/g, '-') : imageList[index - 1]['imageName'];
-			//node.innerHTML = '<td>#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="1"></progress></td><td style="color: #00ff00;">Succeed!</td>';
 			nodeList.fileName.innerHTML = '#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'];
 			nodeList.progress.setAttribute('value', '1');
 			nodeList.progressText.innerHTML = '100%';
@@ -10332,7 +10270,6 @@ function fetchOriginalImage(index, node) {
 		onerror: function(res){
 			console.log('[EHD] #' + index + ': Network Error');
 			console.log('[EHD] #' + index + ': RealIndex >', imageList[index - 1]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
-			//node.innerHTML = '<td>#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="0"></progress></td><td style="color: #ffff00;">Failed! (Network Error)</td>';
 			nodeList.progress.setAttribute('value', '0');
 			nodeList.progressText.innerHTML = '';
 			nodeList.status.innerHTML = 'Failed! (Network Error)';
@@ -10347,7 +10284,6 @@ function fetchOriginalImage(index, node) {
 		ontimeout: function(res){
 			console.log('[EHD] #' + index + ': Timed Out');
 			console.log('[EHD] #' + index + ': RealIndex >', imageList[index - 1]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
-			//node.innerHTML = '<td>#' + imageList[index - 1]['realIndex'] + ': ' + imageList[index - 1]['imageName'] + '</td><td width="210"><progress style="width: 200px;" value="0"></progress></td><td style="color: #ffff00;">Failed! (Timed out)</td>';
 			nodeList.progress.setAttribute('value', '0');
 			nodeList.progressText.innerHTML = '';
 			nodeList.status.innerHTML = 'Failed! (Timed Out)';
@@ -10363,7 +10299,6 @@ function fetchOriginalImage(index, node) {
 }
 
 function retryAllFailed(){
-	//failedCount = 0;
 	var index, refetch = 0;
 	progressTable = document.createElement('table');
 	progressTable.style.width = '100%';
@@ -10382,7 +10317,6 @@ function retryAllFailed(){
 					for (var j = 0; j < imageList.length; j++) {
 						if (imageData[j] == null) {
 							imageData[j] = 'Fetching';
-							//pushDialog('Fetching Image ' + (j + 1) + ': ' + imageList[j]['imageName'] + ' ... \n');
 							fetchOriginalImage(j + 1);
 							fetchCount++;
 							break;
@@ -10410,7 +10344,7 @@ function retryAllFailed(){
 					}
 				}
 			}
-		}
+		};
 		xhr.onerror = xhr.ontimeout = function() {
 			if (retryCount < (setting['retry-count'] != null ? setting['retry-count'] : 3)) {
 				pushDialog('Failed! Retrying... ');
@@ -10446,7 +10380,6 @@ function retryAllFailed(){
 						for (var j = 0; j < imageList.length; j++) {
 							if (imageData[j] == null) {
 								imageData[j] = 'Fetching';
-								//pushDialog('Fetching Image ' + (j + 1) + ': ' + imageList[j]['imageName'] + ' ... \n');
 								fetchOriginalImage(j + 1);
 								fetchCount++;
 								break;
@@ -10455,14 +10388,12 @@ function retryAllFailed(){
 					}
 				}
 			}
-		}
+		};
 	}
 	for (index = 0; index < imageData.length; index++) {
 		if (imageData[index] == 'Fetching') {
 			imageData[index] = null;
 			retryCount[index] = 0;
-			/*retryCount[j] = 0;*/
-			//console.log(j);
 		}
 	}
 	for (index = 0; index < imageData.length; index++) {
@@ -10488,7 +10419,6 @@ function retryAllFailed(){
 			for (var j = 0; j < imageList.length; j++) {
 				if (imageData[j] == null) {
 					imageData[j] = 'Fetching';
-					//pushDialog('Fetching Image ' + (j + 1) + ': ' + imageList[j]['imageName'] + ' ... \n');
 					fetchOriginalImage(j + 1);
 					fetchCount++;
 					break;
@@ -10510,7 +10440,7 @@ function insertCloseButton() {
 		window.URL.revokeObjectURL(blobURL);
 		if ('close' in blobObj) blobObj.close();
 		blobObj = undefined;
-	}
+	};
 	ehDownloadDialog.appendChild(exitButton);
 	ehDownloadDialog.scrollTop = ehDownloadDialog.scrollHeight;
 }
@@ -10538,7 +10468,6 @@ function getAllPagesURL() {
 		pageURLsList = [];
 		var pagesCount = [].reduce.call(document.querySelectorAll('.ptt td'), function(x, y){
 			var i = Number(y.textContent);
-			//console.log(i);
 			if (!isNaN(i)) return x > i ? x : i;
 		    else return x;
 		});
@@ -10567,7 +10496,7 @@ function getAllPagesURL() {
 				xhr.send();
 				pushDialog('\nFetching Archive Pages URL (' + (curPage + 1) + '/' + pagesCount + ') ... ');
 			}
-		}
+		};
 		xhr.ontimeout = xhr.onerror = function(){
 			if (retryCount < (setting['retry-count'] != null ? setting['retry-count'] : 3)) {
 				pushDialog('Failed! Retrying... ');
@@ -10581,7 +10510,7 @@ function getAllPagesURL() {
 				isDownloading = false;
 				alert('Fetch Pages\' URL failed, Please try again later.');
 			}
-		}
+		};
 		xhr.open('GET', location.pathname + '?p=' + curPage);
 		xhr.timeout = 30000;
 		xhr.send();
@@ -10615,7 +10544,6 @@ function ehDownload() {
 	if (dirName == '/') dirName = '';
 	retryCount = downloadedCount = fetchCount = failedCount = 0;
 	needNumberImages = ehDownloadNumberInput.querySelector('input').checked;
-	//console.log(needNumberImages);
 	logStr = document.getElementById('gn').textContent.replaceHTMLEntites() + '\n' 
 		   + document.getElementById('gj').textContent.replaceHTMLEntites() + '\n' 
 		   + window.location.href.replaceHTMLEntites() + '\n\n'
@@ -10631,17 +10559,14 @@ function ehDownload() {
 			/*\n\n* You can enable auto-scale archive feature in Settings, but this is an experimental feature and may cause bug, so please be notice. */
 			else if (setting['store-in-fs'] && window.requestFileSystem != null) {
 				ehDownloadFS.needFileSystem = true;
-				//ehDownloadFS.requestFileSystem
 				var requiredBytes = parseInt(1024 * 1024 * ((c2.indexOf('MB') > 0 ? parseFloat(c2) : parseFloat(c2) * 1024) * 1.05));
 				console.log('[EHD] Required File System Space >', requiredBytes);
 				// Chrome can use about 10% of free space of disk where Chrome User Data stored in as TEMPORARY File System Storage.
-				//window.webkitStorageInfo.requestQuota(window.TEMPORARY, requiredBytes , function (grantedBytes) {
 				if (navigator.webkitTemporaryStorage) { // if support navigator.webkitTemporaryStorage to check usable space
 					navigator.webkitTemporaryStorage.requestQuota(requiredBytes , function (grantedBytes) {
 						console.log('[EHD] Free TEMPORARY File System Space >', grantedBytes);
 						if (grantedBytes < requiredBytes) {
 							console.log('[EHD] Free TEMPORARY File System Space is not enough.');
-							//window.webkitStorageInfo.requestQuota(window.PERSISTENT, requiredBytes , function (grantedBytes) {
 							navigator.webkitPersistentStorage.requestQuota(requiredBytes , function (grantedBytes) {
 								console.log('[EHD] Free PERSISTENT File System Space >', grantedBytes);
 								if (grantedBytes < requiredBytes) {
@@ -10681,15 +10606,12 @@ function ehDownload() {
 		pageURLsList = [];
 		var fetchURL = document.querySelector('#gdt a').getAttribute('href').replaceHTMLEntites().replaceOrigin();
 	}
-	//console.log(fetchURL);
 	//var xhr = new XMLHttpRequest();
 	xhr.onload = function() {
 		if (index == 0) {
 			index = 1;
 			if (!getAllPagesURLFin) {
 				var firstURL = xhr.responseText.match(RegExp('<div class="sn"><a[\\s\\S]+?href="(' + origin.replace(/\./gi, '\\.') + '\\/s\\/\\S+?)"'))[1].replaceHTMLEntites().replaceOrigin();
-				//console.log(firstURL);
-				//console.log(fetchURL == firstURL)
 				if (firstURL != fetchURL) {
 					pushDialog('Error! This is not the first page!\n');
 					pushDialog('Fetching Page 1: ' + firstURL + ' ... ');
@@ -10733,9 +10655,6 @@ function ehDownload() {
 				if (pagesRange.length == 0 || !setting['number-real-index']) {
 					var len = imageList.length.toString().length + 1,
 						padding = new Array(len + 1).join('0');
-					/*for (var j = 0; j < imageList.length; j++) {
-						imageList[j]['imageName'] = (padding + imageList[j].pageURL.match(/\d+$/)[0]).slice(0 - len) + (setting['number-separator'] ? setting['number-separator'] : '>') + imageList[j]['imageName'];
-					}*/
 					imageList.forEach(function(elem, index) {
 						return elem['imageNumber'] = (padding + (index + 1)).slice(0 - len);
 					});
@@ -10751,12 +10670,10 @@ function ehDownload() {
 		 	pushDialog('\n');
 		 	ehDownloadDialog.appendChild(progressTable);
 			retryCount = [];
-			//pushDialog('\n');
 			for (var i = fetchCount; i < (setting['thread-count'] != null ? setting['thread-count'] : 5); i++) {
 				for (var j = 0; j < imageList.length; j++) {
 					if (imageData[j] == null) {
 						imageData[j] = 'Fetching';
-						//pushDialog('Fetching Image ' + (j + 1) + ': ' + imageList[j]['imageName'] + ' ... \n');
 						fetchOriginalImage(j + 1);
 						fetchCount++;
 						break;
@@ -10764,7 +10681,7 @@ function ehDownload() {
 				}
 			}
 		}
-	}
+	};
 	xhr.onerror = xhr.ontimeout = function() {
 		if (retryCount < (setting['retry-count'] != null ? setting['retry-count'] : 3)) {
 			pushDialog('Failed! Retrying... ');
@@ -10778,7 +10695,7 @@ function ehDownload() {
 			isDownloading = false;
 			alert('Fetch images\' URL failed, Please try again later.');
 		}
-	}
+	};
 	pushDialog('Start downloading at ' + new Date() + '\nStart fetching images\' URL...\nFetching Page 1: ' + fetchURL + ' ... ');
 	xhr.open('GET', fetchURL);
 	xhr.timeout = 30000;
