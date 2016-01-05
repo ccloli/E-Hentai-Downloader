@@ -10097,6 +10097,10 @@ function fetchOriginalImage(index, node) {
 			}
 		},
 		onload: function(res) {
+			if(res.status==500){
+				console.log('[EHD] #' + index + ': 500 code received.(See: https://github.com/ccloli/E-Hentai-Downloader/issues/16 )');
+				return failedFetching(index, node);
+			}
 			if (!res.response) {
 				var data = {
 					response: new ArrayBuffer(res.responseText.length),
