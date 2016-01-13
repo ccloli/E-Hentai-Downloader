@@ -50,4 +50,4 @@ else if (
 	console.error('[EHD] GreaseMonkey doesn\'t support E-Hentai Downloader. GreaseMonkey Version > ' + GM_info.version);
 }
 
-// GreasyFork doesn't allow obfuscated or minified script, so if you want to see the main function, please skip to line 9510
+// GreasyFork doesn't allow obfuscated or minified script, so if you want to see the main function, please see src/main.js at GitHub
