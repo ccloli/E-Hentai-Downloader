@@ -41,6 +41,7 @@ This script won't download archive from E-Hentai archive download page, so it wo
 
 ## Should Be Noticed
 
+- If you are using the latest Tampermonkey Beta, or received a warning of "A userscript wants to access a cross-origin resource" from Tampermonkey, please allow and turn off "@connect-src mode" at setting page. For more info, [see details here](https://github.com/ccloli/E-Hentai-Downloader/wiki/Cross-origin-request-warning-from-Tampermonkey)
 - Dolphin Browser doesn't support blob URL, so this script cannot be run in Tampermonkey for Dolphin
 - ViolentMonkey doesn't support timeout, final URL and download progress
 - Opera 12- doesn't support blob URL, and if generated as data URL, it may crash, so we won't support it
