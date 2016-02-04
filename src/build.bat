@@ -4,6 +4,6 @@ set parts_js_dir=.\
 
 type %meta_js_path%>%output_path%
 type %parts_js_dir%first.js>>%output_path%
-type %parts_js_dir%jszip.js>>%output_path%
+type %parts_js_dir%JSZip.js>>%output_path%
 type %parts_js_dir%FileSaver.js>>%output_path%
 type %parts_js_dir%main.js>>%output_path%
