@@ -10665,7 +10665,7 @@ function getAllPagesURL() {
 				}
 			}
 
-			var pagesURL = xhr.responseText.split('<div id="gdt">')[1].split('<div class="c">')[0].match();
+			var pagesURL = xhr.responseText.split('<div id="gdt">')[1].split('<div class="c">')[0].match(ehDownloadRegex.pagesURL);
 			for (var i = 0; i < pagesURL.length; i++) {
 				pageURLsList.push(pagesURL[i].split('"')[1].replaceHTMLEntites().replaceOrigin());
 			}
