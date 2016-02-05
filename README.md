@@ -5,7 +5,7 @@ Download E-Hentai archive as zip file :package:
 
 ## Required Environment
 
-- Firefox > [GreaseMonkey](https://addons.mozilla.org/en-US/firefox/addon/greasemonkey/) 3.2 beta2+
+- Firefox > [GreaseMonkey](https://addons.mozilla.org/en-US/firefox/addon/greasemonkey/) 3.2 beta2+ | [Tampermonkey](https://addons.mozilla.org/en-US/firefox/addon/tampermonkey/) 4.0.5054+
 - Chrome > [Tampermonkey](http://tampermonkey.net/) 3.5.3630+
 - Opera 15+ > [Tampermonkey BETA](https://addons.opera.com/extensions/details/tampermonkey-beta/) 3.5.3630+ | [Violentmonkey](https://addons.opera.com/extensions/details/violent-monkey/) (not sure which version)
 - Maxthon > [Violentmonkey](http://extension.maxthon.cn/detail/index.php?view_id=1680) (not sure which version)
@@ -41,8 +41,9 @@ This script won't download archive from E-Hentai archive download page, so it wo
 
 ## Should Be Noticed
 
-- If you are using the latest Tampermonkey Beta, or received a warning of "A userscript wants to access a cross-origin resource" from Tampermonkey, please allow and turn off "@connect-src mode" at setting page. For more info, [see details here](https://github.com/ccloli/E-Hentai-Downloader/wiki/Cross-origin-request-warning-from-Tampermonkey)
+- If you are using the latest Tampermonkey Beta, or received a warning of _"A userscript wants to access a cross-origin resource"_ from Tampermonkey, please **Allow All** or turn off "@connect-src mode" at setting page. For more info, [see details here](https://github.com/ccloli/E-Hentai-Downloader/wiki/Cross-origin-request-warning-from-Tampermonkey)
 - Dolphin Browser doesn't support blob URL, so this script cannot be run in Tampermonkey for Dolphin
+- UC Browser doesn't support blob, so this script cannot be run in Tampermonkey for UC
 - ViolentMonkey doesn't support timeout, final URL and download progress
 - Opera 12- doesn't support blob URL, and if generated as data URL, it may crash, so we won't support it
 - TrixIE (for IE) is too old and its `GM_xhr` cannot handle large content, so we won't support it
@@ -93,5 +94,7 @@ So how to solve it? I have no good idea. Though new File API added `close()` met
 ## Report A Bug
 
 You can report a bug or give suggestions at [GitHub Issue](https://github.com/ccloli/E-Hentai-Downloader/issues) or [GreasyFork Feedback](https://sleazyfork.org/scripts/10379-e-hentai-downloader/feedback). English and Chinese are acceptable :stuck_out_tongue_closed_eyes:
+
+English is not my mother tounge, so if you have found any mistakes, don't hesitate to let me know =ω=
 
 Sorry my code is a bit untidy, so it may hard for your development. I'll try optimizing it in a further time :sweat_smile:
