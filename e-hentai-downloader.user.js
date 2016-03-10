@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.19
+// @version      1.19.1
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -10100,7 +10100,11 @@ function failedFetching(index, nodeList, forced){
 		failedCount++;
 		fetchCount--;
 
-		if (fetchCount === 0) {
+		if (downloadedCount + failedCount < (pagesRange.length || pageURLsList.length)) {
+			requestDownload();
+		}
+		// failedCount must > 0
+		else if (fetchCount === 0) {
 			for (var i = 0; i < fetchThread.length; i++) fetchThread[i].abort();
 			if (confirm('Some images were failed to download. Would you like to try them again?')) {
 				retryAllFailed();
@@ -10119,12 +10123,6 @@ function failedFetching(index, nodeList, forced){
 				}
 				zip.remove(dirName);
 				isDownloading = false;
-			}
-		}
-		else {
-			if (downloadedCount + failedCount < (pagesRange.length || pageURLsList.length)) {
-
-				requestDownload();
 			}
 		}
 	}
