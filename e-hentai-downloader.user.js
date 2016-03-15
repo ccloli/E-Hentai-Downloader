@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.19.2
+// @version      1.19.3
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -31,7 +31,7 @@ console.log('[EHD] To report a bug, showing all the "[EHD]" logs is wonderful. =
 
 // Opera 12- (Presto) doesn't support generating blob url, and if generate as data url, it may cause crashes.
 if (navigator.userAgent.indexOf('Presto') >= 0) {
-	alert('Your Opera doesn\'t support E-Hentai Downloader. You need to update it to Opera 15+.');
+	alert('Your Opera doesn\'t support E-Hentai Downloader. You need to upgrade it to Opera 15+.');
 	console.error('[EHD] Opera 12- (Presto) doesn\'t support E-Hentai Downloader. UserAgent > ' + navigator.userAgent);
 }
 
@@ -40,21 +40,6 @@ else if (navigator.userAgent.indexOf('Trident') >= 0) {
 	alert('Your browser doesn\'t support E-Hentai Downloader. You need to switch to other browsers.');
 	console.error('[EHD] IE doesn\'t support E-Hentai Downloader. UserAgent > ' + navigator.userAgent);
 }
-
-// Simple fixed not working on Violentmonkey
-// Not sure why these GM_* APIs are working now... OTL
-/*
-else if ((navigator.userAgent.indexOf('OPR') >= 0 || navigator.userAgent.indexOf('Maxthon') >= 0) && !GM_info) {
-	var GM_getValue = GM_getValue || function(i) {
-		return localStorage.getItem(i);
-	}
-	var GM_setValue = GM_setValue || function(i, j) {
-		return localStorage.setItem(i, j);
-	}
-	var GM_info = GM_info || {script: {}, scriptHandler: 'Violentmonkey'};
-	//var unsafeWindow = window;
-}
-*/
 
 // GreaseMonkey 3.2 beta 1 and older version can't load content of GM_xhr.response, and this can't be fix.
 else if (
@@ -9543,7 +9528,7 @@ var ehDownloadRegex = {
 	imageURL: [
 		RegExp('<a href="(' + origin.replace(/\./gi, '\\.') + '\/fullimg\\.php\\?\\S+?)"'),
 		/<img id="img" src="(\S+?)"/,
-		/<\/iframe><a[\s\S]+?><img src="(\S+?)"/
+		/<\/iframe><a[\s\S]+?><img src="(\S+?)"/ // Sometimes preview image may not have id="img"
 	],
 	nextFetchURL: [
 		RegExp('<a id="next"[\\s\\S]+?href="(' + origin.replace(/\./gi, '\\.') + '\\/s\\/\\S+?)"'),
@@ -9699,9 +9684,16 @@ var ehDownloadStyle = '\
 	.ehD-box { margin: 20px auto; width: 732px; box-sizing: border-box; font-size: 12px; border: 1px groove #000000; }\
 	.ehD-box a { cursor: pointer; }\
 	.ehD-box .g2 { display: inline-block; margin: 10px; padding: 0; line-height: 14px; }\
-	.ehD-setting { position: fixed; left: 0; right: 0; top: 0; bottom: 0; padding: 5px; border: 1px solid #000000; background: #34353b; color: #dddddd; width: 550px; height: 550px; max-width: 100%; max-height: 100%; overflow: auto; box-sizing: border-box; margin: auto; z-index: 999; text-align: left; font-size: 12px; }\
+	.ehD-setting { position: fixed; left: 0; right: 0; top: 0; bottom: 0; padding: 5px; border: 1px solid #000000; background: #34353b; color: #dddddd; width: 550px; height: 360px; max-width: 100%; max-height: 100%; overflow-x: hidden; overflow-y: auto; box-sizing: border-box; margin: auto; z-index: 999; text-align: left; font-size: 12px; outline: 5px rgba(0, 0, 0, 0.25) solid; }\
+	.ehD-setting-tab { list-style: none; margin: 5px 0; padding: 0 10px; border-bottom: 1px solid #cccccc; overflow: auto; }\
+	.ehD-setting-tab li { float: left; padding: 5px 10px; border-bottom: 0; cursor: pointer; }\
+	.ehD-setting[data-active-setting="basic"] li[data-target-setting="basic"], .ehD-setting[data-active-setting="advanced"] li[data-target-setting="advanced"] { font-weight: bold; background: #cccccc; color: #000000; }\
+	.ehD-setting-wrapper { width: 200%; overflow: hidden; -webkit-transform: translateX(0%); -moz-transform: translateX(0%); -o-transform: translateX(0%); -ms-transform: translateX(0%); transform: translateX(0%); -webkit-transition: all 0.5s cubic-bezier(0.86, 0, 0.07, 1); -moz-transition: all 0.5s cubic-bezier(0.86, 0, 0.07, 1); -o-transition: all 0.5s cubic-bezier(0.86, 0, 0.07, 1); -ms-transition: all 0.5s cubic-bezier(0.86, 0, 0.07, 1); transition: all 0.5s cubic-bezier(0.86, 0, 0.07, 1); }\
+	.ehD-setting[data-active-setting="advanced"] .ehD-setting-wrapper { -webkit-transform: translateX(-50%); -moz-transform: translateX(-50%); -o-transform: translateX(-50%); -ms-transform: translateX(-50%); transform: translateX(-50%); }\
+	.ehD-setting-content { width: 50%; float: left; box-sizing: border-box; padding: 5px 10px; }\
 	.ehD-setting .g2 { padding-bottom: 10px; }\
 	.ehD-setting input, .ehD-box input { vertical-align: middle; }\
+	.ehD-setting input[type="text"], .ehD-box input[type="text"], .ehD-setting input[type="number"], .ehD-box input[type="number"] { height: 17px; }\
 	.ehD-pt { table-layout: fixed; width: 100%; }\
 	.ehD-pt-name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }\
 	.ehD-pt-progress-outer { width: 160px; position: relative; }\
@@ -9859,7 +9851,7 @@ function createBlob(abdata, config) {
 	catch (error) {
 		pushDialog('An error occurred when generating Blob object.');
 		console.error('[EHD] An error occurred when generating Blob object. Error Name >', error.name, '| Error Message >', error.message);
-		if (confirm('An error occurred when generating Blob object.\n\nError Name: ' + error.name + '\nError message: ' + error.message + '\n\n Try again?')) return createBlob(abdata, config);
+		if (confirm('An error occurred when generating Blob object.\n\nError Name: ' + error.name + '\nError Message: ' + error.message + '\n\n Try again?')) return createBlob(abdata, config);
 
 		abdata = undefined;
 		throw new Error('[EHD] An error occurred when generating Blob object, and user refused to retry.');
@@ -9908,7 +9900,7 @@ function renameImages() {
 				}
 			}
 		}
-		else elem['imageName'] = elem['imageNumber'] + (setting['number-separator'] ? setting['number-separator'] : '：') + elem['imageName'];
+		else elem['imageName'] = elem['imageNumber'] + (setting['number-separator'] ? setting['number-separator'] : '：') + elem['?'];
 	});
 }
 
@@ -10198,7 +10190,8 @@ function fetchOriginalImage(index, nodeList) {
 		onload: function(res) {
 			//console.log('[EHD-Debug]', index, 'Load Finished!', new Date().getTime());
 
-			// cache them to reduce waiting time and CPU usage on Chrome
+			// cache them to reduce waiting time and CPU usage on Chrome with Tampermonkey
+			// (Tampermonkey uses a dirty way to give res.response, transfer string to arraybuffer every time)
 			// now store progress just spent ~1s instead of ~8s
 			var response = res.response;
 			var byteLength = response.byteLength;
@@ -10758,7 +10751,7 @@ function getPageData(index) {
 			}
 		}
 
-		var imageURL = (unsafeWindow.apiuid !== -1 && xhr.responseText.indexOf('fullimg.php') >= 0 && !setting['force-resized']) ? xhr.responseText.match(ehDownloadRegex.imageURL[0])[1].replaceHTMLEntites().replaceOrigin() : xhr.responseText.indexOf('id="img"') > -1 ? xhr.responseText.match(ehDownloadRegex.imageURL[1])[1].replaceHTMLEntites() : xhr.responseText.match(ehDownloadRegex.imageURL[2])[1].replaceHTMLEntites(); // Sometimes preview image may not have id="img"
+		var imageURL = (unsafeWindow.apiuid !== -1 && xhr.responseText.indexOf('fullimg.php') >= 0 && !setting['force-resized']) ? xhr.responseText.match(ehDownloadRegex.imageURL[0])[1].replaceHTMLEntites().replaceOrigin() : xhr.responseText.indexOf('id="img"') > -1 ? xhr.responseText.match(ehDownloadRegex.imageURL[1])[1].replaceHTMLEntites() : xhr.responseText.match(ehDownloadRegex.imageURL[2])[1].replaceHTMLEntites();
 		var fileName = xhr.responseText.match(ehDownloadRegex.fileName)[1].replaceHTMLEntites();
 		var nextNL = ehDownloadRegex.nl.test(xhr.responseText) ? xhr.responseText.match(ehDownloadRegex.nl)[1] : null;
 		var imageNumber = '';
@@ -10828,39 +10821,52 @@ function getPageData(index) {
 function showSettings() {
 	var ehDownloadSettingPanel = document.createElement('div');
 	ehDownloadSettingPanel.className = 'ehD-setting';
+	ehDownloadSettingPanel.setAttribute('data-active-setting', 'basic');
 	ehDownloadSettingPanel.innerHTML = '\
-			<div class="g2"><label>Download <input type="number" data-ehd-setting="thread-count" min="1" placeholder="5" style="width: 51px;"> images at the same time (<=5 is advised)</label></div>\
-			<div class="g2"><label>Abort fetching current image after <input type="number" data-ehd-setting="timeout" min="0" placeholder="300" style="width: 51px;"> second(s) (0 is never abort)</label></div>\
-			<div class="g2"' + ((GM_info.scriptHandler && GM_info.scriptHandler === 'Violentmonkey') ? ' style="opacity: 0.5;" title="Violentmonkey may not support this feature"' : '') + '><label>Skip current image when retried <input type="number" data-ehd-setting="retry-count" min="1" placeholder="3" style="width: 51px;"> time(s)</label></div>\
-			<div class="g2"><label>Set folder name as <input type="text" data-ehd-setting="dir-name" placeholder="{gid}_{token}"> (if you don\'t want to create folder, use "/") *</label></div>\
-			<div class="g2"><label>Set Zip file name as <input type="text" data-ehd-setting="file-name" placeholder="{title}"> *</label></div>\
-			<div class="g2"><label>Set compression level as <input type="number" data-ehd-setting="compression-level" min="0" max="9" placeholder="0" style="width: 51px;"> (0 ~ 9, 0 is only store, not recommended to enable)</label></div>\
-			<div class="g2"><label><input type="checkbox" data-ehd-setting="number-images"> Number images (001：01.jpg, 002：01_theme.jpg, 003：02.jpg...) (Separator <input type="text" data-ehd-setting="number-separator" style="width: 51px;" placeholder="：">)</label></div>\
-			<div class="g2"><label><input type="checkbox" data-ehd-setting="number-real-index"> Number images with original page number if pages range is set</label></div>\
-			<div class="g2"><label><input type="checkbox" data-ehd-setting="force-resized"> Force download resized image (never download original image) **</label></div>\
-			<div class="g2"><label><input type="checkbox" data-ehd-setting="never-new-url"> Never get new image URL when failed downloading image **</label></div>\
-			<div class="g2"><label><input type="checkbox" data-ehd-setting="never-send-nl"> Never send "nl" GET parameter when getting new image URL **</label></div>\
-			<div class="g2"' + (window.requestFileSystem ? '' : ' style="opacity: 0.5;" title="Only Chrome support this feature"') + '><label><input type="checkbox" data-ehd-setting="store-in-fs"> Request File System to handle large Zip file (experiment, Chrome only) +</label></div>\
-			<!--<div class="g2"><label><input type="checkbox" data-ehd-setting="auto-scale"> Auto scale Zip file at <input type="text" min="10" placeholder="250" style="width: 51px;" data-ehd-setting="scale-size"> MB if file is larger than <input type="text" min="10" placeholder="400" style="width: 51px;" data-ehd-setting="scale-reach"> MB (experiment) ***</label></div>-->\
-			<div class="g2">\
-				* Enabled tags: \
-				<span title="You can find GID and token at the address bar like this: exhentai.org/g/[GID]/[Token]/">{gid} Archive\'s GID</sapn> | \
-				<span title="You can find GID and token at the address bar like this: exhentai.org/g/[GID]/[Token]/">{token} Archive\'s token</sapn> | \
-				<span title="This title is the English title or Latin transliteration, you can find it as the first line of the title.">{title} Archive\'s title</span> | \
-				<span title="This title is the original language title, you can find it as the second line of the title.">{subtitle} Archive\'s sub-title</span> | \
-				<span title="This tag means the sort name of the archive, and its output string is upper.">{tag} Archive\'s tag</span> | \
-				<span title="You can find it at the left of the archive page.">{uploader} Archive\'s uploader</span>\
+		<ul class="ehD-setting-tab">\
+			<li data-target-setting="basic">Basic</li>\
+			<li data-target-setting="advanced">Advanced</li>\
+		</ul>\
+		<div class="ehD-setting-wrapper">\
+			<div data-setting-page="basic" class="ehD-setting-content">\
+				<div class="g2"><label>Download <input type="number" data-ehd-setting="thread-count" min="1" placeholder="5" style="width: 51px;"> images at the same time (<=5 is advised)</label></div>\
+				<div class="g2"><label>Abort fetching current image after <input type="number" data-ehd-setting="timeout" min="0" placeholder="300" style="width: 51px;"> second(s) (0 is never abort)</label></div>\
+				<div class="g2"' + ((GM_info.scriptHandler && GM_info.scriptHandler === 'Violentmonkey') ? ' style="opacity: 0.5;" title="Violentmonkey may not support this feature"' : '') + '><label>Skip current image when retried <input type="number" data-ehd-setting="retry-count" min="1" placeholder="3" style="width: 51px;"> time(s)</label></div>\
+				<div class="g2"><label>Set folder name as <input type="text" data-ehd-setting="dir-name" placeholder="{gid}_{token}"> (if you don\'t want to create folder, use "<code>/</code>") *</label></div>\
+				<div class="g2"><label>Set Zip file name as <input type="text" data-ehd-setting="file-name" placeholder="{title}"> *</label></div>\
+				<div class="g2"><label><input type="checkbox" data-ehd-setting="number-images"> Number images (001：01.jpg, 002：01_theme.jpg, 003：02.jpg...) (Separator <input type="text" data-ehd-setting="number-separator" style="width: 51px;" placeholder="：">)</label></div>\
+				<div class="g2"><label><input type="checkbox" data-ehd-setting="number-real-index"> Number images with original page number if pages range is set</label></div>\
+				<div class="g2">\
+					* Available templates: \
+					<span title="You can find GID and token at the address bar like this: exhentai.org/g/[GID]/[Token]/">{gid} Archive\'s GID</sapn> | \
+					<span title="You can find GID and token at the address bar like this: exhentai.org/g/[GID]/[Token]/">{token} Archive\'s token</sapn> | \
+					<span title="This title is the English title or Latin transliteration, you can find it as the first line of the title.">{title} Archive\'s title</span> | \
+					<span title="This title is the original language title, you can find it as the second line of the title.">{subtitle} Archive\'s sub-title</span> | \
+					<span title="This tag means the sort name of the archive, and its output string is upper.">{tag} Archive\'s tag</span> | \
+					<span title="You can find it at the left of the archive page.">{uploader} Archive\'s uploader</span>\
+				</div>\
 			</div>\
-			<div class="g2">\
-				** Enable these options may save your image viewing limits <i><a href="https://github.com/ccloli/E-Hentai-Downloader/wiki/E%E2%88%92Hentai-Image-Viewing-Limits" target="_blank" style="color: #ffffff;">(See wiki)</a></i>, but may also cause some download problems.\
+			<div data-setting-page="advanced" class="ehD-setting-content">\
+				<div class="g2"><label>Set compression level as <input type="number" data-ehd-setting="compression-level" min="0" max="9" placeholder="0" style="width: 51px;"> (0 ~ 9, 0 is only store, not recommended to enable)</label></div>\
+				<div class="g2"><label><input type="checkbox" data-ehd-setting="force-resized"> Force download resized image (never download original image) **</label></div>\
+				<div class="g2"><label><input type="checkbox" data-ehd-setting="never-new-url"> Never get new image URL when failed downloading image **</label></div>\
+				<div class="g2"><label><input type="checkbox" data-ehd-setting="never-send-nl"> Never send "nl" GET parameter when getting new image URL **</label></div>\
+				<div class="g2"' + (window.requestFileSystem ? '' : ' style="opacity: 0.5;" title="Only Chrome support this feature"') + '><label><input type="checkbox" data-ehd-setting="store-in-fs"> Request File System to handle large Zip file (experiment, Chrome only) +</label></div>\
+				<!--<div class="g2"><label><input type="checkbox" data-ehd-setting="auto-scale"> Auto scale Zip file at <input type="text" min="10" placeholder="250" style="width: 51px;" data-ehd-setting="scale-size"> MB if file is larger than <input type="text" min="10" placeholder="400" style="width: 51px;" data-ehd-setting="scale-reach"> MB (experiment) ***</label></div>-->\
+				<div class="g2">\
+					** Enable these options may save your image viewing limits <i><a href="https://github.com/ccloli/E-Hentai-Downloader/wiki/E%E2%88%92Hentai-Image-Viewing-Limits" target="_blank" style="color: #ffffff;">(See wiki)</a></i>, but may also cause some download problems.\
+				</div>\
+				<div class="g2">\
+					+ Please pay attention to memory usage. I tested that the maximum accepted size is about (2GB - the memory used of this tab\'s process), and if browser cannot handle it, it will throw "Uncaught RangeError: Invalid array buffer length"\
+				</div>\
+				<!--<div class="g2">\
+					*** <strong>This function is an experimental feature and may cause bug. </strong>Different browsers have different limit, See wiki for details.\
+				</div>-->\
 			</div>\
-			<div class="g2">\
-				+ Please pay attention to memory usage. I tested that the maximum accepted size is about (2GB - the memory used of this tab\'s process), and if browser cannot handle it, it will throw "Uncaught RangeError: Invalid array buffer length"\
-			</div>\
-			<!--<div class="g2">\
-				*** <strong>This function is an experimental feature and may cause bug. </strong>Different browsers have different limit, See wiki for details.\
-			</div>-->\
-			<div style="text-align: center"><button>Save</button> <button>Cancel</button></div>';
+		</div>\
+		<div class="ehD-setting-footer" style="text-align: center">\
+			<button data-action="save">Save</button> <button data-action="cancel">Cancel</button>\
+		</div>';
 	document.body.appendChild(ehDownloadSettingPanel);
 	
 	for (var i in setting) {
@@ -10869,9 +10875,18 @@ function showSettings() {
 		if (element.getAttribute('type') === 'checkbox') ((setting[i]) && (element.setAttribute('checked', 'checked')));
 		else element.setAttribute('value', setting[i]);
 	}
-	ehDownloadSettingPanel.addEventListener('click', function(event){
-		if (event.target.tagName.toLowerCase() === 'button') {
-			if (event.target.textContent === 'Save') {
+
+	ehDownloadSettingPanel.getElementsByClassName('ehD-setting-tab')[0].addEventListener('click', function(event){
+		var target = event.target;
+		if (target.tagName.toLowerCase() === 'li') {
+			ehDownloadSettingPanel.setAttribute('data-active-setting', target.dataset.targetSetting);
+		}
+	});
+
+	ehDownloadSettingPanel.getElementsByClassName('ehD-setting-footer')[0].addEventListener('click', function(event){
+		var target = event.target;
+		if (target.tagName.toLowerCase() === 'button') {
+			if (target.dataset.action === 'save') {
 				var inputs = ehDownloadSettingPanel.querySelectorAll('input[data-ehd-setting]');
 				setting = {};
 				for (var i = 0; i < inputs.length; i++) {
@@ -10902,11 +10917,6 @@ ehDownloadAction.addEventListener('click', function(event){
 	if (isDownloading && !confirm('E-Hentai Downloader is working now, are you sure to stop downloading and start a new download?')) return;
 	if (unsafeWindow.apiuid === -1 && !confirm('You are not log in to E-Hentai Forums, so you can\'t download original image. Continue?')) return;
 	ehDownloadDialog.innerHTML = '';
-	/*if (ehDownloadRange.querySelector('input').value.trim() === '') {
-		if (pagesRange.length) pagesRange = [];
-		initEHDownload();
-	}
-	else getAllPagesURL();*/
 
 	initEHDownload();
 });
