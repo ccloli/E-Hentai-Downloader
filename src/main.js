@@ -406,7 +406,7 @@ function renameImages() {
 				}
 			}
 		}
-		else elem['imageName'] = elem['imageNumber'] + (setting['number-separator'] ? setting['number-separator'] : '：') + elem['?'];
+		else elem['imageName'] = elem['imageNumber'] + (setting['number-separator'] ? setting['number-separator'] : '：') + elem['imageName'];
 	});
 }
 
