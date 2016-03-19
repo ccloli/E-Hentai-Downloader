@@ -375,17 +375,17 @@ function pushDialog(str) {
 function getReplacedName(str) {
 	return str.replace(/\{gid\}/gi, unsafeWindow.gid)
 		.replace(/\{token\}/gi, unsafeWindow.token)
-		.replace(/\{title\}/gi, document.getElementById('gn').textContent.replace(/[:"*?|<>\/\\\n]/g, '-'))
-		.replace(/\{subtitle\}/gi, document.getElementById('gj').textContent ? document.getElementById('gj').textContent.replace(/[:"*?|<>\/\\\n]/g, '-') : document.getElementById('gn').textContent.replace(/[:"*?|<>\/\\\n]/g, '-'))
+		.replace(/\{title\}/gi, document.getElementById('gn').textContent.replace(ehDownloadRegex.dangerChars, '-'))
+		.replace(/\{subtitle\}/gi, document.getElementById('gj').textContent ? document.getElementById('gj').textContent.replace(ehDownloadRegex.dangerChars, '-') : document.getElementById('gn').textContent.replace(ehDownloadRegex.dangerChars, '-'))
 		.replace(/\{tag\}/gi, document.querySelector('.ic').getAttribute('alt').toUpperCase())
-		.replace(/\{uploader\}/gi, document.querySelector('#gdn a').textContent.replace(/[:"*?|<>\/\\\n]/g, '-'))
+		.replace(/\{uploader\}/gi, document.querySelector('#gdn a').textContent.replace(ehDownloadRegex.dangerChars, '-'))
 		.replaceHTMLEntites();
 }
 
 function PageData(pageURL, imageURL, imageName, nextNL, realIndex, imageNumber) {
 	this.pageURL = pageURL.split('?')[0];
 	this.imageURL = imageURL;
-	this.imageName = imageName.trim().replace(/[:"*?|<>\/\\\n]/g, '-');
+	this.imageName = imageName.trim().replace(ehDownloadRegex.dangerChars, '-');
 	this.equalCount = 1;
 	this.nextNL = nextNL;
 	this.realIndex = realIndex;
