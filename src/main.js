@@ -475,6 +475,11 @@ function generateZip(isFromFS, fs, isRetry){
 									if ('close' in blob) blob.close(); // File Blob.close() API, not supported by all the browser now
 									blob = null;
 									pushDialog('Succeed!\nPlease close this tab and open a new tab to download.\nIf you still can\'t download it, try using <a href="https://chrome.google.com/webstore/detail/nhnjmpbdkieehidddbaeajffijockaea">HTML5 FileSystem Explorer</a> to save them.');
+
+									files.forEach(function(elem){
+										zip.remove(elem);
+									});
+									zip = undefined;
 								});
 							});
 						}
@@ -486,6 +491,11 @@ function generateZip(isFromFS, fs, isRetry){
 
 		return;
 	}
+
+	zip.file(/.*/).forEach(function(elem){
+		zip.remove(elem);
+	});
+	zip = undefined;
 
 	if ((isFromFS || ehDownloadFS.needFileSystem) && fs !== undefined) { // using filesystem to save file is needed
 		var fs = fs || ehDownloadFS.fs;
@@ -1369,6 +1379,14 @@ function showSettings() {
 			}
 			document.body.removeChild(ehDownloadSettingPanel);
 		}
+	});
+
+	Array.prototype.forEach.call(ehDownloadSettingPanel.getElementsByClassName('ehD-setting-content'), function(elem) {
+		elem.addEventListener('focusin', function(event){
+			ehDownloadSettingPanel.setAttribute('data-active-setting', this.dataset.settingPage);
+			// prevent auto-scroll from browser
+			ehDownloadSettingPanel.scrollLeft = 0;
+		}, true);
 	});
 }
 
