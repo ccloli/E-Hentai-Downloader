@@ -364,7 +364,11 @@ function createBlob(abdata, config) {
 
 // show info in dialog box
 function pushDialog(str) {
-	if (typeof str === 'string') ehDownloadDialog.innerHTML += str.replace(/\n/gi, '<br>');
+	if (typeof str === 'string') {
+		var tn = document.createElement('span');
+		tn.innerHTML += str.replace(/\n/gi, '<br>');
+		ehDownloadDialog.appendChild(tn);
+	}
 	else ehDownloadDialog.appendChild(str);
 	ehDownloadDialog.scrollTop = ehDownloadDialog.scrollHeight;
 }
@@ -434,6 +438,8 @@ function generateZip(isFromFS, fs, isRetry){
 		zip.folder(dirName).file('info.txt', infoStr.replace(/\n/gi, '\r\n'));
 	}
 
+	var fs = fs || ehDownloadFS.fs;
+
 	try {
 		// build arraybuffer object to detect if it generates successfully
 		var abData = zip.generate({type: 'arraybuffer', compression: setting['compression-level'] ? 'DEFLATE' : 'STORE', compressionOptions: {level: setting['compression-level'] > 0 ? (setting['compression-level'] < 10 ? setting['compression-level'] : 9) : 1}});
@@ -495,7 +501,7 @@ function generateZip(isFromFS, fs, isRetry){
 	zip.file(/.*/).forEach(function(elem){
 		zip.remove(elem);
 	});
-	zip = undefined;
+	//zip = undefined;
 
 	if ((isFromFS || ehDownloadFS.needFileSystem) && fs !== undefined) { // using filesystem to save file is needed
 		var fs = fs || ehDownloadFS.fs;
@@ -1099,11 +1105,16 @@ function initEHDownload() {
 		var c1 = metaNodes[i].getElementsByClassName('gdt1')[0].textContent.replaceHTMLEntites();
 		var c2 = metaNodes[i].getElementsByClassName('gdt2')[0].textContent.replaceHTMLEntites();
 		infoStr += c1 + ' ' + c2 + '\n';
-		if (c1 === 'File Size:' && (c2.indexOf('GB') > 0 || (c2.indexOf('MB') > 0 && parseFloat(c2) >= 200))) {
-			if ((!setting['store-in-fs'] || !window.requestFileSystem) && (c2.indexOf('GB') > 0 || (c2.indexOf('MB') > 0 && parseFloat(c2) >= 450)) && !confirm('This archive is too large (original size), please consider downloading this archive in other way.\n\nMaximum allowed file size: Chrome / Opera 15+ 500MB | IE 10+ 600 MB | Firefox 20+ 800 MB\n(From FileSaver.js introduction)\n\nAre you sure to continue downloading? Please also consider your operating system\'s free memory, it may takes about double size of archive file size when generating ZIP file.\n\n* If you are using Chrome, you can try enabling "Request File System to handle large Zip file" on settings page.\n\n* You can set Pages Range to download this archive into some parts. If you have already enabled it, please ignore this message.')) return;
-			else if (setting['store-in-fs'] && window.requestFileSystem) {
+		if (c1 === 'File Size:') { // && (c2.indexOf('GB') > 0 || (c2.indexOf('MB') > 0 && parseFloat(c2) >= 200))
+			var requiredBytes = parseInt(
+				c2.indexOf('GB') > 0 ? (parseFloat(c2) + 0.01) * 1024 * 1024 * 1024 :
+				c2.indexOf('MB') > 0 ? (parseFloat(c2) + 0.01) * 1024 * 1024 :
+				parseFloat(c2) * 1024
+			) + 100 * 1024;
+
+			if ((!setting['store-in-fs'] || requiredBytes / 1024 / 1024 >= 450) && !confirm('This archive is too large (original size), please consider downloading this archive in other way.\n\nMaximum allowed file size: Chrome / Opera 15+ 500MB | IE 10+ 600 MB | Firefox 20+ 800 MB\n(From FileSaver.js introduction)\n\nAre you sure to continue downloading? Please also consider your operating system\'s free memory, it may takes about double size of archive file size when generating ZIP file.\n\n* If you are using Chrome, you can try enabling "Request File System to handle large Zip file" on settings page.\n\n* You can set Pages Range to download this archive into some parts. If you have already enabled it, please ignore this message.')) return;
+			else if (setting['store-in-fs'] && window.requestFileSystem && requiredBytes / 1024 >= (setting['fs-size'] !== undefined ? setting['fs-size'] : 200)) {
 				ehDownloadFS.needFileSystem = true;
-				var requiredBytes = parseInt(1024 * 1024 * ((c2.indexOf('MB') > 0 ? parseFloat(c2) : parseFloat(c2) * 1024) * 1.05));
 				console.log('[EHD] Required File System Space >', requiredBytes);
 
 				// Chrome can use about 10% of free space of disk where Chrome User Data stored in as TEMPORARY File System Storage.
@@ -1120,8 +1131,8 @@ function initEHDownload() {
 								if (grantedBytes < requiredBytes) {
 									// roll back and use Blob to handle file
 									ehDownloadFS.needFileSystem = false;
-									alert('You don\'t have enough free space where Chrome stored user data in (Default is system disk, normally it\'s C:), please delete some file.\n\nNeeded more than ' + (requiredBytes - grantedBytes) + ' Bytes.\n\nRoll back and use Blob to handle file.');
-									if ((c2.indexOf('GB') > 0 || (c2.indexOf('MB') > 0 && parseFloat(c2) >= 450)) && !confirm('This archive is too large (original size), please consider downloading this archive in other way.\n\nMaximum allowed file size: Chrome / Opera 15+ 500MB | IE 10+ 600 MB | Firefox 20+ 800 MB\n(From FileSaver.js introduction)\n\nAre you sure to continue downloading? Please also consider your operating system\'s free memory, it may takes about double size of archive file size when generating ZIP file.\n\n* You can set Pages Range to download this archive into some parts. If you have already enabled it, please ignore this message.')) return;
+									alert('You don\'t have enough free space where Chrome stored user data in (Default is system disk, normally it\'s C: ), please delete some file.\n\nNeeds more than ' + (requiredBytes - grantedBytes) + ' Bytes.\n\nRoll back and use Blob to handle file.');
+									if (requiredBytes / 1024 / 1024 >= 450 && !confirm('This archive is too large (original size), please consider downloading this archive in other way.\n\nMaximum allowed file size: Chrome / Opera 15+ 500MB | IE 10+ 600 MB | Firefox 20+ 800 MB\n(From FileSaver.js introduction)\n\nAre you sure to continue downloading? Please also consider your operating system\'s free memory, it may takes about double size of archive file size when generating ZIP file.\n\n* You can set Pages Range to download this archive into some parts. If you have already enabled it, please ignore this message.')) return;
 								}
 								else {
 									pushDialog('\n<strong>Please allow storing large content if browser asked a request.</strong>\n');
@@ -1333,7 +1344,8 @@ function showSettings() {
 				<div class="g2"><label><input type="checkbox" data-ehd-setting="force-resized"> Force download resized image (never download original image) **</label></div>\
 				<div class="g2"><label><input type="checkbox" data-ehd-setting="never-new-url"> Never get new image URL when failed downloading image **</label></div>\
 				<div class="g2"><label><input type="checkbox" data-ehd-setting="never-send-nl"> Never send "nl" GET parameter when getting new image URL **</label></div>\
-				<div class="g2"' + (window.requestFileSystem ? '' : ' style="opacity: 0.5;" title="Only Chrome supports this feature"') + '><label><input type="checkbox" data-ehd-setting="store-in-fs"> Request File System to handle large Zip file (experiment, Chrome only) +</label></div>\
+				<div class="g2"' + (window.requestFileSystem ? '' : ' style="opacity: 0.5;" title="Only Chrome supports this feature"') + '><label><input type="checkbox" data-ehd-setting="store-in-fs"> Request File System to handle large Zip file +</label></div>\
+				<div class="g2"' + (window.requestFileSystem ? '' : ' style="opacity: 0.5;" title="Only Chrome supports this feature"') + '><label>Use File System if archive is larger than <input type="number" data-ehd-setting="fs-size" min="0" placeholder="200" style="width: 51px;"> MB (0 is always) +</label></div>\
 				<!--<div class="g2"><label><input type="checkbox" data-ehd-setting="auto-scale"> Auto scale Zip file at <input type="text" min="10" placeholder="250" style="width: 51px;" data-ehd-setting="scale-size"> MB if file is larger than <input type="text" min="10" placeholder="400" style="width: 51px;" data-ehd-setting="scale-reach"> MB (experiment) ***</label></div>-->\
 				<div class="g2">\
 					** Enable these options may save your image viewing limits <i><a href="https://github.com/ccloli/E-Hentai-Downloader/wiki/E%E2%88%92Hentai-Image-Viewing-Limits" target="_blank" style="color: #ffffff;">(See wiki)</a></i>, but may also cause some download problems.\
