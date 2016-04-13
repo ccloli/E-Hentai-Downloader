@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.19.8
+// @version      1.19.9
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -9891,6 +9891,9 @@ var ehDownloadStyle = '\
 	.ehD-pt-succeed .ehD-pt-status { color: #00ff00; }\
 	.ehD-pt-warning .ehD-pt-status { color: #ffff00; }\
 	.ehD-pt-failed .ehD-pt-status { color: #ff0000; }\
+	.ehD-pt-abort { color: #ffff00; display: none; cursor: pointer; }\
+	.ehD-pt-status[data-inited-abort="1"]:hover .ehD-pt-abort, .ehD-pt-failed .ehD-pt-status[data-inited-abort="1"]:hover .ehD-pt-status-text, .ehD-pt-succeed .ehD-pt-status[data-inited-abort="1"]:hover .ehD-pt-status-text { display: inline; }\
+	.ehD-pt-status[data-inited-abort="1"]:hover .ehD-pt-status-text, .ehD-pt-failed .ehD-pt-status[data-inited-abort="1"]:hover .ehD-pt-abort, .ehD-pt-succeed .ehD-pt-status[data-inited-abort="1"]:hover .ehD-pt-abort { display: none; }\
 	.ehD-dialog { position: fixed; right: 0; bottom: 0; display: none; padding: 5px; border: 1px solid #000000; background: #34353b; color: #dddddd; width: 550px; height: 300px; overflow: auto; z-index: 999; }\
 	';
 
@@ -10246,7 +10249,7 @@ function updateProgress(nodeList, data) {
 	if (data.name !== undefined) nodeList.fileName.textContent = data.name;
 	if (data.progress !== undefined) nodeList.progress.value = data.progress;
 	if (data.progressText !== undefined) nodeList.progressText.textContent = data.progressText;
-	if (data.status !== undefined) nodeList.status.textContent = data.status;
+	if (data.status !== undefined) nodeList.statusText.textContent = data.status;
 	if (data.class !== undefined) nodeList.current.className = ['ehD-pt-item', data.class].join(' ').trim();
 }
 
@@ -10331,15 +10334,20 @@ function fetchOriginalImage(index, nodeList) {
 				<progress class="ehD-pt-progress"></progress>\
 				<span class="ehD-pt-progress-text"></span>\
 			</td>\
-			<td class="ehD-pt-status">Pending...</td>';
+			<td class="ehD-pt-status">\
+				<span class="ehD-pt-status-text">Pending...</span>\
+				<span class="ehD-pt-abort">Force Abort</span>\
+			</td>';
 		progressTable.appendChild(node);
 
 		nodeList = {
 			current: node,
 			fileName: node.getElementsByTagName('td')[0],
 			status: node.getElementsByTagName('td')[2],
+			statusText: node.getElementsByClassName('ehD-pt-status-text')[0],
 			progress: node.getElementsByTagName('progress')[0],
-			progressText: node.getElementsByTagName('span')[0]
+			progressText: node.getElementsByTagName('span')[0],
+			abort: node.getElementsByClassName('ehD-pt-abort')[0]
 		};
 	}
 	var speedInfo = {
@@ -10613,6 +10621,25 @@ function fetchOriginalImage(index, nodeList) {
 			failedFetching(index, nodeList);
 		}
 	});
+
+	if (!nodeList.status.dataset.initedAbort) {
+		nodeList.abort.addEventListener('click', function(){
+			if (!fetchThread[index]) return;
+            fetchThread[index].abort();
+			
+			console.log('[EHD] #' + (index + 1) + ': Force Aborted');
+			updateProgress(nodeList, {
+				status: 'Failed! (User Aborted)',
+				progress: '0',
+				progressText: '',
+				class: 'ehD-pt-warning'
+			});
+
+			failedFetching(index, nodeList);
+		});
+
+		nodeList.status.setAttribute('data-inited-abort', '1');
+	}
 }
 
 function retryAllFailed(){
@@ -10795,9 +10822,10 @@ function initEHDownload() {
 				c2.indexOf('MB') > 0 ? (parseFloat(c2) + 0.01) * 1024 * 1024 :
 				parseFloat(c2) * 1024
 			) + 100 * 1024;
+			var requiredMBs = requiredBytes / 1024 / 1024;
 
-			if ((!setting['store-in-fs'] && requiredBytes / 1024 / 1024 >= 450) && !confirm('This archive is too large (original size), please consider downloading this archive in other way.\n\nMaximum allowed file size: Chrome / Opera 15+ 500MB | IE 10+ 600 MB | Firefox 20+ 800 MB\n(From FileSaver.js introduction)\n\nAre you sure to continue downloading? Please also consider your operating system\'s free memory, it may takes about double size of archive file size when generating ZIP file.\n\n* If you are using Chrome, you can try enabling "Request File System to handle large Zip file" on settings page.\n\n* You can set Pages Range to download this archive into some parts. If you have already enabled it, please ignore this message.')) return;
-			else if (setting['store-in-fs'] && window.requestFileSystem && requiredBytes / 1024 >= (setting['fs-size'] !== undefined ? setting['fs-size'] : 200)) {
+			if ((!setting['store-in-fs'] && requiredMBs >= 450) && !confirm('This archive is too large (original size), please consider downloading this archive in other way.\n\nMaximum allowed file size: Chrome / Opera 15+ 500MB | IE 10+ 600 MB | Firefox 20+ 800 MB\n(From FileSaver.js introduction)\n\nAre you sure to continue downloading? Please also consider your operating system\'s free memory, it may takes about double size of archive file size when generating ZIP file.\n\n* If you are using Chrome, you can try enabling "Request File System to handle large Zip file" on settings page.\n\n* You can set Pages Range to download this archive into some parts. If you have already enabled it, please ignore this message.')) return;
+			else if (setting['store-in-fs'] && window.requestFileSystem && requiredMBs >= (setting['fs-size'] !== undefined ? setting['fs-size'] : 200)) {
 				ehDownloadFS.needFileSystem = true;
 				console.log('[EHD] Required File System Space >', requiredBytes);
 
@@ -10816,7 +10844,7 @@ function initEHDownload() {
 									// roll back and use Blob to handle file
 									ehDownloadFS.needFileSystem = false;
 									alert('You don\'t have enough free space where Chrome stored user data in (Default is system disk, normally it\'s C: ), please delete some file.\n\nNeeds more than ' + (requiredBytes - grantedBytes) + ' Bytes.\n\nRoll back and use Blob to handle file.');
-									if (requiredBytes / 1024 / 1024 >= 450 && !confirm('This archive is too large (original size), please consider downloading this archive in other way.\n\nMaximum allowed file size: Chrome / Opera 15+ 500MB | IE 10+ 600 MB | Firefox 20+ 800 MB\n(From FileSaver.js introduction)\n\nAre you sure to continue downloading? Please also consider your operating system\'s free memory, it may takes about double size of archive file size when generating ZIP file.\n\n* You can set Pages Range to download this archive into some parts. If you have already enabled it, please ignore this message.')) return;
+									if (requiredMBs >= 450 && !confirm('This archive is too large (original size), please consider downloading this archive in other way.\n\nMaximum allowed file size: Chrome / Opera 15+ 500MB | IE 10+ 600 MB | Firefox 20+ 800 MB\n(From FileSaver.js introduction)\n\nAre you sure to continue downloading? Please also consider your operating system\'s free memory, it may takes about double size of archive file size when generating ZIP file.\n\n* You can set Pages Range to download this archive into some parts. If you have already enabled it, please ignore this message.')) return;
 								}
 								else {
 									pushDialog('\n<strong>Please allow storing large content if browser asked a request.</strong>\n');
@@ -10879,7 +10907,10 @@ function getPageData(index) {
 			<progress class="ehD-pt-progress"></progress>\
 			<span class="ehD-pt-progress-text"></span>\
 		</td>\
-		<td class="ehD-pt-status">Fetching URL...</td>';
+		<td class="ehD-pt-status">\
+			<span class="ehD-pt-status-text">Pending...</span>\
+			<span class="ehD-pt-abort">Force Abort</span>\
+		</td>';
 	progressTable.appendChild(node);
 	ehDownloadDialog.scrollTop = ehDownloadDialog.scrollHeight;
 
@@ -10887,8 +10918,10 @@ function getPageData(index) {
 		current: node,
 		fileName: node.getElementsByTagName('td')[0],
 		status: node.getElementsByTagName('td')[2],
+		statusText: node.getElementsByClassName('ehD-pt-status-text')[0],
 		progress: node.getElementsByTagName('progress')[0],
-		progressText: node.getElementsByTagName('span')[0]
+		progressText: node.getElementsByTagName('span')[0],
+		abort: node.getElementsByClassName('ehD-pt-abort')[0]
 	};
 
 	var retryCount = 0;
