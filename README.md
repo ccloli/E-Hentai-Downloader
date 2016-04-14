@@ -50,7 +50,7 @@ This script won't download archive from E-Hentai archive download page, so it wo
 
 Here are some compatible information, which is not important.
 
-- Tampermonkey use a dirty way to give `GM_xhr.response` content (transfer String to ArrayBuffer everytime), so it'll stuck for 1~3 seconds after downloaded image (depend on your device), and if you are using Firefox, it's better to use GreaseMonkey
+- Tampermonkey uses a dirty way to give `GM_xhr.response` content (transfers String to ArrayBuffer everytime), so it'll stuck for 1~3 seconds after downloaded image (depends on your device), and if you are using Firefox, it's better to use GreaseMonkey
 - Dolphin Browser (Android) doesn't support blob URL, so this script cannot be run in Tampermonkey for Dolphin
 - UC Browser (Android) doesn't support blob constructor, so this script cannot be run in Tampermonkey for UC
 - Opera 12- doesn't support blob URL, and if generated as data URL, it may crash, so we won't support it
@@ -62,6 +62,8 @@ Here are some compatible information, which is not important.
 ### Memory Usage
 
 The script will store all the contents in RAM, not in HDD. This will increase the memory usage of current tab process. So if you don't have enough RAM, or the archive is too large (see file size limit section), please pay attention to your memory usage, or try other download tools.
+
+Out of memory problem is **the most limitaion** of this script (in fact, all the sections of W&L are RAM problem, and the issues about them even have a specific [out of memory](https://github.com/ccloli/E-Hentai-Downloader/issues?utf8=%E2%9C%93&q=label%3A%22out+of+memory%22+) tag), and sometimes it relates to Blob size limit. If you receive a warning like out of memory, [see solution here](https://github.com/ccloli/E-Hentai-Downloader/wiki/Can't-make-Zip-file-successfully). And if you always meet the problem, try other tools.
 
 ### Browser Developer Tools
 
@@ -85,21 +87,26 @@ Different browsers have different maximum file size limits. Here is a table to s
 
 (Most of the data is from [FileSaver.js](https://github.com/eligrey/FileSaver.js))
 
-One thing should be noticed is that _the maximum size in table is **the maximum size of Blob Storage**, not a single Zip file_. Zip file will be generated as a Blob object and temporarily saved in Blob Storage by default, so Blob Storage of browser should heve enough free space to create them.
+One thing should be noticed is that _the maximum size in table is **the maximum size of Blob Storage**, not a single Zip file (probably except Firefox)_. Zip file will be generated as a Blob object and temporarily saved in Blob Storage by default, so Blob Storage of browser should have enough free space to create them.
 
-Unfortunately, we don't know how many space we can use, and when the old Blob content are erased. If browser can't split enough free space, instead of throwing an error, it will return a **fake-like** Blob object as usual and we don't know whether it is a REAL Blob object or not. Besides, old Blob content won't be removed immediately even though we don't need it anymore. When we revoke the old Blob object, it just announced to GC that the object can be recycled, but when GC recycled it, we don't know. If you have interested in it, I noted my testing process [here](http://ccloli.com/201509/bullshit-about-blob-and-object-url/) (Simplified Chinese only).
+Unfortunately, we don't know how much space we can use, and when the old Blob content is erased. If browser can't split enough free space, instead of throwing an error, it will return a **fake-like** Blob object as usual and we don't know whether it is a REAL Blob object or not. Besides, old Blob content won't be removed immediately even though we don't need it anymore. When we revoke the old Blob object, it just announced to GC that the object can be recycled, but when GC recycled it, we don't know. If you have interested in it, I noted my testing process [here](http://ccloli.com/201509/bullshit-about-blob-and-object-url/) (Simplified Chinese only).
 
-So how to solve it? I have no good idea. Though new File API added `close()` method to close a Blob object, but it is still up for review, and all the browser are not supported right now. _One way for all browser is that **not download too many archives** at the same time, and when downloading large archive, **use Pages Range** to download them into some parts_ (auto-scale is still in plan but it won't be worked out recently).
+So how to solve it? I have no good idea. Though new File API added `close()` method to close a Blob object, it is still up for review, and all the browsers are not supported right now. _One way for all browser is that **not download too many archives** at the same time, and when downloading large archive, **use Pages Range** to download them into some parts_ (auto-scale is still in plan but it won't be worked out recently).
 
 \* Tamporary File System storage size is 10% of disk free space where Google Chrome / Opera installed. However, Chrome may have a maximum ArrayBuffer size limit for each process (about 2 GB I tested, on Windows 8.1 64-bit & 8 GB RAM), when reach the limit, Chrome will throw "Uncaught RangeError: Invalid array buffer length". Besides, when generating Zip file, we also have to storage images in memory in order to package. _So the maximum supported size is about 1 GB_.
 
-\+ Though Firefox can handle 800 MB file in maximum, when generating large archive (350+ MB) it will throw "out of memory" error and **abort running script** with a high chance. 
+\+ Though Firefox can handle 800 MB file in maximum, when generating large archive (~~350+ MB~~ depends on your device) it will throw "out of memory" error and **abort running script** with a high chance. And it seems that 800 MB is the size limit of a single file, we can still create more small Blobs after that. If you are interested in it, see our discussion in [issue #18](https://github.com/ccloli/E-Hentai-Downloader/issues/18). Anyway, it all depends on your RAM size, e.g. if you only have 4GB RAM, you should be careful when downloading 150+ MB archive in Firefox.
+
+
+## Todo List
+
+[See plans and progress here](https://github.com/ccloli/E-Hentai-Downloader/wiki/Todo-List), notice that some of them may changed or removed in some time.
 
 
 ## Report A Bug
 
 You can report a bug or give suggestions at [GitHub Issue](https://github.com/ccloli/E-Hentai-Downloader/issues) or [GreasyFork Feedback](https://sleazyfork.org/scripts/10379-e-hentai-downloader/feedback). English and Chinese are acceptable :stuck_out_tongue_closed_eyes:
 
-English is not my mother tounge, so if you have found any mistakes, don't hesitate to let me know =ω=
+English is not my mother tounge, so if you found any mistakes, don't hesitate to [let me know](https://github.com/ccloli/E-Hentai-Downloader/issues/24) =ω=
 
 Sorry my code is a bit untidy, so it may hard for your development. I'll try optimizing it in a further time :sweat_smile:
