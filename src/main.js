@@ -188,7 +188,7 @@ var ehDownloadStyle = '\
 	.ehD-box { margin: 20px auto; width: 732px; box-sizing: border-box; font-size: 12px; border: 1px groove #000000; }\
 	.ehD-box a { cursor: pointer; }\
 	.ehD-box .g2 { display: inline-block; margin: 10px; padding: 0; line-height: 14px; }\
-	.ehD-setting { position: fixed; left: 0; right: 0; top: 0; bottom: 0; padding: 5px; border: 1px solid #000000; background: #34353b; color: #dddddd; width: 550px; height: 360px; max-width: 100%; max-height: 100%; overflow-x: hidden; overflow-y: auto; box-sizing: border-box; margin: auto; z-index: 999; text-align: left; font-size: 12px; outline: 5px rgba(0, 0, 0, 0.25) solid; }\
+	.ehD-setting { position: fixed; left: 0; right: 0; top: 0; bottom: 0; padding: 5px; border: 1px solid #000000; background: #34353b; color: #dddddd; width: 550px; height: 400px; max-width: 100%; max-height: 100%; overflow-x: hidden; overflow-y: auto; box-sizing: border-box; margin: auto; z-index: 999; text-align: left; font-size: 12px; outline: 5px rgba(0, 0, 0, 0.25) solid; }\
 	.ehD-setting-tab { list-style: none; margin: 5px 0; padding: 0 10px; border-bottom: 1px solid #cccccc; overflow: auto; }\
 	.ehD-setting-tab li { float: left; padding: 5px 10px; border-bottom: 0; cursor: pointer; }\
 	.ehD-setting[data-active-setting="basic"] li[data-target-setting="basic"], .ehD-setting[data-active-setting="advanced"] li[data-target-setting="advanced"] { font-weight: bold; background: #cccccc; color: #000000; }\
@@ -210,6 +210,8 @@ var ehDownloadStyle = '\
 	.ehD-pt-abort { color: #ffff00; display: none; cursor: pointer; }\
 	.ehD-pt-status[data-inited-abort="1"]:hover .ehD-pt-abort, .ehD-pt-failed .ehD-pt-status[data-inited-abort="1"]:hover .ehD-pt-status-text, .ehD-pt-succeed .ehD-pt-status[data-inited-abort="1"]:hover .ehD-pt-status-text { display: inline; }\
 	.ehD-pt-status[data-inited-abort="1"]:hover .ehD-pt-status-text, .ehD-pt-failed .ehD-pt-status[data-inited-abort="1"]:hover .ehD-pt-abort, .ehD-pt-succeed .ehD-pt-status[data-inited-abort="1"]:hover .ehD-pt-abort { display: none; }\
+    .ehD-pt-gen-progress { width: 50%; }\
+    .ehD-pt-gen-filename { margin-bottom: 1em; }\
 	.ehD-dialog { position: fixed; right: 0; bottom: 0; display: none; padding: 5px; border: 1px solid #000000; background: #34353b; color: #dddddd; width: 550px; height: 300px; overflow: auto; z-index: 999; }\
 	';
 
@@ -441,11 +443,91 @@ function generateZip(isFromFS, fs, isRetry){
 		zip.folder(dirName).file('info.txt', infoStr.replace(/\n/gi, '\r\n'));
 	}
 
+	pushDialog('\n\nGenerating Zip file...\n');
+
 	var fs = fs || ehDownloadFS.fs;
+
+	var progress = document.createElement('progress');
+	var curFile = document.createElement('div');
+    progress.className = 'ehD-pt-gen-progress';
+    progress.className = 'ehD-pt-gen-filename';
+	ehDownloadDialog.appendChild(progress);
+	ehDownloadDialog.appendChild(curFile);
 
 	try {
 		// build arraybuffer object to detect if it generates successfully
-		var abData = zip.generate({type: 'arraybuffer', compression: setting['compression-level'] ? 'DEFLATE' : 'STORE', compressionOptions: {level: setting['compression-level'] > 0 ? (setting['compression-level'] < 10 ? setting['compression-level'] : 9) : 1}});
+		zip.generateAsync({
+			type: 'arraybuffer',
+			compression: setting['compression-level'] ? 'DEFLATE' : 'STORE',
+			compressionOptions: {
+				level: setting['compression-level'] > 0 ? (setting['compression-level'] < 10 ? setting['compression-level'] : 9) : 1
+			},
+			streamFiles: setting['file-descriptor'] ? true : false
+		}, function(meta){
+			progress.value = meta.percent / 100;
+			curFile.textContent = meta.currentFile || 'Calculating extra data...';
+		}).then(function(abData){
+			zip.file(/.*/).forEach(function(elem){
+				zip.remove(elem);
+			});
+
+			if ((isFromFS || ehDownloadFS.needFileSystem) && fs !== undefined) { // using filesystem to save file is needed
+				curFile.textContent = ' ';
+
+				var fs = fs || ehDownloadFS.fs;
+				pushDialog('\n\nSlicing and storing Zip file...');
+				var data = abData;
+				var dataIndex = 0;
+				var dataLength = data.byteLength;
+				var loopWrite = function(fileEntry){
+					fileEntry.createWriter(function(fileWriter){
+						//fileWriter.seek(fileWriter.length);
+						dataIndex = fileWriter.length;
+						if (dataIndex >= dataLength) {
+							data = undefined;
+							abData = undefined;
+							return setTimeout(function(){
+								ehDownloadFS.saveAs(isFromFS ? fs : undefined);
+							}, 1500);
+						}
+						fileWriter.seek(dataIndex);
+						var dataLastIndex = dataIndex + 1024 * 1024 * 10;
+						// I tried setting it as 100MB but some parts were still gone, so I have to make it smaller.
+						console.log('[EHD] DataIndex >', dataIndex, '| DataLastIndex >', dataLastIndex, '| FileWriterLength >', fileWriter.length, '| DataLength >', dataLength);
+						pushDialog('\n' + dataIndex + '-' + dataLastIndex + '/' + dataLength);
+						var blob = createBlob([data.slice(dataIndex, dataLastIndex)], {type: 'application/zip'});
+						fileWriter.write(blob);
+						if ('close' in blob) blob.close(); // File Blob.close() API, not supported by all the browser now
+						blob = null;
+						setTimeout(loopWrite, 100, fileEntry);
+					}, ehDownloadFS.errorHandler);
+				};
+				fs.root.getFile(unsafeWindow.gid + '.zip', {create: true}, loopWrite, ehDownloadFS.errorHandler);
+			}
+			else { // or just using blob
+				curFile.textContent = 'Generating Blob object...';
+				var blob = createBlob([abData], {type: 'application/zip'});
+				curFile.textContent = ' ';
+				saveAs(blob, fileName + '.zip');
+
+				var redownloadBtn = document.createElement('button');
+				redownloadBtn.textContent = 'Not download? Click here to download';
+				redownloadBtn.addEventListener('click', function(){
+					// rebuild blob object if "File is not exist" occured
+					blob = createBlob([abData], {type: 'application/zip'});
+					saveAs(blob, fileName + '.zip');
+
+					if ('close' in blob) blob.close();
+					blob = null;
+				});
+				ehDownloadDialog.appendChild(redownloadBtn);
+
+				insertCloseButton();
+
+				if ('close' in blob) blob.close();
+				blob = null;
+			}
+		});
 	}
 	catch (error) {
 		abData = undefined;
@@ -497,66 +579,6 @@ function generateZip(isFromFS, fs, isRetry){
 			};
 			window.requestFileSystem(window.TEMPORARY, 1024 * 1024 * 1024 * 1024, initFS, ehDownloadFS.errorHandler);
 		}
-
-		return;
-	}
-
-	zip.file(/.*/).forEach(function(elem){
-		zip.remove(elem);
-	});
-	//zip = undefined;
-
-	if ((isFromFS || ehDownloadFS.needFileSystem) && fs !== undefined) { // using filesystem to save file is needed
-		var fs = fs || ehDownloadFS.fs;
-		pushDialog('\n\nSlicing and storing Zip file...');
-		var data = abData;
-		var dataIndex = 0;
-		var dataLength = data.byteLength;
-		var loopWrite = function(fileEntry){
-			fileEntry.createWriter(function(fileWriter){
-				//fileWriter.seek(fileWriter.length);
-				dataIndex = fileWriter.length;
-				if (dataIndex >= dataLength) {
-					data = undefined;
-					abData = undefined;
-					return setTimeout(function(){
-						ehDownloadFS.saveAs(isFromFS ? fs : undefined);
-					}, 1500);
-				}
-				fileWriter.seek(dataIndex);
-				var dataLastIndex = dataIndex + 1024 * 1024 * 10;
-				// I tried setting it as 100MB but some parts were still gone, so I have to make it smaller.
-				console.log('[EHD] DataIndex >', dataIndex, '| DataLastIndex >', dataLastIndex, '| FileWriterLength >', fileWriter.length, '| DataLength >', dataLength);
-				pushDialog('\n' + dataIndex + '-' + dataLastIndex + '/' + dataLength);
-				var blob = createBlob([data.slice(dataIndex, dataLastIndex)], {type: 'application/zip'});
-				fileWriter.write(blob);
-				if ('close' in blob) blob.close(); // File Blob.close() API, not supported by all the browser now
-				blob = null;
-				setTimeout(loopWrite, 100, fileEntry);
-			}, ehDownloadFS.errorHandler);
-		};
-		fs.root.getFile(unsafeWindow.gid + '.zip', {create: true}, loopWrite, ehDownloadFS.errorHandler);
-	}
-	else { // or just using blob
-		var blob = createBlob([abData], {type: 'application/zip'});
-		saveAs(blob, fileName + '.zip');
-
-		var redownloadBtn = document.createElement('button');
-		redownloadBtn.textContent = 'Not download? Click here to download';
-		redownloadBtn.addEventListener('click', function(){
-			// rebuild blob object if "File is not exist" occured
-			blob = createBlob([abData], {type: 'application/zip'});
-			saveAs(blob, fileName + '.zip');
-
-			if ('close' in blob) blob.close();
-			blob = null;
-		});
-		ehDownloadDialog.appendChild(redownloadBtn);
-
-		insertCloseButton();
-
-		if ('close' in blob) blob.close();
-		blob = null;
 	}
 }
 
@@ -1374,6 +1396,7 @@ function showSettings() {
 			</div>\
 			<div data-setting-page="advanced" class="ehD-setting-content">\
 				<div class="g2"><label>Set compression level as <input type="number" data-ehd-setting="compression-level" min="0" max="9" placeholder="0" style="width: 51px;"> (0 ~ 9, 0 is only store, not recommended to enable)</label></div>\
+				<div class="g2"><label><input type="checkbox" data-ehd-setting="file-descriptor"> Stream files and create Zip with file descriptors *</label></div>\
 				<div class="g2"><label><input type="checkbox" data-ehd-setting="force-resized"> Force download resized image (never download original image) **</label></div>\
 				<div class="g2"><label><input type="checkbox" data-ehd-setting="never-new-url"> Never get new image URL when failed downloading image **</label></div>\
 				<div class="g2"><label><input type="checkbox" data-ehd-setting="never-send-nl"> Never send "nl" GET parameter when getting new image URL **</label></div>\
@@ -1381,10 +1404,13 @@ function showSettings() {
 				<div class="g2"' + (window.requestFileSystem ? '' : ' style="opacity: 0.5;" title="Only Chrome supports this feature"') + '><label>Use File System if archive is larger than <input type="number" data-ehd-setting="fs-size" min="0" placeholder="200" style="width: 51px;"> MB (0 is always) +</label></div>\
 				<!--<div class="g2"><label><input type="checkbox" data-ehd-setting="auto-scale"> Auto scale Zip file at <input type="text" min="10" placeholder="250" style="width: 51px;" data-ehd-setting="scale-size"> MB if file is larger than <input type="text" min="10" placeholder="400" style="width: 51px;" data-ehd-setting="scale-reach"> MB (experiment) ***</label></div>-->\
 				<div class="g2">\
+					* This may reduce memory usage but some program might not support the Zip file. See <a href="http://stuk.github.io/jszip/documentation/api_jszip/generate_async.html" target="_blank" style="color: #ffffff;">JSZip Docs</a> for more info.\
+				</div>\
+				<div class="g2">\
 					** Enable these options may save your image viewing limits <i><a href="https://github.com/ccloli/E-Hentai-Downloader/wiki/E%E2%88%92Hentai-Image-Viewing-Limits" target="_blank" style="color: #ffffff;">(See wiki)</a></i>, but may also cause some download problems.\
 				</div>\
 				<div class="g2">\
-					+ Please pay attention to memory usage. I tested that the maximum accepted size is about (2GB - the memory used of this tab\'s process), and if browser cannot handle it, it will throw "Uncaught RangeError: Invalid array buffer length"\
+					+ If enabled you can save larger Zip files (probably ~1GB).\
 				</div>\
 				<!--<div class="g2">\
 					*** <strong>This function is an experimental feature and may cause bug. </strong>Different browsers have different limit, See wiki for details.\
