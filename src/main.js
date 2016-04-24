@@ -1,6 +1,4 @@
 
-// ==========---------- Main Function Starts Here ----------========== //
-
 var zip;
 var retryCount = 0;
 var imageList = [];
@@ -210,8 +208,8 @@ var ehDownloadStyle = '\
 	.ehD-pt-abort { color: #ffff00; display: none; cursor: pointer; }\
 	.ehD-pt-status[data-inited-abort="1"]:hover .ehD-pt-abort, .ehD-pt-failed .ehD-pt-status[data-inited-abort="1"]:hover .ehD-pt-status-text, .ehD-pt-succeed .ehD-pt-status[data-inited-abort="1"]:hover .ehD-pt-status-text { display: inline; }\
 	.ehD-pt-status[data-inited-abort="1"]:hover .ehD-pt-status-text, .ehD-pt-failed .ehD-pt-status[data-inited-abort="1"]:hover .ehD-pt-abort, .ehD-pt-succeed .ehD-pt-status[data-inited-abort="1"]:hover .ehD-pt-abort { display: none; }\
-    .ehD-pt-gen-progress { width: 50%; }\
-    .ehD-pt-gen-filename { margin-bottom: 1em; }\
+	.ehD-pt-gen-progress { width: 50%; }\
+	.ehD-pt-gen-filename { margin-bottom: 1em; }\
 	.ehD-dialog { position: fixed; right: 0; bottom: 0; display: none; padding: 5px; border: 1px solid #000000; background: #34353b; color: #dddddd; width: 550px; height: 300px; overflow: auto; z-index: 999; }\
 	';
 
@@ -449,8 +447,8 @@ function generateZip(isFromFS, fs, isRetry){
 
 	var progress = document.createElement('progress');
 	var curFile = document.createElement('div');
-    progress.className = 'ehD-pt-gen-progress';
-    progress.className = 'ehD-pt-gen-filename';
+	progress.className = 'ehD-pt-gen-progress';
+	curFile.className = 'ehD-pt-gen-filename';
 	ehDownloadDialog.appendChild(progress);
 	ehDownloadDialog.appendChild(curFile);
 
@@ -690,16 +688,60 @@ function fetchOriginalImage(index, nodeList) {
 	}
 	var speedInfo = {
 		lastProgress: 0,
-		lastTimestamp: new Date().getTime()
+		lastTimestamp: new Date().getTime(),
+		zeroDetect: null,
+		expiredDetect: null
 	};
 
 	ehDownloadDialog.scrollTop = ehDownloadDialog.scrollHeight;
+
+	var zeroSpeedHandler = function(res){
+		updateProgress(nodeList, { progressText: '0 KB/s' });
+
+		if (setting['speed-detect'] && speedInfo.expiredDetect === null) {
+			speedInfo.expiredDetect = setTimeout(expiredSpeedHandler, (setting['speed-expired'] ? setting['speed-expired'] : 30) * 1000, res);
+		}
+	};
+
+	var expiredSpeedHandler = function(res){
+		//fetchThread[index].abort();
+
+		console.log('[EHD] #' + (index + 1) + ': Speed Too Low');
+		console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
+
+		updateProgress(nodeList, {
+			status: 'Failed! (Low Speed)',
+			progress: '0',
+			progressText: '',
+			class: 'ehD-pt-warning'
+		});
+
+		if (imageList[index]['imageURL'].indexOf('fullimg.php') >= 0) imageList[index]['imageFinalURL'] = res.finalUrl;
+
+		for (var i in res) {
+			delete res[i];
+		}
+
+		failedFetching(index, nodeList);
+	};
+
+	var removeTimerHandler = function(){
+		if (speedInfo.expiredDetect !== null) {
+			clearTimeout(speedInfo.expiredDetect);
+			speedInfo.expiredDetect = null;
+		}
+
+		if (speedInfo.zeroDetect !== null) {
+			clearTimeout(speedInfo.zeroDetect);
+			speedInfo.zeroDetect = null;
+		}
+	};
 
 	fetchThread[index] = GM_xmlhttpRequest({
 		method: 'GET',
 		url: imageList[index]['imageFinalURL'] || imageList[index]['imageURL'],
 		responseType: 'arraybuffer',
-		timeout: setting['timeout'] !== undefined ? Number(setting['timeout']) * 1000 : 300000,
+		timeout: (setting['timeout'] !== undefined && Number(setting['timeout']) !== 0) ? Number(setting['timeout']) * 1000 : 300000,
 		headers: {
 			'Referer': imageList[index]['pageURL'],
 			'X-Alt-Referer': imageList[index]['pageURL']
@@ -707,9 +749,10 @@ function fetchOriginalImage(index, nodeList) {
 		onprogress: function(res) {
 			var t = new Date().getTime();
 			var speedText;
+			var speedKBs = res.lengthComputable ? Number((res.loaded - speedInfo.lastProgress) / (t - speedInfo.lastTimestamp) / 1.024) : -1;
 
-			if (t - speedInfo.lastTimestamp >= 1000) {
-				speedText = res.lengthComputable ? Number((res.loaded - speedInfo.lastProgress) / (t - speedInfo.lastTimestamp) / 1.024).toFixed(2) + ' KB/s' : '';
+			if (t - speedInfo.lastTimestamp >= 1000 || speedInfo.lastProgress === 0) {
+				speedText = res.lengthComputable ? speedKBs.toFixed(2) + ' KB/s' : '';
 				speedInfo.lastProgress = res.loaded;
 				speedInfo.lastTimestamp = t;
 			}
@@ -721,12 +764,35 @@ function fetchOriginalImage(index, nodeList) {
 				status: retryCount[index] === 0 ? 'Downloading...' : 'Retrying (' + retryCount[index] + '/' + (setting['retry-count'] !== undefined ? setting['retry-count'] : 3) + ') ...'
 			});
 
-			for (var i in res) {
-				delete res[i];
+			// set showing speed to 0
+			if (speedInfo.zeroDetect !== null) {
+				clearTimeout(speedInfo.zeroDetect);
+				speedInfo.zeroDetect = null;
+			}
+			speedInfo.zeroDetect = setTimeout(zeroSpeedHandler, 3000, res);
+
+			if (setting['speed-detect']) {
+				if (speedKBs >= setting['speed-min'] ? setting['speed-min'] : 5) {
+
+					if (speedInfo.expiredDetect !== null) {
+						clearTimeout(speedInfo.expiredDetect);
+						speedInfo.expiredDetect = null;
+					}
+
+					for (var i in res) {
+						delete res[i];
+					}
+				}
+				else if (speedInfo.expiredDetect === null) {
+					speedInfo.expiredDetect = setTimeout(expiredSpeedHandler, (setting['speed-expired'] ? setting['speed-expired'] : 30) * 1000, res);
+					console.log('[EHD] Speed detect handler is inited for', index + 1, '!');
+				}
 			}
 		},
 		onload: function(res) {
 			//console.log('[EHD-Debug]', index, 'Load Finished!', new Date().getTime());
+			
+			removeTimerHandler();
 
 			// cache them to reduce waiting time and CPU usage on Chrome with Tampermonkey
 			// (Tampermonkey uses a dirty way to give res.response, transfer string to arraybuffer every time)
@@ -921,6 +987,8 @@ function fetchOriginalImage(index, nodeList) {
 			//console.log('[EHD-Debug]', index, 'Res was deleted!', new Date().getTime());
 		},
 		onerror: function(res){
+			removeTimerHandler();
+
 			console.log('[EHD] #' + (index + 1) + ': Network Error');
 			console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
 
@@ -940,6 +1008,8 @@ function fetchOriginalImage(index, nodeList) {
 			failedFetching(index, nodeList);
 		},
 		ontimeout: function(res){
+			removeTimerHandler();
+
 			console.log('[EHD] #' + (index + 1) + ': Timed Out');
 			console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
 
@@ -963,7 +1033,7 @@ function fetchOriginalImage(index, nodeList) {
 	if (!nodeList.status.dataset.initedAbort) {
 		nodeList.abort.addEventListener('click', function(){
 			if (!fetchThread[index]) return;
-            fetchThread[index].abort();
+			//fetchThread[index].abort();
 			
 			console.log('[EHD] #' + (index + 1) + ': Force Aborted');
 			updateProgress(nodeList, {
@@ -1197,7 +1267,7 @@ function initEHDownload() {
 			}
 		}
 	}
-	infoStr += 'Rating: ' + unsafeWindow.original_rating + '\n\n';
+	infoStr += 'Rating: ' + unsafeWindow.average_rating + '\n\n';
 	if (document.getElementById('comment_0')) {
 		infoStr += 'Uploader Comment:\n' + document.getElementById('comment_0').innerHTML.replace(/<br>|<br \/>/gi, '\n') + '\n\n';
 	}
@@ -1313,7 +1383,7 @@ function getPageData(index) {
 					padding = new Array(len < 3 ? len + 1 : len).join('0');
 				imageNumber = (padding + realIndex).slice(0 - len);
 			}
-	 	}
+		}
 
 		//imageList.push(new PageData(fetchURL, imageURL, fileName, nextNL, realIndex));
 		imageList[index] = new PageData(fetchURL, imageURL, fileName, nextNL, realIndex, imageNumber);
@@ -1377,12 +1447,13 @@ function showSettings() {
 		</ul>\
 		<div class="ehD-setting-wrapper">\
 			<div data-setting-page="basic" class="ehD-setting-content">\
-				<div class="g2"><label>Download <input type="number" data-ehd-setting="thread-count" min="1" placeholder="5" style="width: 51px;"> images at the same time (<=5 is advised)</label></div>\
-				<div class="g2"' + ((GM_info.scriptHandler && GM_info.scriptHandler === 'Violentmonkey') ? ' style="opacity: 0.5;" title="Violentmonkey may not support this feature"' : '') + '><label>Abort fetching current image after <input type="number" data-ehd-setting="timeout" min="0" placeholder="300" style="width: 51px;"> second(s) (0 is never abort)</label></div>\
-				<div class="g2"><label>Skip current image when retried <input type="number" data-ehd-setting="retry-count" min="1" placeholder="3" style="width: 51px;"> time(s)</label></div>\
+				<div class="g2"><label>Download <input type="number" data-ehd-setting="thread-count" min="1" placeholder="5" style="width: 46px;"> images at the same time (<=5 is advised)</label></div>\
+				<div class="g2"' + ((GM_info.scriptHandler && GM_info.scriptHandler === 'Violentmonkey') ? ' style="opacity: 0.5;" title="Violentmonkey may not support this feature"' : '') + '><label>Abort downloading current image after <input type="number" data-ehd-setting="timeout" min="0" placeholder="300" style="width: 46px;"> second(s) (0 is never abort)</label></div>\
+				<div class="g2"><label><input type="checkbox" data-ehd-setting="speed-detect"> Abort downloading current image if speed is less than <input type="number" data-ehd-setting="speed-min" min="0" placeholder="5" style="width: 46px;"> KB/s in <input type="number" data-ehd-setting="speed-expired" min="1" placeholder="30" style="width: 46px;"> second(s)</label></div>\
+				<div class="g2"><label>Skip current image when retried <input type="number" data-ehd-setting="retry-count" min="1" placeholder="3" style="width: 46px;"> time(s)</label></div>\
 				<div class="g2"><label>Set folder name as <input type="text" data-ehd-setting="dir-name" placeholder="{gid}_{token}"> (if you don\'t want to create folder, use "<code>/</code>") *</label></div>\
 				<div class="g2"><label>Set Zip file name as <input type="text" data-ehd-setting="file-name" placeholder="{title}"> *</label></div>\
-				<div class="g2"><label><input type="checkbox" data-ehd-setting="number-images"> Number images (001：01.jpg, 002：01_theme.jpg, 003：02.jpg...) (Separator <input type="text" data-ehd-setting="number-separator" style="width: 51px;" placeholder="：">)</label></div>\
+				<div class="g2"><label><input type="checkbox" data-ehd-setting="number-images"> Number images (001：01.jpg, 002：01_theme.jpg, 003：02.jpg...) (Separator <input type="text" data-ehd-setting="number-separator" style="width: 46px;" placeholder="：">)</label></div>\
 				<div class="g2"><label><input type="checkbox" data-ehd-setting="number-real-index"> Number images with original page number if pages range is set</label></div>\
 				<div class="g2">\
 					* Available templates: \
@@ -1395,14 +1466,14 @@ function showSettings() {
 				</div>\
 			</div>\
 			<div data-setting-page="advanced" class="ehD-setting-content">\
-				<div class="g2"><label>Set compression level as <input type="number" data-ehd-setting="compression-level" min="0" max="9" placeholder="0" style="width: 51px;"> (0 ~ 9, 0 is only store, not recommended to enable)</label></div>\
+				<div class="g2"><label>Set compression level as <input type="number" data-ehd-setting="compression-level" min="0" max="9" placeholder="0" style="width: 46px;"> (0 ~ 9, 0 is only store, not recommended to enable)</label></div>\
 				<div class="g2"><label><input type="checkbox" data-ehd-setting="file-descriptor"> Stream files and create Zip with file descriptors *</label></div>\
 				<div class="g2"><label><input type="checkbox" data-ehd-setting="force-resized"> Force download resized image (never download original image) **</label></div>\
 				<div class="g2"><label><input type="checkbox" data-ehd-setting="never-new-url"> Never get new image URL when failed downloading image **</label></div>\
 				<div class="g2"><label><input type="checkbox" data-ehd-setting="never-send-nl"> Never send "nl" GET parameter when getting new image URL **</label></div>\
 				<div class="g2"' + (window.requestFileSystem ? '' : ' style="opacity: 0.5;" title="Only Chrome supports this feature"') + '><label><input type="checkbox" data-ehd-setting="store-in-fs"> Request File System to handle large Zip file +</label></div>\
-				<div class="g2"' + (window.requestFileSystem ? '' : ' style="opacity: 0.5;" title="Only Chrome supports this feature"') + '><label>Use File System if archive is larger than <input type="number" data-ehd-setting="fs-size" min="0" placeholder="200" style="width: 51px;"> MB (0 is always) +</label></div>\
-				<!--<div class="g2"><label><input type="checkbox" data-ehd-setting="auto-scale"> Auto scale Zip file at <input type="text" min="10" placeholder="250" style="width: 51px;" data-ehd-setting="scale-size"> MB if file is larger than <input type="text" min="10" placeholder="400" style="width: 51px;" data-ehd-setting="scale-reach"> MB (experiment) ***</label></div>-->\
+				<div class="g2"' + (window.requestFileSystem ? '' : ' style="opacity: 0.5;" title="Only Chrome supports this feature"') + '><label>Use File System if archive is larger than <input type="number" data-ehd-setting="fs-size" min="0" placeholder="200" style="width: 46px;"> MB (0 is always) +</label></div>\
+				<!--<div class="g2"><label><input type="checkbox" data-ehd-setting="auto-scale"> Auto scale Zip file at <input type="text" min="10" placeholder="250" style="width: 46px;" data-ehd-setting="scale-size"> MB if file is larger than <input type="text" min="10" placeholder="400" style="width: 46px;" data-ehd-setting="scale-reach"> MB (experiment) ***</label></div>-->\
 				<div class="g2">\
 					* This may reduce memory usage but some program might not support the Zip file. See <a href="http://stuk.github.io/jszip/documentation/api_jszip/generate_async.html" target="_blank" style="color: #ffffff;">JSZip Docs</a> for more info.\
 				</div>\
@@ -1514,8 +1585,8 @@ ehDownloadDialog.className = 'ehD-dialog';
 document.body.appendChild(ehDownloadDialog);
 
 window.onbeforeunload = function(){
-	ehDownloadFS.removeFile(unsafeWindow.gid + '.zip');
 	if (isDownloading) return 'E-Hentai Downloader is still running, please don\'t close this tab before it finished downloading.';
+	ehDownloadFS.removeFile(unsafeWindow.gid + '.zip');
 };
 
 // Forced request File System to check if have temp archive
