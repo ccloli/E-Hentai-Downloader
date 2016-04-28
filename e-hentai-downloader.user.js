@@ -12476,6 +12476,9 @@ var ehDownloadStyle = '\
 	.ehD-pt-gen-progress { width: 50%; }\
 	.ehD-pt-gen-filename { margin-bottom: 1em; }\
 	.ehD-dialog { position: fixed; right: 0; bottom: 0; display: none; padding: 5px; border: 1px solid #000000; background: #34353b; color: #dddddd; width: 550px; height: 300px; overflow: auto; z-index: 999; }\
+	.ehD-status { position: fixed; right: 0; bottom: 311px; width: 550px; padding: 5px; border: 1px solid #000000; background: #34353b; color: #dddddd; cursor: pointer; }\
+	.ehD-dialog, .ehD-status { -webkit-transition: margin 0.5s ease; -moz-transition: margin 0.5s ease; -o-transition: margin 0.5s ease; -ms-transition: margin 0.5s ease; transition: margin 0.5s ease; }\
+	.ehD-dialog.hidden, .ehD-dialog.hidden .ehD-status { margin-bottom: -311px; }\
 	';
 
 // log information
@@ -12854,6 +12857,11 @@ function updateProgress(nodeList, data) {
 	if (data.class !== undefined) nodeList.current.className = ['ehD-pt-item', data.class].join(' ').trim();
 }
 
+// update ehDownloadStatus
+function updateTotalStatus(){
+	ehDownloadStatus.textContent = 'Total: ' + (pagesRange.length || pageURLsList.length) + ' | Downloading: ' + fetchCount + ' | Succeed: ' + downloadedCount + ' | Failed: ' + failedCount;
+}
+
 // Updated on 1.19: Now the index argument is the page's number - 1 (original is page's number)
 function failedFetching(index, nodeList, forced){
 	if ('abort' in fetchThread[index]) fetchThread[index].abort();
@@ -12867,6 +12875,7 @@ function failedFetching(index, nodeList, forced){
 		updateProgress(nodeList, {
 			class: 'ehD-pt-failed'
 		});
+		updateTotalStatus();
 
 		imageList[index]['imageFinalURL'] = null;
 		failedCount++;
@@ -13128,6 +13137,7 @@ function fetchOriginalImage(index, nodeList) {
 					progressText: '',
 					class: 'ehD-pt-failed'
 				});
+				updateTotalStatus();
 
 				for (var i in res) {
 					delete res[i];
@@ -13166,6 +13176,7 @@ function fetchOriginalImage(index, nodeList) {
 					progressText: '',
 					class: 'ehD-pt-failed'
 				});
+				updateTotalStatus();
 
 				pushDialog('\nYou have exceeded your bandwidth limits.');
 
@@ -13240,6 +13251,7 @@ function fetchOriginalImage(index, nodeList) {
 				progressText: '100%',
 				class: 'ehD-pt-succeed'
 			});
+			updateTotalStatus();
 			//console.log('[EHD-Debug]', index, 'Progress was updated!', new Date().getTime());
 
 			storeRes(response, index);
@@ -13313,6 +13325,8 @@ function fetchOriginalImage(index, nodeList) {
 
 		nodeList.status.setAttribute('data-inited-abort', '1');
 	}
+
+	updateTotalStatus();
 }
 
 function retryAllFailed(){
@@ -13540,6 +13554,7 @@ function initEHDownload() {
 	pushDialog(infoStr);
 
 	pushDialog('Start downloading at ' + new Date() + '\n');
+	ehDownloadDialog.appendChild(ehDownloadStatus);
 
 	// get all pages url to fix 403 forbidden (download request was timed out)
 	getAllPagesURL();
@@ -13627,6 +13642,7 @@ function getPageData(index) {
 					progressText: '',
 					class: 'ehD-pt-failed'
 				});
+				updateTotalStatus();
 
 				checkFailed();
 			}
@@ -13690,6 +13706,7 @@ function getPageData(index) {
 				progressText: '',
 				class: 'ehD-pt-failed'
 			});
+			updateTotalStatus();
 
 			checkFailed();
 		}
@@ -13720,6 +13737,7 @@ function showSettings() {
 				<div class="g2"><label>Set Zip file name as <input type="text" data-ehd-setting="file-name" placeholder="{title}"> *</label></div>\
 				<div class="g2"><label><input type="checkbox" data-ehd-setting="number-images"> Number images (001：01.jpg, 002：01_theme.jpg, 003：02.jpg...) (Separator <input type="text" data-ehd-setting="number-separator" style="width: 46px;" placeholder="：">)</label></div>\
 				<div class="g2"><label><input type="checkbox" data-ehd-setting="number-real-index"> Number images with original page number if pages range is set</label></div>\
+				<div class="g2"><label><input type="checkbox" data-ehd-setting="ignore-torrent"> Never show notification if torrents are available</label></div>\
 				<div class="g2">\
 					* Available templates: \
 					<span title="You can find GID and token at the address bar like this: exhentai.org/g/[GID]/[Token]/">{gid} Archive\'s GID</sapn> | \
@@ -13811,7 +13829,13 @@ ehDownloadAction.className = 'g2';
 ehDownloadAction.innerHTML = ehDownloadArrow + ' <a>Download Archive</a>';
 ehDownloadAction.addEventListener('click', function(event){
 	event.preventDefault();
+
+	var torrentsNode = document.querySelector('#gd5 a[onclick*="gallerytorrents.php"]');
+	var torrentsCount = torrentsNode ? torrentsNode.textContent.match(/\d+/)[0] - 0 : 0;
 	if (isDownloading && !confirm('E-Hentai Downloader is working now, are you sure to stop downloading and start a new download?')) return;
+	else if (!setting['ignore-torrent'] && torrentsCount > 0 && !confirm('There are ' + torrentsCount + ' torrent(s) available for this archive. You can download torrent to get stable and controlable download experience without spending your image limits, or even get bonus content.\n\nContinue downloading with E-Hentai Downloader (Yes) or use torrent directly (No)?\n(You can disable this notification on Settings)')) {
+		return torrentsNode.dispatchEvent(new MouseEvent('click'));
+	}
 	if (unsafeWindow.apiuid === -1 && !confirm('You are not log in to E-Hentai Forums, so you can\'t download original image. Continue?')) return;
 	ehDownloadDialog.innerHTML = '';
 
@@ -13848,6 +13872,12 @@ document.body.insertBefore(ehDownloadBox, document.getElementById('asm') || docu
 var ehDownloadDialog = document.createElement('div');
 ehDownloadDialog.className = 'ehD-dialog';
 document.body.appendChild(ehDownloadDialog);
+
+var ehDownloadStatus = document.createElement('div');
+ehDownloadStatus.className = 'ehD-status';
+ehDownloadStatus.addEventListener('click', function(){
+	ehDownloadDialog.classList.toggle('hidden');
+});
 
 window.onbeforeunload = function(){
 	if (isDownloading) return 'E-Hentai Downloader is still running, please don\'t close this tab before it finished downloading.';
