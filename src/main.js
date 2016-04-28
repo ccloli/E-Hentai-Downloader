@@ -54,12 +54,6 @@ var ehDownloadFS = {
 		console.log('[EHD] File System is opened! Name >', fs.name);
 		ehDownloadFS.removeAllFiles(fs); // It's sure that user have downloaded or ignored temp archive
 	},
-	reinitHandler: function(fs) {
-		ehDownloadFS.fs = fs;
-		console.log('[EHD] File System is opened! Name >', fs.name);
-		ehDownloadFS.removeFile(unsafeWindow.gid + '.zip');
-		generateZip();
-	},
 	errorHandler: function(e) {
 		var errorMsg = 'File System Request Error > ';
 		switch (e.code) {
@@ -1145,9 +1139,26 @@ function getAllPagesURL() {
 					isDownloading = false;
 					alert('Fetch Pages\' URL failed, Please try again later.');
 				}
+				return;
 			}
 
 			var pagesURL = xhr.responseText.split('<div id="gdt">')[1].split('<div class="c">')[0].match(ehDownloadRegex.pagesURL);
+			if (!pagesURL) {
+				console.error('[EHD] Response content is not correct!');
+				if (retryCount < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
+					pushDialog('Failed! Retrying... ');
+					retryCount++;
+					xhr.open('GET', location.pathname + '?p=' + curPage);
+					xhr.timeout = 30000;
+					xhr.send();
+				}
+				else {
+					pushDialog('Failed!\nCan\'t get pages URL from response content.');
+					isDownloading = false;
+					alert('We can\'t get request content from response content. It\'s possible that E-Hentai changes source code format so that we can\'t find them, or your ISP modifies (or say hijacks) the page content. If it\'s sure that you can access to any pages of E-Hentai, including current page: ' + location.pathname + '?p=' + curPage + ' , please report a bug.');
+				}
+				return;
+			}
 			for (var i = 0; i < pagesURL.length; i++) {
 				pageURLsList.push(pagesURL[i].split('"')[1].replaceHTMLEntites().replaceOrigin());
 			}
@@ -1383,10 +1394,47 @@ function getPageData(index) {
 			}
 		}
 
-		var imageURL = (unsafeWindow.apiuid !== -1 && xhr.responseText.indexOf('fullimg.php') >= 0 && !setting['force-resized']) ? xhr.responseText.match(ehDownloadRegex.imageURL[0])[1].replaceHTMLEntites().replaceOrigin() : xhr.responseText.indexOf('id="img"') > -1 ? xhr.responseText.match(ehDownloadRegex.imageURL[1])[1].replaceHTMLEntites() : xhr.responseText.match(ehDownloadRegex.imageURL[2])[1].replaceHTMLEntites();
-		var fileName = xhr.responseText.match(ehDownloadRegex.fileName)[1].replaceHTMLEntites();
-		var nextNL = ehDownloadRegex.nl.test(xhr.responseText) ? xhr.responseText.match(ehDownloadRegex.nl)[1] : null;
-		var imageNumber = '';
+		try {
+			var imageURL = (unsafeWindow.apiuid !== -1 && xhr.responseText.indexOf('fullimg.php') >= 0 && !setting['force-resized']) ? xhr.responseText.match(ehDownloadRegex.imageURL[0])[1].replaceHTMLEntites().replaceOrigin() : xhr.responseText.indexOf('id="img"') > -1 ? xhr.responseText.match(ehDownloadRegex.imageURL[1])[1].replaceHTMLEntites() : xhr.responseText.match(ehDownloadRegex.imageURL[2])[1].replaceHTMLEntites();
+			var fileName = xhr.responseText.match(ehDownloadRegex.fileName)[1].replaceHTMLEntites();
+			var nextNL = ehDownloadRegex.nl.test(xhr.responseText) ? xhr.responseText.match(ehDownloadRegex.nl)[1] : null;
+			var imageNumber = '';
+		}
+		catch (error) {
+			console.error('[EHD] Response content is not correct!', error);
+			if (retryCount < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
+				retryCount++;
+
+				updateProgress(nodeList, {
+					status: 'Retrying (' + retryCount + '/' + (setting['retry-count'] !== undefined ? setting['retry-count'] : 3) + ')...',
+					progress: '',
+					progressText: '',
+					class: 'ehD-pt-warning'
+				});
+
+				xhr.open('GET', fetchURL);
+				xhr.timeout = 30000;
+				xhr.send();
+			}
+			else {
+				failedCount++;
+				fetchCount--;
+
+				console.error('[EHD] #' + realIndex + ': Can\'t get request content from response content');
+				updateProgress(nodeList, {
+					status: 'Response Error',
+					progress: '0',
+					progressText: '',
+					class: 'ehD-pt-failed'
+				});
+				updateTotalStatus();
+				alert('We can\'t get request content from response content. It\'s possible that E-Hentai changes source code format so that we can\'t find them, or your ISP modifies (or say hijacks) the page content. If it\'s sure that you can access to any pages of E-Hentai, including current page: ' + fetchURL + ' , please report a bug.');
+
+				checkFailed();
+			}
+			return;
+		}
+
 		if (needNumberImages) {
 			// Number images, thanks to JingJang@GitHub, source: https://github.com/JingJang/E-Hentai-Downloader
 			if (!setting['number-real-index'] && pagesRange.length) { // if pages range was set and number original index is not required
