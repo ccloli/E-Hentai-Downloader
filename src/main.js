@@ -744,7 +744,7 @@ function fetchOriginalImage(index, nodeList) {
 		method: 'GET',
 		url: imageList[index]['imageFinalURL'] || imageList[index]['imageURL'],
 		responseType: 'arraybuffer',
-		timeout: (setting['timeout'] !== undefined && Number(setting['timeout']) !== 0) ? Number(setting['timeout']) * 1000 : 300000,
+		timeout: (setting['timeout'] !== undefined) ? Number(setting['timeout']) * 1000 : 300000,
 		headers: {
 			'Referer': imageList[index]['pageURL'],
 			'X-Alt-Referer': imageList[index]['pageURL']
