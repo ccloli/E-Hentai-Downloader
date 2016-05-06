@@ -1,6 +1,5 @@
 
 var zip;
-var retryCount = 0;
 var imageList = [];
 var imageData = [];
 var infoStr;
@@ -8,10 +7,12 @@ var origin = window.location.origin;
 var setting = GM_getValue('ehD-setting') ? JSON.parse(GM_getValue('ehD-setting')) : {};
 var fetchCount = 0;
 var downloadedCount = 0;
+var totalCount = 0;
+var retryCount = 0;
+var failedCount = 0;
 var fetchThread = [];
 var dirName;
 var fileName;
-var failedCount = 0;
 var progressTable = null;
 var isREH = false;
 var needNumberImages = setting['number-images'];
@@ -19,6 +20,8 @@ var pagesRange = [];
 var isDownloading = false;
 var pageURLsList = [];
 var getAllPagesURLFin = false;
+var pretitle = document.title;
+var needTitleStatus = false;
 
 // r.e-hentai.org points all links to g.e-hentai.org
 if (origin === 'http://r.e-hentai.org') {
@@ -180,7 +183,7 @@ var ehDownloadStyle = '\
 	.ehD-box { margin: 20px auto; width: 732px; box-sizing: border-box; font-size: 12px; border: 1px groove #000000; }\
 	.ehD-box a { cursor: pointer; }\
 	.ehD-box .g2 { display: inline-block; margin: 10px; padding: 0; line-height: 14px; }\
-	.ehD-setting { position: fixed; left: 0; right: 0; top: 0; bottom: 0; padding: 5px; border: 1px solid #000000; background: #34353b; color: #dddddd; width: 550px; height: 400px; max-width: 100%; max-height: 100%; overflow-x: hidden; overflow-y: auto; box-sizing: border-box; margin: auto; z-index: 999; text-align: left; font-size: 12px; outline: 5px rgba(0, 0, 0, 0.25) solid; }\
+	.ehD-setting { position: fixed; left: 0; right: 0; top: 0; bottom: 0; padding: 5px; border: 1px solid #000000; background: #34353b; color: #dddddd; width: 600px; height: 450px; max-width: 100%; max-height: 100%; overflow-x: hidden; overflow-y: auto; box-sizing: border-box; margin: auto; z-index: 999; text-align: left; font-size: 12px; outline: 5px rgba(0, 0, 0, 0.25) solid; }\
 	.ehD-setting-tab { list-style: none; margin: 5px 0; padding: 0 10px; border-bottom: 1px solid #cccccc; overflow: auto; }\
 	.ehD-setting-tab li { float: left; padding: 5px 10px; border-bottom: 0; cursor: pointer; }\
 	.ehD-setting[data-active-setting="basic"] li[data-target-setting="basic"], .ehD-setting[data-active-setting="advanced"] li[data-target-setting="advanced"] { font-weight: bold; background: #cccccc; color: #000000; }\
@@ -421,6 +424,7 @@ function storeRes(res, index) {
 	fetchCount--;
 	//console.log('[EHD-Debug]', index, 'Res data was stored in imageData!', new Date().getTime());
 
+	updateTotalStatus();
 	checkFailed();
 	
 	for (var i in res) {
@@ -588,7 +592,8 @@ function updateProgress(nodeList, data) {
 
 // update ehDownloadStatus
 function updateTotalStatus(){
-	ehDownloadStatus.textContent = 'Total: ' + (pagesRange.length || pageURLsList.length) + ' | Downloading: ' + fetchCount + ' | Succeed: ' + downloadedCount + ' | Failed: ' + failedCount;
+	ehDownloadStatus.textContent = 'Total: ' + totalCount + ' | Downloading: ' + fetchCount + ' | Succeed: ' + downloadedCount + ' | Failed: ' + failedCount;
+	if (needTitleStatus) document.title = '[EHD: ' + (downloadedCount < totalCount ? '↓ ' + downloadedCount + '/' + totalCount : totalCount === 0 ? '↓' : '√' ) + '] ' + pretitle;
 }
 
 // Updated on 1.19: Now the index argument is the page's number - 1 (original is page's number)
@@ -604,12 +609,12 @@ function failedFetching(index, nodeList, forced){
 		updateProgress(nodeList, {
 			class: 'ehD-pt-failed'
 		});
-		updateTotalStatus();
 
 		imageList[index]['imageFinalURL'] = null;
 		failedCount++;
 		fetchCount--;
 
+		updateTotalStatus();
 		checkFailed();
 	}
 }
@@ -626,7 +631,7 @@ function saveDownloaded(){
 }
 
 function checkFailed() {
-	if (downloadedCount + failedCount < (pagesRange.length || pageURLsList.length)) { // download not finished, some files are not being called to download
+	if (downloadedCount + failedCount < totalCount) { // download not finished, some files are not being called to download
 		requestDownload();
 	}
 	else if (failedCount > 0) { // all files are called to download and some files can't be downloaded
@@ -647,7 +652,7 @@ function checkFailed() {
 	}
 	else { // all files are downloaded successfully
 		renameImages();
-		for (var j = 0; j < (pagesRange.length || pageURLsList.length); j++) {
+		for (var j = 0; j < totalCount; j++) {
 			zip.folder(dirName).file(imageList[j]['imageName'], imageData.shift());
 		}
 		generateZip();
@@ -980,7 +985,6 @@ function fetchOriginalImage(index, nodeList) {
 				progressText: '100%',
 				class: 'ehD-pt-succeed'
 			});
-			updateTotalStatus();
 			//console.log('[EHD-Debug]', index, 'Progress was updated!', new Date().getTime());
 
 			storeRes(response, index);
@@ -1178,6 +1182,7 @@ function getAllPagesURL() {
 						return;
 					}
 				}
+				totalCount = pagesRange.length || pageURLsList.length;
 				pushDialog('\n\n');
 				initProgressTable();
 				requestDownload();
@@ -1219,6 +1224,8 @@ function getAllPagesURL() {
 				return;
 			}
 		}
+
+		totalCount = pagesRange.length || pageURLsList.length;
 		pushDialog('\n\n');
 		initProgressTable();
 		requestDownload();
@@ -1316,7 +1323,7 @@ function initProgressTable(){
 function requestDownload(){
 	var i = fetchCount, j = 0;
 	for (/*var i = fetchCount*/; i < (setting['thread-count'] !== undefined ? setting['thread-count'] : 5); i++) {
-		for (/*var j = 0*/; j < (pagesRange.length || pageURLsList.length); j++) {
+		for (/*var j = 0*/; j < totalCount; j++) {
 			if (imageData[j] == null) {
 				imageData[j] = 'Fetching';
 				if (imageList[j] && setting['never-new-url']) fetchOriginalImage(j);
@@ -1521,6 +1528,7 @@ function showSettings() {
 				<div class="g2"><label><input type="checkbox" data-ehd-setting="number-images"> Number images (001：01.jpg, 002：01_theme.jpg, 003：02.jpg...) (Separator <input type="text" data-ehd-setting="number-separator" style="width: 46px;" placeholder="：">)</label></div>\
 				<div class="g2"><label><input type="checkbox" data-ehd-setting="number-real-index"> Number images with original page number if pages range is set</label></div>\
 				<div class="g2"><label><input type="checkbox" data-ehd-setting="ignore-torrent"> Never show notification if torrents are available</label></div>\
+				<div class="g2"><label><input type="checkbox" data-ehd-setting="status-in-title"> Show download progress in title if current window is not focused</label></div>\
 				<div class="g2">\
 					* Available templates: \
 					<span title="You can find GID and token at the address bar like this: exhentai.org/g/[GID]/[Token]/">{gid} Archive\'s GID</sapn> | \
@@ -1658,8 +1666,22 @@ document.body.appendChild(ehDownloadDialog);
 
 var ehDownloadStatus = document.createElement('div');
 ehDownloadStatus.className = 'ehD-status';
-ehDownloadStatus.addEventListener('click', function(){
+ehDownloadStatus.addEventListener('click', function(event){
+	event.preventDefault();
 	ehDownloadDialog.classList.toggle('hidden');
+});
+
+window.addEventListener('focus', function(){
+	if (!needTitleStatus) return;
+	document.title = pretitle;
+	needTitleStatus = false;
+});
+
+window.addEventListener('blur', function(){
+	if (isDownloading && setting['status-in-title']) {
+		needTitleStatus = true;
+		document.title = '[EHD: ' + (downloadedCount < totalCount ? '↓ ' + downloadedCount + '/' + totalCount : totalCount === 0 ? '↓' : '√' ) + '] ' + pretitle;
+	}
 });
 
 window.onbeforeunload = function(){
