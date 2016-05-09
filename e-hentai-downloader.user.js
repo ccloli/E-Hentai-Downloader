@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.21.3
+// @version      1.21.4
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -12901,7 +12901,9 @@ function checkFailed() {
 	}
 	else if (failedCount > 0) { // all files are called to download and some files can't be downloaded
 		if (fetchCount === 0) { // all files are finished downloading
-			for (var i = 0; i < fetchThread.length; i++) fetchThread[i].abort();
+			for (var i = 0; i < fetchThread.length; i++) {
+				if ('abort' in fetchThread[i]) fetchThread[i].abort();
+			}
 			if (confirm('Some images were failed to download. Would you like to try them again?')) {
 				retryAllFailed();
 			}
@@ -12909,6 +12911,9 @@ function checkFailed() {
 				pushDialog('\nFetch images failed.');
 				if (confirm('Fetch images failed, Please try again later.\n\nWould you like to download downloaded images?')) {
 					saveDownloaded();
+				}
+				else {
+					insertCloseButton();
 				}
 				zip.remove(dirName);
 				isDownloading = false;
@@ -12977,7 +12982,7 @@ function fetchOriginalImage(index, nodeList) {
 	};
 
 	var expiredSpeedHandler = function(res){
-		//fetchThread[index].abort();
+		fetchThread[index].abort();
 
 		console.log('[EHD] #' + (index + 1) + ': Speed Too Low');
 		console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
@@ -13126,7 +13131,9 @@ function fetchOriginalImage(index, nodeList) {
 				return failedFetching(index, nodeList, true);
 			}
 			else if (byteLength === 141) { // Image Viewing Limits String Byte Size
-				for (var i = 0; i < fetchThread.length; i++) fetchThread[i].abort();
+				for (var i = 0; i < fetchThread.length; i++) {
+					if ('abort' in fetchThread[i]) fetchThread[i].abort();
+				}
 				console.log('[EHD] #' + (index + 1) + ': Exceed Image Viewing Limits');
 				console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
 
@@ -13143,6 +13150,7 @@ function fetchOriginalImage(index, nodeList) {
 				}
 
 				pushDialog('\nYou have exceeded your image viewing limits.');
+
 				if (confirm('You have exceeded your image viewing limits. You can reset these limits at home page.\n\nYou can try reseting your image viewing limits to continue by paying your GPs. Reset now?') && (unsafeWindow.apiuid !== -1 ? 1 : (alert('Sorry, you are not log in!'), 0))) {
 					window.open('http://g.e-hentai.org/home.php');
 					pushDialog('Please reset your viewing limits on opened window. If not shown, try this <a href="http://g.e-hentai.org/home.php" target="_blank">link</a>.\nAfter reseting your viewing limits, click the button below to continue.\n');
@@ -13160,12 +13168,17 @@ function fetchOriginalImage(index, nodeList) {
 				else if (confirm('You have exceeded your image viewing limits. Would you like to save downloaded images?')) {
 					saveDownloaded();
 				}
+				else {
+					insertCloseButton();
+				}
 				zip.remove(dirName);
 				isDownloading = false;
 				return;
 			}
 			else if (byteLength === 28658) { // '509 Bandwidth Exceeded' Image Byte Size
-				for (var i = 0; i < fetchThread.length; i++) fetchThread[i].abort();
+				for (var i = 0; i < fetchThread.length; i++) {
+					if ('abort' in fetchThread[i]) fetchThread[i].abort();
+				}
 				console.log('[EHD] #' + (index + 1) + ': 509 Bandwidth Exceeded');
 				console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
 
@@ -13177,11 +13190,12 @@ function fetchOriginalImage(index, nodeList) {
 				});
 				updateTotalStatus();
 
-				pushDialog('\nYou have exceeded your bandwidth limits.');
-
 				for (var i in res) {
 					delete res[i];
 				}
+
+				pushDialog('\nYou have exceeded your bandwidth limits.');
+
 				if (confirm('You have temporarily reached the limit for how many images you can browse. You can\n- Sign up/in E-Hentai account at E-Hentai Forums to get double daily quota if you are not sign in.\n- Run the Hentai@Home to support E-Hentai and get more points to increase your limit.\n- Check back in a few hours, and you will be able to download more.\n\nYou can try reseting your image viewing limits to continue by paying your GPs. Reset now?') && (unsafeWindow.apiuid !== -1 ? 1 : (alert('Sorry, you are not log in!'), 0))) {
 					window.open('http://g.e-hentai.org/home.php');
 					pushDialog('Please reset your viewing limits on opened window. If not shown, try this <a href="http://g.e-hentai.org/home.php" target="_blank">link</a>.\nAfter reseting your viewing limits, click the button below to continue.\n');
@@ -13198,6 +13212,9 @@ function fetchOriginalImage(index, nodeList) {
 				}
 				else if (confirm('You have exceeded your image viewing limits. Would you like to save downloaded images?')) {
 					saveDownloaded();
+				}
+				else {
+					insertCloseButton();
 				}
 				zip.remove(dirName);
 				isDownloading = false;
@@ -13308,9 +13325,10 @@ function fetchOriginalImage(index, nodeList) {
 	if (!nodeList.status.dataset.initedAbort) {
 		nodeList.abort.addEventListener('click', function(){
 			if (!fetchThread[index]) return;
-			//fetchThread[index].abort();
+			fetchThread[index].abort();
+			removeTimerHandler();
 			
-			console.log('[EHD] #' + (index + 1) + ': Force Aborted');
+			console.log('[EHD] #' + (index + 1) + ': Force Aborted By User');
 			updateProgress(nodeList, {
 				status: 'Failed! (User Aborted)',
 				progress: '0',
@@ -13498,7 +13516,9 @@ function getAllPagesURL() {
 }
 
 function initEHDownload() {
-	for (var i = 0; i < fetchThread.length; i++) fetchThread[i].abort();
+	for (var i = 0; i < fetchThread.length; i++) {
+		if ('abort' in fetchThread[i]) fetchThread[i].abort();
+	}
 	imageList = [];
 	imageData = [];
 	fetchThread = [];
@@ -13949,8 +13969,11 @@ window.addEventListener('blur', function(){
 	}
 });
 
-window.onbeforeunload = function(){
+window.onbeforeunload = unsafeWindow.onbeforeunload = function(){
 	if (isDownloading) return 'E-Hentai Downloader is still running, please don\'t close this tab before it finished downloading.';
+	for (var i = 0; i < fetchThread.length; i++) {
+		if ('abort' in fetchThread[i]) fetchThread[i].abort();
+	}
 	ehDownloadFS.removeFile(unsafeWindow.gid + '.zip');
 };
 
