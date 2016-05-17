@@ -472,7 +472,7 @@ function generateZip(isFromFS, fs, isRetry){
 				zip.remove(elem);
 			});
 
-			if ((isFromFS || ehDownloadFS.needFileSystem) && fs !== undefined) { // using filesystem to save file is needed
+			if (isFromFS || ehDownloadFS.needFileSystem) { // using filesystem to save file is needed
 				curFile.textContent = ' ';
 
 				var fs = fs || ehDownloadFS.fs;
@@ -538,7 +538,7 @@ function generateZip(isFromFS, fs, isRetry){
 		console.error(error);
 		if (confirm('An error occurred when generating Zip file as ArrayBuffer. Try again?')) return generateZip(isFromFS, fs, 1);
 
-		if ((isFromFS || ehDownloadFS.needFileSystem) && fs !== undefined) {
+		if (isFromFS || ehDownloadFS.needFileSystem) {
 			// if enabled file system, then store all files into file system
 			pushDialog('Storing files into File System...');
 			var files = zip.file(/.*/);
