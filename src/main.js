@@ -21,7 +21,7 @@ var isDownloading = false;
 var pageURLsList = [];
 var getAllPagesURLFin = false;
 var pretitle = document.title;
-var needTitleStatus = false;
+var needTitleStatus = setting['status-in-title'] === 'always' ? true : false;
 
 // r.e-hentai.org points all links to g.e-hentai.org
 if (origin === 'http://r.e-hentai.org') {
@@ -214,6 +214,9 @@ var ehDownloadStyle = '\
 	.ehD-dialog .ehD-force-download-tips { position: fixed; right: 0; bottom: 288px; border: 1px solid #000000; width: 550px; padding: 5px; background: rgba(0, 0, 0, 0.75); color: #ffffff; cursor: pointer; opacity: 0; pointer-events: none; }\
 	.ehD-dialog:hover .ehD-force-download-tips { opacity: 1; }\
 	';
+
+// overwrite settings
+if (setting['status-in-title'] === true) setting['status-in-title'] = 'blur';
 
 // log information
 console.log('[EHD] UserAgent >', navigator.userAgent);
@@ -1575,7 +1578,7 @@ function showSettings() {
 				<div class="g2"><label><input type="checkbox" data-ehd-setting="number-images"> Number images (001：01.jpg, 002：01_theme.jpg, 003：02.jpg...) (Separator <input type="text" data-ehd-setting="number-separator" style="width: 46px;" placeholder="：">)</label></div>\
 				<div class="g2"><label><input type="checkbox" data-ehd-setting="number-real-index"> Number images with original page number if pages range is set</label></div>\
 				<div class="g2"><label><input type="checkbox" data-ehd-setting="ignore-torrent"> Never show notification if torrents are available</label></div>\
-				<div class="g2"><label><input type="checkbox" data-ehd-setting="status-in-title"> Show download progress in title if current window is not focused</label></div>\
+				<div class="g2"><label><select data-ehd-setting="status-in-title"><option value="never">Never</option><option value="blur">When current window is not focused</option><option value="always">Always</option></select> show download progress in title</label></div>\
 				<div class="g2">\
 					* Available templates: \
 					<span title="You can find GID and token at the address bar like this: exhentai.org/g/[GID]/[Token]/">{gid} Archive\'s GID</sapn> | \
@@ -1616,9 +1619,14 @@ function showSettings() {
 	document.body.appendChild(ehDownloadSettingPanel);
 	
 	for (var i in setting) {
-		var element = ehDownloadSettingPanel.querySelector('input[data-ehd-setting="' + i + '"]');
+		var element = ehDownloadSettingPanel.querySelector('input[data-ehd-setting="' + i + '"], select[data-ehd-setting="' + i + '"]');
 		if (!element) continue;
-		if (element.getAttribute('type') === 'checkbox') ((setting[i]) && (element.setAttribute('checked', 'checked')));
+		if (element.getAttribute('type') === 'checkbox' && setting[i]) element.setAttribute('checked', 'checked');
+        else if (element.tagName.toLowerCase() === 'select') {
+            element = element.querySelector('option[value="' + setting[i] + '"]');
+            if (!element) continue;
+            element.setAttribute('selected', 'selected');
+        }
 		else element.setAttribute('value', setting[i]);
 	}
 
@@ -1720,13 +1728,15 @@ ehDownloadStatus.addEventListener('click', function(event){
 });
 
 window.addEventListener('focus', function(){
-	if (!needTitleStatus) return;
-	document.title = pretitle;
-	needTitleStatus = false;
+	if (setting['status-in-title'] === 'blur') {
+		if (!needTitleStatus) return;
+		document.title = pretitle;
+		needTitleStatus = false;
+	}
 });
 
 window.addEventListener('blur', function(){
-	if (isDownloading && setting['status-in-title']) {
+	if (isDownloading && setting['status-in-title'] === 'blur') {
 		needTitleStatus = true;
 		document.title = '[EHD: ' + (downloadedCount < totalCount ? '↓ ' + downloadedCount + '/' + totalCount : totalCount === 0 ? '↓' : '√' ) + '] ' + pretitle;
 	}
