@@ -605,6 +605,8 @@ function updateTotalStatus(){
 
 // Updated on 1.19: Now the index argument is the page's number - 1 (original is page's number)
 function failedFetching(index, nodeList, forced){
+	if (imageData[index] instanceof ArrayBuffer) return;
+ // Temporarily fixes #31	
 	if (typeof fetchThread[index] !== 'undefined' && 'abort' in fetchThread[index]) fetchThread[index].abort();
 	console.error('[EHD] Index >', index + 1, ' | RealIndex >', imageList[index]['realIndex'], ' | Name >', imageList[index]['imageName'], ' | RetryCount >', retryCount[index], ' | DownloadedCount >', downloadedCount, ' | FetchCount >', fetchCount, ' | FailedCount >', failedCount);
 
@@ -723,6 +725,8 @@ function fetchOriginalImage(index, nodeList) {
 	ehDownloadDialog.scrollTop = ehDownloadDialog.scrollHeight;
 
 	var zeroSpeedHandler = function(res){
+		if (imageData[index] instanceof ArrayBuffer) return; // Temporarily fixes #31
+
 		updateProgress(nodeList, { progressText: '0 KB/s' });
 
 		if (setting['speed-detect'] && speedInfo.expiredDetect === null) {
@@ -731,6 +735,8 @@ function fetchOriginalImage(index, nodeList) {
 	};
 
 	var expiredSpeedHandler = function(res){
+		if (imageData[index] instanceof ArrayBuffer) return; // Temporarily fixes #31
+
 		if (typeof fetchThread[index] !== 'undefined' && 'abort' in fetchThread[index]) fetchThread[index].abort();
 
 		console.log('[EHD] #' + (index + 1) + ': Speed Too Low');
@@ -820,6 +826,7 @@ function fetchOriginalImage(index, nodeList) {
 			//console.log('[EHD-Debug]', index, 'Load Finished!', new Date().getTime());
 			
 			removeTimerHandler();
+			if (imageData[index] instanceof ArrayBuffer) return; // Temporarily fixes #31
 
 			// cache them to reduce waiting time and CPU usage on Chrome with Tampermonkey
 			// (Tampermonkey uses a dirty way to give res.response, transfer string to arraybuffer every time)
@@ -1029,6 +1036,7 @@ function fetchOriginalImage(index, nodeList) {
 		},
 		onerror: function(res){
 			removeTimerHandler();
+			if (imageData[index] instanceof ArrayBuffer) return; // Temporarily fixes #31
 
 			console.log('[EHD] #' + (index + 1) + ': Network Error');
 			console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
@@ -1050,6 +1058,7 @@ function fetchOriginalImage(index, nodeList) {
 		},
 		ontimeout: function(res){
 			removeTimerHandler();
+			if (imageData[index] instanceof ArrayBuffer) return; // Temporarily fixes #31
 
 			console.log('[EHD] #' + (index + 1) + ': Timed Out');
 			console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
@@ -1073,6 +1082,8 @@ function fetchOriginalImage(index, nodeList) {
 
 	if (!nodeList.status.dataset.initedAbort) {
 		nodeList.abort.addEventListener('click', function(){
+			if (imageData[index] instanceof ArrayBuffer) return; // Temporarily fixes #31
+
 			if (typeof fetchThread[index] !== 'undefined' && 'abort' in fetchThread[index]) fetchThread[index].abort();
 			removeTimerHandler();
 			
