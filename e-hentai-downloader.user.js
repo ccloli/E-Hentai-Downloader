@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.21.6
+// @version      1.21.7
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -12286,7 +12286,7 @@ var isDownloading = false;
 var pageURLsList = [];
 var getAllPagesURLFin = false;
 var pretitle = document.title;
-var needTitleStatus = false;
+var needTitleStatus = setting['status-in-title'] === 'always' ? true : false;
 
 // r.e-hentai.org points all links to g.e-hentai.org
 if (origin === 'http://r.e-hentai.org') {
@@ -12479,6 +12479,9 @@ var ehDownloadStyle = '\
 	.ehD-dialog .ehD-force-download-tips { position: fixed; right: 0; bottom: 288px; border: 1px solid #000000; width: 550px; padding: 5px; background: rgba(0, 0, 0, 0.75); color: #ffffff; cursor: pointer; opacity: 0; pointer-events: none; }\
 	.ehD-dialog:hover .ehD-force-download-tips { opacity: 1; }\
 	';
+
+// overwrite settings
+if (setting['status-in-title'] === true) setting['status-in-title'] = 'blur';
 
 // log information
 console.log('[EHD] UserAgent >', navigator.userAgent);
@@ -12870,6 +12873,8 @@ function updateTotalStatus(){
 
 // Updated on 1.19: Now the index argument is the page's number - 1 (original is page's number)
 function failedFetching(index, nodeList, forced){
+	if (!isDownloading || imageData[index] instanceof ArrayBuffer) return;
+ // Temporarily fixes #31	
 	if (typeof fetchThread[index] !== 'undefined' && 'abort' in fetchThread[index]) fetchThread[index].abort();
 	console.error('[EHD] Index >', index + 1, ' | RealIndex >', imageList[index]['realIndex'], ' | Name >', imageList[index]['imageName'], ' | RetryCount >', retryCount[index], ' | DownloadedCount >', downloadedCount, ' | FetchCount >', fetchCount, ' | FailedCount >', failedCount);
 
@@ -12988,6 +12993,8 @@ function fetchOriginalImage(index, nodeList) {
 	ehDownloadDialog.scrollTop = ehDownloadDialog.scrollHeight;
 
 	var zeroSpeedHandler = function(res){
+		if (!isDownloading || imageData[index] instanceof ArrayBuffer) return; // Temporarily fixes #31
+
 		updateProgress(nodeList, { progressText: '0 KB/s' });
 
 		if (setting['speed-detect'] && speedInfo.expiredDetect === null) {
@@ -12996,6 +13003,8 @@ function fetchOriginalImage(index, nodeList) {
 	};
 
 	var expiredSpeedHandler = function(res){
+		if (!isDownloading || imageData[index] instanceof ArrayBuffer) return; // Temporarily fixes #31
+
 		if (typeof fetchThread[index] !== 'undefined' && 'abort' in fetchThread[index]) fetchThread[index].abort();
 
 		console.log('[EHD] #' + (index + 1) + ': Speed Too Low');
@@ -13085,6 +13094,7 @@ function fetchOriginalImage(index, nodeList) {
 			//console.log('[EHD-Debug]', index, 'Load Finished!', new Date().getTime());
 			
 			removeTimerHandler();
+			if (!isDownloading || imageData[index] instanceof ArrayBuffer) return; // Temporarily fixes #31
 
 			// cache them to reduce waiting time and CPU usage on Chrome with Tampermonkey
 			// (Tampermonkey uses a dirty way to give res.response, transfer string to arraybuffer every time)
@@ -13294,6 +13304,7 @@ function fetchOriginalImage(index, nodeList) {
 		},
 		onerror: function(res){
 			removeTimerHandler();
+			if (!isDownloading || imageData[index] instanceof ArrayBuffer) return; // Temporarily fixes #31
 
 			console.log('[EHD] #' + (index + 1) + ': Network Error');
 			console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
@@ -13315,6 +13326,7 @@ function fetchOriginalImage(index, nodeList) {
 		},
 		ontimeout: function(res){
 			removeTimerHandler();
+			if (!isDownloading || imageData[index] instanceof ArrayBuffer) return; // Temporarily fixes #31
 
 			console.log('[EHD] #' + (index + 1) + ': Timed Out');
 			console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
@@ -13338,6 +13350,8 @@ function fetchOriginalImage(index, nodeList) {
 
 	if (!nodeList.status.dataset.initedAbort) {
 		nodeList.abort.addEventListener('click', function(){
+			if (!isDownloading || imageData[index] instanceof ArrayBuffer) return; // Temporarily fixes #31
+
 			if (typeof fetchThread[index] !== 'undefined' && 'abort' in fetchThread[index]) fetchThread[index].abort();
 			removeTimerHandler();
 			
@@ -13829,7 +13843,7 @@ function showSettings() {
 				<div class="g2"><label><input type="checkbox" data-ehd-setting="number-images"> Number images (001：01.jpg, 002：01_theme.jpg, 003：02.jpg...) (Separator <input type="text" data-ehd-setting="number-separator" style="width: 46px;" placeholder="：">)</label></div>\
 				<div class="g2"><label><input type="checkbox" data-ehd-setting="number-real-index"> Number images with original page number if pages range is set</label></div>\
 				<div class="g2"><label><input type="checkbox" data-ehd-setting="ignore-torrent"> Never show notification if torrents are available</label></div>\
-				<div class="g2"><label><input type="checkbox" data-ehd-setting="status-in-title"> Show download progress in title if current window is not focused</label></div>\
+				<div class="g2"><label><select data-ehd-setting="status-in-title"><option value="never">Never</option><option value="blur">When current window is not focused</option><option value="always">Always</option></select> show download progress in title</label></div>\
 				<div class="g2">\
 					* Available templates: \
 					<span title="You can find GID and token at the address bar like this: exhentai.org/g/[GID]/[Token]/">{gid} Archive\'s GID</sapn> | \
@@ -13870,9 +13884,14 @@ function showSettings() {
 	document.body.appendChild(ehDownloadSettingPanel);
 	
 	for (var i in setting) {
-		var element = ehDownloadSettingPanel.querySelector('input[data-ehd-setting="' + i + '"]');
+		var element = ehDownloadSettingPanel.querySelector('input[data-ehd-setting="' + i + '"], select[data-ehd-setting="' + i + '"]');
 		if (!element) continue;
-		if (element.getAttribute('type') === 'checkbox') ((setting[i]) && (element.setAttribute('checked', 'checked')));
+		if (element.getAttribute('type') === 'checkbox' && setting[i]) element.setAttribute('checked', 'checked');
+        else if (element.tagName.toLowerCase() === 'select') {
+            element = element.querySelector('option[value="' + setting[i] + '"]');
+            if (!element) continue;
+            element.setAttribute('selected', 'selected');
+        }
 		else element.setAttribute('value', setting[i]);
 	}
 
@@ -13974,13 +13993,15 @@ ehDownloadStatus.addEventListener('click', function(event){
 });
 
 window.addEventListener('focus', function(){
-	if (!needTitleStatus) return;
-	document.title = pretitle;
-	needTitleStatus = false;
+	if (setting['status-in-title'] === 'blur') {
+		if (!needTitleStatus) return;
+		document.title = pretitle;
+		needTitleStatus = false;
+	}
 });
 
 window.addEventListener('blur', function(){
-	if (isDownloading && setting['status-in-title']) {
+	if (isDownloading && setting['status-in-title'] === 'blur') {
 		needTitleStatus = true;
 		document.title = '[EHD: ' + (downloadedCount < totalCount ? '↓ ' + downloadedCount + '/' + totalCount : totalCount === 0 ? '↓' : '√' ) + '] ' + pretitle;
 	}
