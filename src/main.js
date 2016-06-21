@@ -605,7 +605,7 @@ function updateProgress(nodeList, data) {
 // update ehDownloadStatus
 function updateTotalStatus(){
 	ehDownloadStatus.textContent = 'Total: ' + totalCount + ' | Downloading: ' + fetchCount + ' | Succeed: ' + downloadedCount + ' | Failed: ' + failedCount;
-	if (needTitleStatus) document.title = '[EHD: ' + (downloadedCount < totalCount ? '↓ ' + downloadedCount + '/' + totalCount : totalCount === 0 ? '↓' : '√' ) + '] ' + pretitle;
+	if (needTitleStatus) document.title = '[' + (downloadedCount < totalCount ? '↓ ' + downloadedCount + '/' + totalCount : totalCount === 0 ? '↓' : '√' ) + '] ' + pretitle;
 }
 
 // Updated on 1.19: Now the index argument is the page's number - 1 (original is page's number)
@@ -1796,7 +1796,7 @@ window.addEventListener('focus', function(){
 window.addEventListener('blur', function(){
 	if (isDownloading && setting['status-in-title'] === 'blur') {
 		needTitleStatus = true;
-		document.title = '[EHD: ' + (downloadedCount < totalCount ? '↓ ' + downloadedCount + '/' + totalCount : totalCount === 0 ? '↓' : '√' ) + '] ' + pretitle;
+		document.title = '[' + (downloadedCount < totalCount ? '↓ ' + downloadedCount + '/' + totalCount : totalCount === 0 ? '↓' : '√' ) + '] ' + pretitle;
 	}
 });
 
