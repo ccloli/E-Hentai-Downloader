@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.21.7
+// @version      1.21.9
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -12479,6 +12479,8 @@ var ehDownloadStyle = '\
 	.ehD-dialog.hidden, .ehD-dialog.hidden .ehD-status { margin-bottom: -311px; }\
 	.ehD-dialog .ehD-force-download-tips { position: fixed; right: 0; bottom: 288px; border: 1px solid #000000; width: 550px; padding: 5px; background: rgba(0, 0, 0, 0.75); color: #ffffff; cursor: pointer; opacity: 0; pointer-events: none; }\
 	.ehD-dialog:hover .ehD-force-download-tips { opacity: 1; }\
+	.ehD-dialog.hidden .ehD-force-download-tips { display: none; }\
+    .ehD-close-tips { position: fixed; left: 0; right: 0; bottom: 0; padding: 10px; border: 1px solid #000000; background: #34353b; color: #dddddd; width: 732px; max-width: 100%; max-height: 100%; overflow-x: hidden; overflow-y: auto; box-sizing: border-box; margin: auto; z-index: 1000; text-align: left; font-size: 14px; outline: 5px rgba(0, 0, 0, 0.25) solid; }\
 	';
 
 // overwrite settings
@@ -12840,7 +12842,7 @@ function generateZip(isFromFS, fs, isRetry, forced){
 									fileWriter.write(blob);
 									if ('close' in blob) blob.close(); // File Blob.close() API, not supported by all the browser now
 									blob = null;
-									pushDialog('Succeed!\nPlease close this tab and open a new tab to download.\nIf you still can\'t download it, try using <a href="https://chrome.google.com/webstore/detail/nhnjmpbdkieehidddbaeajffijockaea">HTML5 FileSystem Explorer</a> to save them.');
+									pushDialog('Succeed!\nPlease close this tab and open a new tab to download.\nIf you still can\'t download it, try using <a href="https://chrome.google.com/webstore/detail/nhnjmpbdkieehidddbaeajffijockaea" target="_blank">HTML5 FileSystem Explorer</a> to save them.');
 
 									files.forEach(function(elem){
 										zip.remove(elem);
@@ -12869,7 +12871,7 @@ function updateProgress(nodeList, data) {
 // update ehDownloadStatus
 function updateTotalStatus(){
 	ehDownloadStatus.textContent = 'Total: ' + totalCount + ' | Downloading: ' + fetchCount + ' | Succeed: ' + downloadedCount + ' | Failed: ' + failedCount;
-	if (needTitleStatus) document.title = '[EHD: ' + (downloadedCount < totalCount ? '↓ ' + downloadedCount + '/' + totalCount : totalCount === 0 ? '↓' : '√' ) + '] ' + pretitle;
+	if (needTitleStatus) document.title = '[' + (downloadedCount < totalCount ? '↓ ' + downloadedCount + '/' + totalCount : totalCount === 0 ? '↓' : '√' ) + '] ' + pretitle;
 }
 
 // Updated on 1.19: Now the index argument is the page's number - 1 (original is page's number)
@@ -13385,6 +13387,7 @@ function retryAllFailed(){
 	}
 
 	failedCount = 0;
+	fetchThread = 0;
 	requestDownload();
 }
 
@@ -13472,7 +13475,7 @@ function getAllPagesURL() {
 				else {
 					pushDialog('Failed!\nCan\'t get pages URL from response content.');
 					isDownloading = false;
-					alert('We can\'t get request content from response content. It\'s possible that E-Hentai changes source code format so that we can\'t find them, or your ISP modifies (or say hijacks) the page content. If it\'s sure that you can access to any pages of E-Hentai, including current page: ' + location.pathname + '?p=' + curPage + ' , please report a bug.');
+					//alert('We can\'t get request content from response content. It\'s possible that E-Hentai changes source code format so that we can\'t find them, or your ISP modifies (or say hijacks) the page content. If it\'s sure that you can access to any pages of E-Hentai, including current page: ' + location.pathname + '?p=' + curPage + ' , please report a bug.');
 				}
 				return;
 			}
@@ -13751,7 +13754,7 @@ function getPageData(index) {
 					class: 'ehD-pt-failed'
 				});
 				updateTotalStatus();
-				alert('We can\'t get request content from response content. It\'s possible that E-Hentai changes source code format so that we can\'t find them, or your ISP modifies (or say hijacks) the page content. If it\'s sure that you can access to any pages of E-Hentai, including current page: ' + fetchURL + ' , please report a bug.');
+				//alert('We can\'t get request content from response content. It\'s possible that E-Hentai changes source code format so that we can\'t find them, or your ISP modifies (or say hijacks) the page content. If it\'s sure that you can access to any pages of E-Hentai, including current page: ' + fetchURL + ' , please report a bug.');
 
 				checkFailed();
 			}
@@ -13865,7 +13868,7 @@ function showSettings() {
 				<div class="g2"' + (window.requestFileSystem ? '' : ' style="opacity: 0.5;" title="Only Chrome supports this feature"') + '><label><input type="checkbox" data-ehd-setting="store-in-fs"> Request File System to handle large Zip file +</label></div>\
 				<div class="g2"' + (window.requestFileSystem ? '' : ' style="opacity: 0.5;" title="Only Chrome supports this feature"') + '><label>Use File System if archive is larger than <input type="number" data-ehd-setting="fs-size" min="0" placeholder="200" style="width: 46px;"> MB (0 is always) +</label></div>\
 				<div class="g2"><label>Record and save gallery info as <select data-ehd-setting="save-info"><option value="file">File info.txt</option><option value="comment">Zip comment</option><option value="none">None</option></select></label></div>\
-				<div class="g2"><label><input type="checkbox" data-ehd-setting="image-limits-both"> I\'m in China and/or using proxy to visit g.e-hentai.org so that my image limits is incorrect</label></div>\
+				<div class="g2"><label><input type="checkbox" data-ehd-setting="image-limits-both"> I\'m in China and/or using proxy to visit g.e-hentai.org so my image limits on ExHentai is incorrect</label></div>\
 				<!--<div class="g2"><label><input type="checkbox" data-ehd-setting="auto-scale"> Auto scale Zip file at <input type="text" min="10" placeholder="250" style="width: 46px;" data-ehd-setting="scale-size"> MB if file is larger than <input type="text" min="10" placeholder="400" style="width: 46px;" data-ehd-setting="scale-reach"> MB (experiment) ***</label></div>-->\
 				<div class="g2">\
 					* This may reduce memory usage but some program might not support the Zip file. See <a href="http://stuk.github.io/jszip/documentation/api_jszip/generate_async.html" target="_blank" style="color: #ffffff;">JSZip Docs</a> for more info.\
@@ -14060,16 +14063,21 @@ window.addEventListener('focus', function(){
 window.addEventListener('blur', function(){
 	if (isDownloading && setting['status-in-title'] === 'blur') {
 		needTitleStatus = true;
-		document.title = '[EHD: ' + (downloadedCount < totalCount ? '↓ ' + downloadedCount + '/' + totalCount : totalCount === 0 ? '↓' : '√' ) + '] ' + pretitle;
+		document.title = '[' + (downloadedCount < totalCount ? '↓ ' + downloadedCount + '/' + totalCount : totalCount === 0 ? '↓' : '√' ) + '] ' + pretitle;
 	}
 });
 
 var forceDownloadTips = document.createElement('div');
 forceDownloadTips.className = 'ehD-force-download-tips';
 forceDownloadTips.innerHTML = 'If an error occur and script can\'t work, click <a href="javascript: getzip();" style="font-weight: bold; pointer-events: auto;" title="Force download won\'t stop current downloading task.">here</a> to force get your downloaded images.';
+forceDownloadTips.getElementsByTagName('a')[0].addEventListener('click', function(event){
+    // fixed permission denied on GreaseMonkey
+    event.preventDefault();
+    saveDownloaded(true);
+});
 
 unsafeWindow.getzip = window.getzip = function(){
- 	saveDownloaded(true);
+	saveDownloaded(true);
 }
 
 if (!setting['hide-image-limits']) {
@@ -14080,11 +14088,25 @@ if (!setting['hide-image-limits']) {
 window.addEventListener('storage', showImageLimits);
 
 window.onbeforeunload = unsafeWindow.onbeforeunload = function(){
-	if (isDownloading) return 'E-Hentai Downloader is still running, please don\'t close this tab before it finished downloading.';
-	for (var i = 0; i < fetchThread.length; i++) {
-		if (typeof fetchThread[i] !== 'undefined' && 'abort' in fetchThread[i]) fetchThread[i].abort();
+    function clearRubbish() {
+        for (var i = 0; i < fetchThread.length; i++) {
+            if (typeof fetchThread[i] !== 'undefined' && 'abort' in fetchThread[i]) fetchThread[i].abort();
+        }
+        ehDownloadFS.removeFile(unsafeWindow.gid + '.zip');
+    }
+	if (isDownloading) {
+		var closeTips = document.createElement('div');
+		closeTips.className = 'ehD-close-tips';
+		closeTips.innerHTML = 'E-Hentai Downloader is still running, please don\'t close this tab before it finished downloading.<br><br>If any bug occured and the script can\'t work correctly, you can move your mouse pointer onto the progress box, and force to save downloaded images before you leave.';
+		document.body.appendChild(closeTips);
+
+        setTimeout(function(){
+            document.body.removeChild(closeTips);
+        }, 10);
+
+		return 'E-Hentai Downloader is still running, please don\'t close this tab before it finished downloading.';
 	}
-	ehDownloadFS.removeFile(unsafeWindow.gid + '.zip');
+    clearRubbish();
 };
 
 // Forced request File System to check if have temp archive
