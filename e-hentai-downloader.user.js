@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.21.10
+// @version      1.21.11
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -12918,7 +12918,7 @@ function saveDownloaded(forced){
 }
 
 function checkFailed() {
-	if (downloadedCount + failedCount < totalCount) { // download not finished, some files are not being called to download
+	if (isDownloading && downloadedCount + failedCount < totalCount) { // download not finished, some files are not being called to download
 		requestDownload();
 	}
 	else if (failedCount > 0) { // all files are called to download and some files can't be downloaded
@@ -13105,6 +13105,7 @@ function fetchOriginalImage(index, nodeList) {
 			var response = res.response;
 			var byteLength = response.byteLength;
 			var responseHeaders = res.responseHeaders;
+			var mime = responseHeaders.indexOf('Content-Type:') >= 0 ? responseHeaders.split('Content-Type:')[1].split('\n')[0].trim().split('/') : '';
 
 			if (!response) {
 				console.log('[EHD] #' + (index + 1) + ': Empty Response (See: https://github.com/ccloli/E-Hentai-Downloader/issues/16 )');
@@ -13157,11 +13158,17 @@ function fetchOriginalImage(index, nodeList) {
 				}
 				return failedFetching(index, nodeList, true);
 			}
-			else if (byteLength === 141) { // Image Viewing Limits String Byte Size
-				for (var i = 0; i < fetchThread.length; i++) {
+			else if (
+				byteLength === 142 ||   // Image Viewing Limits String Byte Size (exhentai)
+				byteLength === 144 ||   // Image Viewing Limits String Byte Size (g.e-hentai)
+				byteLength === 28658 || // '509 Bandwidth Exceeded' Image Byte Size
+				(mime[0] === 'text' && (new TextDecoder()).decode(new DataView(response)).indexOf('You have exceeded your image viewing limits') >= 0) // directly detect response content in case byteLength will be modified
+			) {
+				// thought exceed the limits, downloading image is still accessable
+				/*for (var i = 0; i < fetchThread.length; i++) {
 					if (typeof fetchThread[i] !== 'undefined' && 'abort' in fetchThread[i]) fetchThread[i].abort();
-				}
-				console.log('[EHD] #' + (index + 1) + ': Exceed Image Viewing Limits');
+				}*/
+				console.log('[EHD] #' + (index + 1) + ': Exceed Image Viewing Limits / 509 Bandwidth Exceeded');
 				console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
 
 				updateProgress(nodeList, {
@@ -13176,52 +13183,10 @@ function fetchOriginalImage(index, nodeList) {
 					delete res[i];
 				}
 
+				if (!isDownloading) return;
+
 				pushDialog('\nYou have exceeded your image viewing limits.');
-
-				if (confirm('You have exceeded your image viewing limits. You can reset these limits at home page.\n\nYou can try reseting your image viewing limits to continue by paying your GPs. Reset now?') && (unsafeWindow.apiuid !== -1 ? 1 : (alert('Sorry, you are not log in!'), 0))) {
-					window.open('http://g.e-hentai.org/home.php');
-					pushDialog('Please reset your viewing limits on opened window. If not shown, try this <a href="http://g.e-hentai.org/home.php" target="_blank">link</a>.\nAfter reseting your viewing limits, click the button below to continue.\n');
-					var continueButton = document.createElement('button');
-					continueButton.innerHTML = 'Continue Downloading';
-					continueButton.addEventListener('click', function(){
-						fetchCount = 0;
-						ehDownloadDialog.removeChild(continueButton);
-
-						requestDownload();
-					});
-					ehDownloadDialog.appendChild(continueButton);
-					return;
-				}
-				else if (confirm('You have exceeded your image viewing limits. Would you like to save downloaded images?')) {
-					saveDownloaded();
-				}
-				else {
-					insertCloseButton();
-				}
-				zip.remove(dirName);
 				isDownloading = false;
-				return;
-			}
-			else if (byteLength === 28658) { // '509 Bandwidth Exceeded' Image Byte Size
-				for (var i = 0; i < fetchThread.length; i++) {
-					if (typeof fetchThread[i] !== 'undefined' && 'abort' in fetchThread[i]) fetchThread[i].abort();
-				}
-				console.log('[EHD] #' + (index + 1) + ': 509 Bandwidth Exceeded');
-				console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
-
-				updateProgress(nodeList, {
-					status: 'Failed! (Error 509)',
-					progress: '0',
-					progressText: '',
-					class: 'ehD-pt-failed'
-				});
-				updateTotalStatus();
-
-				for (var i in res) {
-					delete res[i];
-				}
-
-				pushDialog('\nYou have exceeded your bandwidth limits.');
 
 				if (confirm('You have temporarily reached the limit for how many images you can browse. You can\n- Sign up/in E-Hentai account at E-Hentai Forums to get double daily quota if you are not sign in.\n- Run the Hentai@Home to support E-Hentai and get more points to increase your limit.\n- Check back in a few hours, and you will be able to download more.\n\nYou can try reseting your image viewing limits to continue by paying your GPs. Reset now?') && (unsafeWindow.apiuid !== -1 ? 1 : (alert('Sorry, you are not log in!'), 0))) {
 					window.open('http://g.e-hentai.org/home.php');
@@ -13232,6 +13197,7 @@ function fetchOriginalImage(index, nodeList) {
 						fetchCount = 0;
 						ehDownloadDialog.removeChild(continueButton);
 
+						initProgressTable();
 						requestDownload();
 					});
 					ehDownloadDialog.appendChild(continueButton);
@@ -13244,11 +13210,10 @@ function fetchOriginalImage(index, nodeList) {
 					insertCloseButton();
 				}
 				zip.remove(dirName);
-				isDownloading = false;
 				return;
 			}
 			// res.status should be detected at here, because we should know are we reached image limits at first
-			if (res.status !== 200) {
+			else if (res.status !== 200) {
 				console.log('[EHD] #' + (index + 1) + ': Wrong Response Status');
 				console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
 
@@ -13266,7 +13231,7 @@ function fetchOriginalImage(index, nodeList) {
 			}
 			// GM_xhr doesn't support xhr.getResponseHeader() function
 			//if (res.getResponseHeader('Content-Type').split('/')[0] != 'image') {
-			else if (res.responseHeaders.indexOf('Content-Type:') < 0 || res.responseHeaders.split('Content-Type:')[1].split('\n')[0].split('/')[0].trim() !== 'image') {
+			else if (mime[0].trim() !== 'image') {
 				console.log('[EHD] #' + (index + 1) + ': Wrong Content-Type');
 				console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
 
@@ -13387,7 +13352,7 @@ function retryAllFailed(){
 	}
 
 	failedCount = 0;
-	fetchThread = 0;
+	fetchCount = 0;
 	requestDownload();
 }
 
@@ -13955,7 +13920,7 @@ function getImageLimits(host, forced){
 		onload: function(res) {
 			if (!res.responseText) return;
 			var data = res.responseText.match(ehDownloadRegex.imageLimits);
-			if (data.length === 3) {
+			if (data && data.length === 3) {
 				preData.cur = data[1];
 				preData.total = data[2];
 				preData.timestamp = new Date().getTime();
