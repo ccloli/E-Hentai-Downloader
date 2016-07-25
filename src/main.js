@@ -935,11 +935,16 @@ function fetchOriginalImage(index, nodeList) {
 				for (var i in res) {
 					delete res[i];
 				}
+				
+				failedCount++;
+				fetchCount--;
+				updateTotalStatus();
 
 				if (isPausing) return;
 
 				pushDialog('\nYou have exceeded your image viewing limits.');
 				isPausing = true;
+				updateTotalStatus();
 
 				if (ehDownloadDialog.contains(ehDownloadPauseBtn)) {
 					ehDownloadDialog.removeChild(ehDownloadPauseBtn);
