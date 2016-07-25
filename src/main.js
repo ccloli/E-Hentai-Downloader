@@ -840,6 +840,7 @@ function fetchOriginalImage(index, nodeList) {
 			var response = res.response;
 			var byteLength = response.byteLength;
 			var responseHeaders = res.responseHeaders;
+			var mime = responseHeaders.indexOf('Content-Type:') >= 0 ? responseHeaders.split('Content-Type:')[1].split('\n')[0].trim().split('/') : '';
 
 			if (!response) {
 				console.log('[EHD] #' + (index + 1) + ': Empty Response (See: https://github.com/ccloli/E-Hentai-Downloader/issues/16 )');
@@ -893,10 +894,11 @@ function fetchOriginalImage(index, nodeList) {
 				return failedFetching(index, nodeList, true);
 			}
 			else if (
-				byteLength === 141 || // Image Viewing Limits String Byte Size
-				byteLength === 137 || // Image Viewing Limits String Byte Size
-				byteLength === 28658  // '509 Bandwidth Exceeded' Image Byte Size
-			) { 
+				byteLength === 142 ||   // Image Viewing Limits String Byte Size (exhentai)
+				byteLength === 144 ||   // Image Viewing Limits String Byte Size (g.e-hentai)
+				byteLength === 28658 || // '509 Bandwidth Exceeded' Image Byte Size
+				(mime[0] === 'text' && (new TextDecoder()).decode(new DataView(response)).indexOf('You have exceeded your image viewing limits') >= 0) // directly detect response content in case byteLength will be modified
+			) {
 				// thought exceed the limits, downloading image is still accessable
 				/*for (var i = 0; i < fetchThread.length; i++) {
 					if (typeof fetchThread[i] !== 'undefined' && 'abort' in fetchThread[i]) fetchThread[i].abort();
@@ -946,7 +948,7 @@ function fetchOriginalImage(index, nodeList) {
 				return;
 			}
 			// res.status should be detected at here, because we should know are we reached image limits at first
-			if (res.status !== 200) {
+			else if (res.status !== 200) {
 				console.log('[EHD] #' + (index + 1) + ': Wrong Response Status');
 				console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
 
@@ -964,7 +966,7 @@ function fetchOriginalImage(index, nodeList) {
 			}
 			// GM_xhr doesn't support xhr.getResponseHeader() function
 			//if (res.getResponseHeader('Content-Type').split('/')[0] != 'image') {
-			else if (res.responseHeaders.indexOf('Content-Type:') < 0 || res.responseHeaders.split('Content-Type:')[1].split('\n')[0].split('/')[0].trim() !== 'image') {
+			else if (mime[0].trim() !== 'image') {
 				console.log('[EHD] #' + (index + 1) + ': Wrong Content-Type');
 				console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
 
