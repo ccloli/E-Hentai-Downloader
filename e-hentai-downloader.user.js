@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.21.11
+// @version      1.22
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -13201,10 +13201,15 @@ function fetchOriginalImage(index, nodeList) {
 					delete res[i];
 				}
 
+				failedCount++;
+				fetchCount--;
+				updateTotalStatus();
+
 				if (isPausing) return;
 
 				pushDialog('\nYou have exceeded your image viewing limits.');
 				isPausing = true;
+				updateTotalStatus();
 
 				if (ehDownloadDialog.contains(ehDownloadPauseBtn)) {
 					ehDownloadDialog.removeChild(ehDownloadPauseBtn);
@@ -13867,6 +13872,7 @@ function showSettings() {
 				<div class="g2"' + (window.requestFileSystem ? '' : ' style="opacity: 0.5;" title="Only Chrome supports this feature"') + '><label><input type="checkbox" data-ehd-setting="store-in-fs"> Request File System to handle large Zip file +</label></div>\
 				<div class="g2"' + (window.requestFileSystem ? '' : ' style="opacity: 0.5;" title="Only Chrome supports this feature"') + '><label>Use File System if archive is larger than <input type="number" data-ehd-setting="fs-size" min="0" placeholder="200" style="width: 46px;"> MB (0 is always) +</label></div>\
 				<div class="g2"><label>Record and save gallery info as <select data-ehd-setting="save-info"><option value="file">File info.txt</option><option value="comment">Zip comment</option><option value="none">None</option></select></label></div>\
+				<div class="g2"><label><input type="checkbox" data-ehd-setting="force-pause"> Force drop downloading images data when pausing download</label></div>\
 				<div class="g2"><label><input type="checkbox" data-ehd-setting="image-limits-both"> I\'m in China and/or using proxy to visit g.e-hentai.org so my image limits on ExHentai is incorrect</label></div>\
 				<!--<div class="g2"><label><input type="checkbox" data-ehd-setting="auto-scale"> Auto scale Zip file at <input type="text" min="10" placeholder="250" style="width: 46px;" data-ehd-setting="scale-size"> MB if file is larger than <input type="text" min="10" placeholder="400" style="width: 46px;" data-ehd-setting="scale-reach"> MB (experiment) ***</label></div>-->\
 				<div class="g2">\
@@ -14053,31 +14059,32 @@ ehDownloadStatus.addEventListener('click', function(event){
 
 var ehDownloadPauseBtn = document.createElement('button');
 ehDownloadPauseBtn.className = 'ehD-pause';
-ehDownloadPauseBtn.textContent = 'Pause (Downloading images will keep downloading)';
+ehDownloadPauseBtn.textContent = setting['force-pause'] ? 'Pause (Downloading images will be aborted)' : 'Pause (Downloading images will keep downloading)';
 ehDownloadPauseBtn.addEventListener('click', function(event){
 	if (!isPausing) {
 		isPausing = true;
 		ehDownloadPauseBtn.textContent = 'Resume';
-		// keep downloading image downloading instead of pausing
-		/*fetchCount = 0;
+		
+		if (setting['force-pause']) {
+			// waiting Tampermonkey for transfering string to ArrayBuffer, it may stuck for a second 
+			setTimeout(function(){
+				for (var i = 0; i < fetchThread.length; i++) {
+					if (typeof fetchThread[i] !== 'undefined' && 'abort' in fetchThread[i]) fetchThread[i].abort();
 
-		// waiting Tampermonkey for transfering string to ArrayBuffer, it may stuck for a second 
-		setTimeout(function(){
-			for (var i = 0; i < fetchThread.length; i++) {
-				if ('abort' in fetchThread[i]) fetchThread[i].abort();
-
-				if (imageData[i] === 'Fetching') {
-					var elem = progressTable.querySelector('tr[data-index="' + i + '"] .ehD-pt-status-text');
-					if (!elem) continue;
-					elem.textContent = 'Force Paused';
-					imageData[i] = null;
+					if (imageData[i] === 'Fetching') {
+						var elem = progressTable.querySelector('tr[data-index="' + i + '"] .ehD-pt-status-text');
+						if (!elem) continue;
+						elem.textContent = 'Force Paused';
+						imageData[i] = null;
+						fetchCount = 0; // fixed for async
+					}
 				}
-			}
-		}, 0);*/
+			}, 0);
+		}
 	}
 	else {
 		isPausing = false;
-		ehDownloadPauseBtn.textContent = 'Pause (Downloading images will keep downloading)';
+		ehDownloadPauseBtn.textContent = setting['force-pause'] ? 'Pause (Downloading images will be aborted)' : 'Pause (Downloading images will keep downloading)';
 
 		requestDownload();
 	}
