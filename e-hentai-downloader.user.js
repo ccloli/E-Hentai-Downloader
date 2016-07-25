@@ -12283,6 +12283,7 @@ var isREH = false;
 var needNumberImages = setting['number-images'];
 var pagesRange = [];
 var isDownloading = false;
+var isPausing = false;
 var pageURLsList = [];
 var getAllPagesURLFin = false;
 var pretitle = document.title;
@@ -12646,6 +12647,11 @@ function pushDialog(str) {
 		ehDownloadDialog.appendChild(tn);
 	}
 	else ehDownloadDialog.appendChild(str);
+
+	if (getAllPagesURLFin && isDownloading && ehDownloadDialog.contains(ehDownloadPauseBtn)) {
+		ehDownloadDialog.appendChild(ehDownloadPauseBtn);
+	}
+
 	ehDownloadDialog.scrollTop = ehDownloadDialog.scrollHeight;
 }
 
@@ -12699,7 +12705,7 @@ function storeRes(res, index) {
 	//console.log('[EHD-Debug]', index, 'Res data was stored in imageData!', new Date().getTime());
 
 	updateTotalStatus();
-	checkFailed();
+	if (!isPausing) checkFailed();
 	
 	for (var i in res) {
 		delete res[i];
@@ -12707,6 +12713,11 @@ function storeRes(res, index) {
 }
 
 function generateZip(isFromFS, fs, isRetry, forced){
+	// remove pause button
+	if (ehDownloadDialog.contains(ehDownloadPauseBtn)) {
+		ehDownloadDialog.removeChild(ehDownloadPauseBtn);
+	}
+
 	if (!isFromFS && !isRetry) {
 		imageList.forEach(function(elem, index){
 			infoStr += '\n\nPage ' + elem['realIndex'] + ': ' + elem['pageURL'] + '\nImage ' + elem['realIndex'] + ': ' + elem['imageName'] /*+ '\nImage URL: ' + elem['imageURL']*/; // Image URL may useless, see https://github.com/ccloli/E-Hentai-Downloader/issues/6
@@ -12871,7 +12882,7 @@ function updateProgress(nodeList, data) {
 // update ehDownloadStatus
 function updateTotalStatus(){
 	ehDownloadStatus.textContent = 'Total: ' + totalCount + ' | Downloading: ' + fetchCount + ' | Succeed: ' + downloadedCount + ' | Failed: ' + failedCount;
-	if (needTitleStatus) document.title = '[' + (downloadedCount < totalCount ? '↓ ' + downloadedCount + '/' + totalCount : totalCount === 0 ? '↓' : '√' ) + '] ' + pretitle;
+	if (needTitleStatus) document.title = '[' + (isPausing ? '❙❙' : downloadedCount < totalCount ? '↓ ' + downloadedCount + '/' + totalCount : totalCount === 0 ? '↓' : '√' ) + '] ' + pretitle;
 }
 
 // Updated on 1.19: Now the index argument is the page's number - 1 (original is page's number)
@@ -12918,7 +12929,7 @@ function saveDownloaded(forced){
 }
 
 function checkFailed() {
-	if (isDownloading && downloadedCount + failedCount < totalCount) { // download not finished, some files are not being called to download
+	if (downloadedCount + failedCount < totalCount) { // download not finished, some files are not being called to download
 		requestDownload();
 	}
 	else if (failedCount > 0) { // all files are called to download and some files can't be downloaded
@@ -12960,21 +12971,26 @@ function fetchOriginalImage(index, nodeList) {
 	// https://github.com/greasemonkey/greasemonkey/issues/1834
 	//console.log(imageList[index]);
 	if (retryCount[index] === undefined) retryCount[index] = 0;
+	// if (isPausing) return;
 
 	if (nodeList === undefined) {
-		var node = document.createElement('tr');
-		node.className = 'ehD-pt-item';
-		node.innerHTML = '\
-			<td class="ehD-pt-name">#' + imageList[index]['realIndex'] + ': ' + imageList[index]['imageName'] + '</td>\
-			<td class="ehD-pt-progress-outer">\
-				<progress class="ehD-pt-progress"></progress>\
-				<span class="ehD-pt-progress-text"></span>\
-			</td>\
-			<td class="ehD-pt-status">\
-				<span class="ehD-pt-status-text">Pending...</span>\
-				<span class="ehD-pt-abort">Force Abort</span>\
-			</td>';
-		progressTable.appendChild(node);
+		var node = progressTable.querySelector('tr[data-index="' + index + '"]');
+		if (!node) {
+			node = document.createElement('tr');
+			node.className = 'ehD-pt-item';
+			node.setAttribute('data-index', index);
+			node.innerHTML = '\
+				<td class="ehD-pt-name">#' + imageList[index]['realIndex'] + ': ' + imageList[index]['imageName'] + '</td>\
+				<td class="ehD-pt-progress-outer">\
+					<progress class="ehD-pt-progress"></progress>\
+					<span class="ehD-pt-progress-text"></span>\
+				</td>\
+				<td class="ehD-pt-status">\
+					<span class="ehD-pt-status-text">Pending...</span>\
+					<span class="ehD-pt-abort">Force Abort</span>\
+				</td>';
+			progressTable.appendChild(node);
+		}
 
 		nodeList = {
 			current: node,
@@ -12997,6 +13013,7 @@ function fetchOriginalImage(index, nodeList) {
 
 	var zeroSpeedHandler = function(res){
 		if (!isDownloading || imageData[index] instanceof ArrayBuffer) return; // Temporarily fixes #31
+        // if (isPausing) return;
 
 		updateProgress(nodeList, { progressText: '0 KB/s' });
 
@@ -13007,6 +13024,7 @@ function fetchOriginalImage(index, nodeList) {
 
 	var expiredSpeedHandler = function(res){
 		if (!isDownloading || imageData[index] instanceof ArrayBuffer) return; // Temporarily fixes #31
+        // if (isPausing) return;
 
 		if (typeof fetchThread[index] !== 'undefined' && 'abort' in fetchThread[index]) fetchThread[index].abort();
 
@@ -13183,10 +13201,14 @@ function fetchOriginalImage(index, nodeList) {
 					delete res[i];
 				}
 
-				if (!isDownloading) return;
+				if (isPausing) return;
 
 				pushDialog('\nYou have exceeded your image viewing limits.');
-				isDownloading = false;
+				isPausing = true;
+
+				if (ehDownloadDialog.contains(ehDownloadPauseBtn)) {
+					ehDownloadDialog.removeChild(ehDownloadPauseBtn);
+				}
 
 				if (confirm('You have temporarily reached the limit for how many images you can browse. You can\n- Sign up/in E-Hentai account at E-Hentai Forums to get double daily quota if you are not sign in.\n- Run the Hentai@Home to support E-Hentai and get more points to increase your limit.\n- Check back in a few hours, and you will be able to download more.\n\nYou can try reseting your image viewing limits to continue by paying your GPs. Reset now?') && (unsafeWindow.apiuid !== -1 ? 1 : (alert('Sorry, you are not log in!'), 0))) {
 					window.open('http://g.e-hentai.org/home.php');
@@ -13196,7 +13218,9 @@ function fetchOriginalImage(index, nodeList) {
 					continueButton.addEventListener('click', function(){
 						fetchCount = 0;
 						ehDownloadDialog.removeChild(continueButton);
+						ehDownloadDialog.appendChild(ehDownloadPauseBtn);
 
+						isPausing = false;
 						initProgressTable();
 						requestDownload();
 					});
@@ -13602,9 +13626,11 @@ function initProgressTable(){
 	ehDownloadDialog.style.display = 'block';
 	ehDownloadDialog.appendChild(progressTable);
 	ehDownloadDialog.appendChild(forceDownloadTips);
+	ehDownloadDialog.appendChild(ehDownloadPauseBtn);
 }
 
 function requestDownload(){
+	// if (isPausing) return;
 	var i = fetchCount, j = 0;
 	for (/*var i = fetchCount*/; i < (setting['thread-count'] !== undefined ? setting['thread-count'] : 5); i++) {
 		for (/*var j = 0*/; j < totalCount; j++) {
@@ -13621,22 +13647,28 @@ function requestDownload(){
 }
 
 function getPageData(index) {
+	// if (isPausing) return;
+
 	if (pagesRange.length) var realIndex = pagesRange[index];
 	else var realIndex = index + 1;
 
-	var node = document.createElement('tr');
-	node.className = 'ehD-pt-item';
-	node.innerHTML = '\
-		<td class="ehD-pt-name">#' + realIndex + '</td>\
-		<td class="ehD-pt-progress-outer">\
-			<progress class="ehD-pt-progress"></progress>\
-			<span class="ehD-pt-progress-text"></span>\
-		</td>\
-		<td class="ehD-pt-status">\
-			<span class="ehD-pt-status-text">Pending...</span>\
-			<span class="ehD-pt-abort">Force Abort</span>\
-		</td>';
-	progressTable.appendChild(node);
+	var node = progressTable.querySelector('tr[data-index="' + index + '"]');
+	if (!node) {
+		node = document.createElement('tr');
+		node.className = 'ehD-pt-item';
+		node.setAttribute('data-index', index);
+		node.innerHTML = '\
+			<td class="ehD-pt-name">#' + realIndex + '</td>\
+			<td class="ehD-pt-progress-outer">\
+				<progress class="ehD-pt-progress"></progress>\
+				<span class="ehD-pt-progress-text"></span>\
+			</td>\
+			<td class="ehD-pt-status">\
+				<span class="ehD-pt-status-text">Pending...</span>\
+				<span class="ehD-pt-abort">Force Abort</span>\
+			</td>';
+		progressTable.appendChild(node);
+	}
 	ehDownloadDialog.scrollTop = ehDownloadDialog.scrollHeight;
 
 	var nodeList = {
@@ -13651,7 +13683,9 @@ function getPageData(index) {
 
 	var retryCount = 0;
 	var fetchURL = imageList[index] ? (imageList[index]['pageURL'] + ((!setting['never-send-nl'] && imageList[index]['nextNL']) ? (imageList[index]['pageURL'].indexOf('?') >= 0 ? '&' : '?') + 'nl=' + imageList[index]['nextNL'] : '')).replaceHTMLEntites() : pageURLsList[realIndex - 1];
-	var xhr = new XMLHttpRequest();
+
+	// assign to fetchThread, so that we can abort them and all GM_xhr by one command fetchThread[i].abort()
+	var xhr = fetchThread[index] = new XMLHttpRequest();
 	xhr.onload = function() {
 		if (xhr.status !== 200 || !xhr.responseText) {
 			if (retryCount < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
@@ -13785,7 +13819,6 @@ function getPageData(index) {
 			checkFailed();
 		}
 	};
-
 	
 	xhr.open('GET', fetchURL);
 	xhr.timeout = 30000;
@@ -14018,6 +14051,38 @@ ehDownloadStatus.addEventListener('click', function(event){
 	ehDownloadDialog.classList.toggle('hidden');
 });
 
+var ehDownloadPauseBtn = document.createElement('button');
+ehDownloadPauseBtn.className = 'ehD-pause';
+ehDownloadPauseBtn.textContent = 'Pause (Downloading images will keep downloading)';
+ehDownloadPauseBtn.addEventListener('click', function(event){
+	if (!isPausing) {
+		isPausing = true;
+		ehDownloadPauseBtn.textContent = 'Resume';
+		// keep downloading image downloading instead of pausing
+		/*fetchCount = 0;
+
+		// waiting Tampermonkey for transfering string to ArrayBuffer, it may stuck for a second 
+		setTimeout(function(){
+			for (var i = 0; i < fetchThread.length; i++) {
+				if ('abort' in fetchThread[i]) fetchThread[i].abort();
+
+				if (imageData[i] === 'Fetching') {
+					var elem = progressTable.querySelector('tr[data-index="' + i + '"] .ehD-pt-status-text');
+					if (!elem) continue;
+					elem.textContent = 'Force Paused';
+					imageData[i] = null;
+				}
+			}
+		}, 0);*/
+	}
+	else {
+		isPausing = false;
+		ehDownloadPauseBtn.textContent = 'Pause (Downloading images will keep downloading)';
+
+		requestDownload();
+	}
+});
+
 window.addEventListener('focus', function(){
 	if (setting['status-in-title'] === 'blur') {
 		if (!needTitleStatus) return;
@@ -14029,7 +14094,7 @@ window.addEventListener('focus', function(){
 window.addEventListener('blur', function(){
 	if (isDownloading && setting['status-in-title'] === 'blur') {
 		needTitleStatus = true;
-		document.title = '[' + (downloadedCount < totalCount ? '↓ ' + downloadedCount + '/' + totalCount : totalCount === 0 ? '↓' : '√' ) + '] ' + pretitle;
+		document.title = '[' + (isPausing ? '❙❙' : downloadedCount < totalCount ? '↓ ' + downloadedCount + '/' + totalCount : totalCount === 0 ? '↓' : '√' ) + '] ' + pretitle;
 	}
 });
 
