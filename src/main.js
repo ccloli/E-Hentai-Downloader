@@ -1122,7 +1122,7 @@ function retryAllFailed(){
 	}
 
 	failedCount = 0;
-	fetchThread = 0;
+	fetchCount = 0;
 	requestDownload();
 }
 
@@ -1690,7 +1690,7 @@ function getImageLimits(host, forced){
 		onload: function(res) {
 			if (!res.responseText) return;
 			var data = res.responseText.match(ehDownloadRegex.imageLimits);
-			if (data.length === 3) {
+			if (data && data.length === 3) {
 				preData.cur = data[1];
 				preData.total = data[2];
 				preData.timestamp = new Date().getTime();
