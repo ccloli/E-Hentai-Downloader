@@ -18,6 +18,7 @@ var isREH = false;
 var needNumberImages = setting['number-images'];
 var pagesRange = [];
 var isDownloading = false;
+var isPausing = false;
 var pageURLsList = [];
 var getAllPagesURLFin = false;
 var pretitle = document.title;
@@ -434,7 +435,7 @@ function storeRes(res, index) {
 	//console.log('[EHD-Debug]', index, 'Res data was stored in imageData!', new Date().getTime());
 
 	updateTotalStatus();
-	checkFailed();
+	if (!isPausing) checkFailed();
 	
 	for (var i in res) {
 		delete res[i];
@@ -653,7 +654,7 @@ function saveDownloaded(forced){
 }
 
 function checkFailed() {
-	if (isDownloading && downloadedCount + failedCount < totalCount) { // download not finished, some files are not being called to download
+	if (downloadedCount + failedCount < totalCount) { // download not finished, some files are not being called to download
 		requestDownload();
 	}
 	else if (failedCount > 0) { // all files are called to download and some files can't be downloaded
@@ -918,10 +919,10 @@ function fetchOriginalImage(index, nodeList) {
 					delete res[i];
 				}
 
-				if (!isDownloading) return;
+				if (isPausing) return;
 
 				pushDialog('\nYou have exceeded your image viewing limits.');
-				isDownloading = false;
+				isPausing = true;
 
 				if (confirm('You have temporarily reached the limit for how many images you can browse. You can\n- Sign up/in E-Hentai account at E-Hentai Forums to get double daily quota if you are not sign in.\n- Run the Hentai@Home to support E-Hentai and get more points to increase your limit.\n- Check back in a few hours, and you will be able to download more.\n\nYou can try reseting your image viewing limits to continue by paying your GPs. Reset now?') && (unsafeWindow.apiuid !== -1 ? 1 : (alert('Sorry, you are not log in!'), 0))) {
 					window.open('http://g.e-hentai.org/home.php');
@@ -932,6 +933,7 @@ function fetchOriginalImage(index, nodeList) {
 						fetchCount = 0;
 						ehDownloadDialog.removeChild(continueButton);
 
+						isPausing = false;
 						initProgressTable();
 						requestDownload();
 					});
