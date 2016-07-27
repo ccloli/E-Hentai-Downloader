@@ -1,15 +1,15 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.22
+// @version      1.22.1
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
-// @match        http://exhentai.org/g/*
-// @match        http://g.e-hentai.org/g/*
-// @match        http://r.e-hentai.org/g/*
 // @include      http://exhentai.org/g/*
 // @include      http://g.e-hentai.org/g/*
 // @include      http://r.e-hentai.org/g/*
+// @include      https://exhentai.org/g/*
+// @include      https://g.e-hentai.org/g/*
+// @include      https://r.e-hentai.org/g/*
 // @namespace    http://ext.ccloli.com
 // @updateURL    https://github.com/ccloli/E-Hentai-Downloader/raw/master/e-hentai-downloader.meta.js
 // @downloadURL  https://github.com/ccloli/E-Hentai-Downloader/raw/master/e-hentai-downloader.user.js
@@ -13207,7 +13207,7 @@ function fetchOriginalImage(index, nodeList) {
 
 				if (isPausing) return;
 
-				pushDialog('\nYou have exceeded your image viewing limits.');
+				pushDialog('\nYou have exceeded your image viewing limits.\n');
 				isPausing = true;
 				updateTotalStatus();
 
@@ -13215,31 +13215,54 @@ function fetchOriginalImage(index, nodeList) {
 					ehDownloadDialog.removeChild(ehDownloadPauseBtn);
 				}
 
-				if (confirm('You have temporarily reached the limit for how many images you can browse. You can\n- Sign up/in E-Hentai account at E-Hentai Forums to get double daily quota if you are not sign in.\n- Run the Hentai@Home to support E-Hentai and get more points to increase your limit.\n- Check back in a few hours, and you will be able to download more.\n\nYou can try reseting your image viewing limits to continue by paying your GPs. Reset now?') && (unsafeWindow.apiuid !== -1 ? 1 : (alert('Sorry, you are not log in!'), 0))) {
+				if (confirm('You have temporarily reached the limit for how many images you can browse.\n\n\
+					- If you are not sign in, sign up/in E-Hentai account at E-Hentai Forums to get double daily quota.\n\
+					- You can run the Hentai@Home to support E-Hentai and get some points which you can pay to increase your limit.\n\
+					- Check back in a few hours, and you will be able to download more (reduce 3 points per minute by default).\n\
+					- You can reset your image viewing limits to continue by paying your GPs or credits.\n\n\
+					If you want to reset your limits by paying your GPs or credits right now, choose YES, and you can reset it on opened window. Or if you want to wait a few minutes until you have enough free limits, then continue, choose NO.')) {
 					window.open('http://g.e-hentai.org/home.php');
-					pushDialog('Please reset your viewing limits on opened window. If not shown, try this <a href="http://g.e-hentai.org/home.php" target="_blank">link</a>.\nAfter reseting your viewing limits, click the button below to continue.\n');
-					var continueButton = document.createElement('button');
-					continueButton.innerHTML = 'Continue Downloading';
-					continueButton.addEventListener('click', function(){
-						fetchCount = 0;
-						ehDownloadDialog.removeChild(continueButton);
-						ehDownloadDialog.appendChild(ehDownloadPauseBtn);
+				}
 
-						isPausing = false;
-						initProgressTable();
-						requestDownload();
-					});
-					ehDownloadDialog.appendChild(continueButton);
-					return;
-				}
-				else if (confirm('You have exceeded your image viewing limits. Would you like to save downloaded images?')) {
-					saveDownloaded();
-				}
-				else {
-					insertCloseButton();
-				}
-				zip.remove(dirName);
-				return;
+				var resetButton = document.createElement('a');
+				resetButton.innerHTML = '<button>Reset Limits</button>';
+				resetButton.setAttribute('href', 'http://g.e-hentai.org/home.php');
+				resetButton.setAttribute('target', '_blank');
+				ehDownloadDialog.appendChild(resetButton);
+
+				var continueButton = document.createElement('button');
+				continueButton.innerHTML = 'Continue Download';
+				continueButton.addEventListener('click', function(){
+					fetchCount = 0;
+					ehDownloadDialog.removeChild(resetButton);
+					ehDownloadDialog.removeChild(continueButton);
+					ehDownloadDialog.removeChild(cancelButton);
+					ehDownloadDialog.appendChild(ehDownloadPauseBtn);
+
+					isPausing = false;
+					initProgressTable();
+					requestDownload();
+				});
+				ehDownloadDialog.appendChild(continueButton);
+
+				var cancelButton = document.createElement('button');
+				cancelButton.innerHTML = 'Cancel Download';
+				cancelButton.addEventListener('click', function(){
+					ehDownloadDialog.removeChild(resetButton);
+					ehDownloadDialog.removeChild(continueButton);
+					ehDownloadDialog.removeChild(cancelButton);
+
+					if (confirm('You have exceeded your image viewing limits. Would you like to save downloaded images?')) {
+						saveDownloaded();
+					}
+					else {
+						insertCloseButton();
+					}
+					isPausing = false;
+					isDownloading = false;
+					zip.remove(dirName);
+				});
+				ehDownloadDialog.appendChild(cancelButton);
 			}
 			// res.status should be detected at here, because we should know are we reached image limits at first
 			else if (res.status !== 200) {
