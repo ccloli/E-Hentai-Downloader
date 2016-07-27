@@ -993,6 +993,8 @@ function fetchOriginalImage(index, nodeList) {
 					else {
 						insertCloseButton();
 					}
+					isPausing = false;
+					isDownloading = false;
 					zip.remove(dirName);
 				});
 				ehDownloadDialog.appendChild(cancelButton);
