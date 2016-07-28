@@ -942,7 +942,7 @@ function fetchOriginalImage(index, nodeList) {
 
 				if (isPausing) return;
 
-				pushDialog('\nYou have exceeded your image viewing limits.\n');
+				pushDialog('You have exceeded your image viewing limits.\n');
 				isPausing = true;
 				updateTotalStatus();
 
@@ -968,7 +968,7 @@ function fetchOriginalImage(index, nodeList) {
 				var continueButton = document.createElement('button');
 				continueButton.innerHTML = 'Continue Download';
 				continueButton.addEventListener('click', function(){
-					fetchCount = 0;
+					//fetchCount = 0;
 					ehDownloadDialog.removeChild(resetButton);
 					ehDownloadDialog.removeChild(continueButton);
 					ehDownloadDialog.removeChild(cancelButton);

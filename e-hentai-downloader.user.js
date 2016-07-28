@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.22.1
+// @version      1.22.2
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -13207,7 +13207,7 @@ function fetchOriginalImage(index, nodeList) {
 
 				if (isPausing) return;
 
-				pushDialog('\nYou have exceeded your image viewing limits.\n');
+				pushDialog('You have exceeded your image viewing limits.\n');
 				isPausing = true;
 				updateTotalStatus();
 
@@ -13233,7 +13233,7 @@ function fetchOriginalImage(index, nodeList) {
 				var continueButton = document.createElement('button');
 				continueButton.innerHTML = 'Continue Download';
 				continueButton.addEventListener('click', function(){
-					fetchCount = 0;
+					//fetchCount = 0;
 					ehDownloadDialog.removeChild(resetButton);
 					ehDownloadDialog.removeChild(continueButton);
 					ehDownloadDialog.removeChild(cancelButton);
