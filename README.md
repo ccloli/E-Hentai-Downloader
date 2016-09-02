@@ -9,6 +9,8 @@ Download E-Hentai archive as zip file :package:
 - Chrome > [Tampermonkey](http://tampermonkey.net/) 3.5.3630+ | [Violentmonkey](https://chrome.google.com/webstore/detail/jinjaccalgkegednnccohejagnlnfdag)
 - Opera 15+ > [Tampermonkey BETA](https://addons.opera.com/extensions/details/tampermonkey-beta/) 3.5.3630+ | [Violentmonkey](https://addons.opera.com/extensions/details/violent-monkey/)
 - Maxthon > [Violentmonkey](http://extension.maxthon.cn/detail/index.php?view_id=1680)
+- Microsoft Edge > [Tampermonkey](https://www.microsoft.com/zh-cn/store/p/tampermonkey/9nblggh5162s) 4.2.5284.0+  
+  > You must upgrade your Windows 10 to 14393 which supports Edge extension.
 
 
 ## Install This Script
@@ -49,7 +51,7 @@ This script won't download archive from E-Hentai archive download page, so it wo
 
 Here are some compatible information, which is not important.
 
-- Tampermonkey uses a dirty way to give `GM_xhr.response` content (transfers String to ArrayBuffer everytime), so it'll stuck for 1~3 seconds after downloaded image (depends on your device), and if you are using Firefox, it's better to use GreaseMonkey
+- Tampermonkey uses a dirty way to give `GM_xhr.response` content (transfers String to ArrayBuffer everytime), so it'll stuck for 1~3 seconds or more after downloaded image (depends on your device). If you are using Microsoft Edge, you may often see the working tab is stuck, saying it's not responding. Just let it go and do nothing. And if you are using Firefox, it's better to use GreaseMonkey from this side
 - Some versions of Safari don't support blob URL, so we removed it from supports list
 - Dolphin Browser (Android) doesn't support blob URL, so this script cannot be run in Tampermonkey for Dolphin
 - UC Browser (Android) doesn't support blob constructor, so this script cannot be run in Tampermonkey for UC
