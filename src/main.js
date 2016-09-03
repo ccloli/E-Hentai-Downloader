@@ -216,7 +216,7 @@ var ehDownloadStyle = '\
 	.ehD-dialog .ehD-force-download-tips { position: fixed; right: 0; bottom: 288px; border: 1px solid #000000; width: 550px; padding: 5px; background: rgba(0, 0, 0, 0.75); color: #ffffff; cursor: pointer; opacity: 0; pointer-events: none; }\
 	.ehD-dialog:hover .ehD-force-download-tips { opacity: 1; }\
 	.ehD-dialog.hidden .ehD-force-download-tips { display: none; }\
-    .ehD-close-tips { position: fixed; left: 0; right: 0; bottom: 0; padding: 10px; border: 1px solid #000000; background: #34353b; color: #dddddd; width: 732px; max-width: 100%; max-height: 100%; overflow-x: hidden; overflow-y: auto; box-sizing: border-box; margin: auto; z-index: 1000; text-align: left; font-size: 14px; outline: 5px rgba(0, 0, 0, 0.25) solid; }\
+	.ehD-close-tips { position: fixed; left: 0; right: 0; bottom: 0; padding: 10px; border: 1px solid #000000; background: #34353b; color: #dddddd; width: 732px; max-width: 100%; max-height: 100%; overflow-x: hidden; overflow-y: auto; box-sizing: border-box; margin: auto; z-index: 1000; text-align: left; font-size: 14px; outline: 5px rgba(0, 0, 0, 0.25) solid; }\
 	';
 
 // overwrite settings
@@ -622,8 +622,7 @@ function updateTotalStatus(){
 
 // Updated on 1.19: Now the index argument is the page's number - 1 (original is page's number)
 function failedFetching(index, nodeList, forced){
-	if (!isDownloading || imageData[index] instanceof ArrayBuffer) return;
- // Temporarily fixes #31	
+	if (!isDownloading || imageData[index] instanceof ArrayBuffer) return; // Temporarily fixes #31	
 	if (typeof fetchThread[index] !== 'undefined' && 'abort' in fetchThread[index]) fetchThread[index].abort();
 	console.error('[EHD] Index >', index + 1, ' | RealIndex >', imageList[index]['realIndex'], ' | Name >', imageList[index]['imageName'], ' | RetryCount >', retryCount[index], ' | DownloadedCount >', downloadedCount, ' | FetchCount >', fetchCount, ' | FailedCount >', failedCount);
 
@@ -747,8 +746,19 @@ function fetchOriginalImage(index, nodeList) {
 	ehDownloadDialog.scrollTop = ehDownloadDialog.scrollHeight;
 
 	var zeroSpeedHandler = function(res){
-		if (!isDownloading || imageData[index] instanceof ArrayBuffer) return; // Temporarily fixes #31
-        // if (isPausing) return;
+		if (imageData[index] instanceof ArrayBuffer) { // Has already downloaded
+			updateProgress(nodeList, {
+				name: '#' + imageList[index]['realIndex'] + ': ' + imageList[index]['imageName'],
+				status: 'Succeed!',
+				progress: '1',
+				progressText: '100%',
+				class: 'ehD-pt-succeed'
+			});
+
+			return;
+		}
+		if (!isDownloading) return; // Temporarily fixes #31
+		// if (isPausing) return;
 
 		updateProgress(nodeList, { progressText: '0 KB/s' });
 
@@ -758,8 +768,19 @@ function fetchOriginalImage(index, nodeList) {
 	};
 
 	var expiredSpeedHandler = function(res){
-		if (!isDownloading || imageData[index] instanceof ArrayBuffer) return; // Temporarily fixes #31
-        // if (isPausing) return;
+		if (imageData[index] instanceof ArrayBuffer) { // Has already downloaded
+			updateProgress(nodeList, {
+				name: '#' + imageList[index]['realIndex'] + ': ' + imageList[index]['imageName'],
+				status: 'Succeed!',
+				progress: '1',
+				progressText: '100%',
+				class: 'ehD-pt-succeed'
+			});
+
+			return;
+		}
+		if (!isDownloading) return; // Temporarily fixes #31
+		// if (isPausing) return;
 
 		if (typeof fetchThread[index] !== 'undefined' && 'abort' in fetchThread[index]) fetchThread[index].abort();
 
@@ -1309,6 +1330,7 @@ function initEHDownload() {
 	fetchThread = [];
 	retryCount = [];
 	downloadedCount = fetchCount = failedCount = 0;
+	isPausing = false;
 	zip = new JSZip();
 
 	dirName = getReplacedName(!setting['dir-name'] ? '{gid}_{token}' : setting['dir-name']);
@@ -1656,11 +1678,11 @@ function showSettings() {
 		var element = ehDownloadSettingPanel.querySelector('input[data-ehd-setting="' + i + '"], select[data-ehd-setting="' + i + '"]');
 		if (!element) continue;
 		if (element.getAttribute('type') === 'checkbox' && setting[i]) element.setAttribute('checked', 'checked');
-        else if (element.tagName.toLowerCase() === 'select') {
-            element = element.querySelector('option[value="' + setting[i] + '"]');
-            if (!element) continue;
-            element.setAttribute('selected', 'selected');
-        }
+		else if (element.tagName.toLowerCase() === 'select') {
+			element = element.querySelector('option[value="' + setting[i] + '"]');
+			if (!element) continue;
+			element.setAttribute('selected', 'selected');
+		}
 		else element.setAttribute('value', setting[i]);
 	}
 
@@ -1708,7 +1730,7 @@ function getImageLimits(host, forced){
 		return showImageLimits();
 	}
 
-    console.log('[EHD] Request Image Limits From ' + host);
+	console.log('[EHD] Request Image Limits From ' + host);
 
 	GM_xmlhttpRequest({
 		method: 'GET',
@@ -1867,9 +1889,9 @@ var forceDownloadTips = document.createElement('div');
 forceDownloadTips.className = 'ehD-force-download-tips';
 forceDownloadTips.innerHTML = 'If an error occur and script can\'t work, click <a href="javascript: getzip();" style="font-weight: bold; pointer-events: auto;" title="Force download won\'t stop current downloading task.">here</a> to force get your downloaded images.';
 forceDownloadTips.getElementsByTagName('a')[0].addEventListener('click', function(event){
-    // fixed permission denied on GreaseMonkey
-    event.preventDefault();
-    saveDownloaded(true);
+	// fixed permission denied on GreaseMonkey
+	event.preventDefault();
+	saveDownloaded(true);
 });
 
 unsafeWindow.getzip = window.getzip = function(){
@@ -1884,25 +1906,25 @@ if (!setting['hide-image-limits']) {
 window.addEventListener('storage', showImageLimits);
 
 window.onbeforeunload = unsafeWindow.onbeforeunload = function(){
-    function clearRubbish() {
-        for (var i = 0; i < fetchThread.length; i++) {
-            if (typeof fetchThread[i] !== 'undefined' && 'abort' in fetchThread[i]) fetchThread[i].abort();
-        }
-        ehDownloadFS.removeFile(unsafeWindow.gid + '.zip');
-    }
+	function clearRubbish() {
+		for (var i = 0; i < fetchThread.length; i++) {
+			if (typeof fetchThread[i] !== 'undefined' && 'abort' in fetchThread[i]) fetchThread[i].abort();
+		}
+		ehDownloadFS.removeFile(unsafeWindow.gid + '.zip');
+	}
 	if (isDownloading) {
 		var closeTips = document.createElement('div');
 		closeTips.className = 'ehD-close-tips';
 		closeTips.innerHTML = 'E-Hentai Downloader is still running, please don\'t close this tab before it finished downloading.<br><br>If any bug occured and the script can\'t work correctly, you can move your mouse pointer onto the progress box, and force to save downloaded images before you leave.';
 		document.body.appendChild(closeTips);
 
-        setTimeout(function(){
-            document.body.removeChild(closeTips);
-        }, 10);
+		setTimeout(function(){
+			document.body.removeChild(closeTips);
+		}, 10);
 
 		return 'E-Hentai Downloader is still running, please don\'t close this tab before it finished downloading.';
 	}
-    clearRubbish();
+	clearRubbish();
 };
 
 // Forced request File System to check if have temp archive
