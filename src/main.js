@@ -185,7 +185,8 @@ var ehDownloadStyle = '\
 	.ehD-box { margin: 20px auto; width: 732px; box-sizing: border-box; font-size: 12px; border: 1px groove #000000; }\
 	.ehD-box a { cursor: pointer; }\
 	.ehD-box .g2 { display: inline-block; margin: 10px; padding: 0; line-height: 14px; }\
-	.ehD-setting { position: fixed; left: 0; right: 0; top: 0; bottom: 0; padding: 5px; border: 1px solid #000000; background: #34353b; color: #dddddd; width: 600px; height: 500px; max-width: 100%; max-height: 100%; overflow-x: hidden; overflow-y: auto; box-sizing: border-box; margin: auto; z-index: 999; text-align: left; font-size: 12px; outline: 5px rgba(0, 0, 0, 0.25) solid; }\
+	.ehD-box-extend input { width: 255px; }\
+	.ehD-setting { position: fixed; left: 0; right: 0; top: 0; bottom: 0; padding: 5px; border: 1px solid #000000; background: #34353b; color: #dddddd; width: 600px; height: 550px; max-width: 100%; max-height: 100%; overflow-x: hidden; overflow-y: auto; box-sizing: border-box; margin: auto; z-index: 999; text-align: left; font-size: 12px; outline: 5px rgba(0, 0, 0, 0.25) solid; }\
 	.ehD-setting-tab { list-style: none; margin: 5px 0; padding: 0 10px; border-bottom: 1px solid #cccccc; overflow: auto; }\
 	.ehD-setting-tab li { float: left; padding: 5px 10px; border-bottom: 0; cursor: pointer; }\
 	.ehD-setting[data-active-setting="basic"] li[data-target-setting="basic"], .ehD-setting[data-active-setting="advanced"] li[data-target-setting="advanced"] { font-weight: bold; background: #cccccc; color: #000000; }\
@@ -240,116 +241,20 @@ if (setting['enable-multi-threading'] === false) {
 
 String.prototype.replaceHTMLEntites = function() {
 	var matchEntity = function(entity) {
-		var entitesList = {
-			'euro': '€',
-			'nbsp': ' ',
-			'quot': '"',
-			'amp': '&',
-			'lt': '<',
-			'gt': '>',
-			'iexcl': '¡',
-			'cent': '¢',
-			'pound': '£',
-			'curren': '¤',
-			'yen': '¥',
-			'brvbar': '¦',
-			'sect': '§',
-			'uml': '¨',
-			'copy': '©',
-			'ordf': 'ª',
-			'not': '¬',
-			'shy': '',
-			'reg': '®',
-			'macr': '¯',
-			'deg': '°',
-			'plusmn': '±',
-			'sup2': '²',
-			'sup3': '³',
-			'acute': '´',
-			'micro': 'µ',
-			'para': '¶',
-			'middot': '·',
-			'cedil': '¸',
-			'sup1': '¹',
-			'ordm': 'º',
-			'raquo': '»',
-			'frac14': '¼',
-			'frac12': '½',
-			'frac34': '¾',
-			'iquest': '¿',
-			'Agrave': 'À',
-			'Aacute': 'Á',
-			'Acirc': 'Â',
-			'Atilde': 'Ã',
-			'Auml': 'Ä',
-			'Aring': 'Å',
-			'AElig': 'Æ',
-			'Ccedil': 'Ç',
-			'Egrave': 'È',
-			'Eacute': 'É',
-			'Ecirc': 'Ê',
-			'Euml': 'Ë',
-			'Igrave': 'Ì',
-			'Iacute': 'Í',
-			'Icirc': 'Î',
-			'Iuml': 'Ï',
-			'ETH': 'Ð',
-			'Ntilde': 'Ñ',
-			'Ograve': 'Ò',
-			'Oacute': 'Ó',
-			'Ocirc': 'Ô',
-			'Otilde': 'Õ',
-			'Ouml': 'Ö',
-			'times': '×',
-			'Oslash': 'Ø',
-			'Ugrave': 'Ù',
-			'Uacute': 'Ú',
-			'Ucirc': 'Û',
-			'Uuml': 'Ü',
-			'Yacute': 'Ý',
-			'THORN': 'Þ',
-			'szlig': 'ß',
-			'agrave': 'à',
-			'aacute': 'á',
-			'acirc': 'â',
-			'atilde': 'ã',
-			'auml': 'ä',
-			'aring': 'å',
-			'aelig': 'æ',
-			'ccedil': 'ç',
-			'egrave': 'è',
-			'eacute': 'é',
-			'ecirc': 'ê',
-			'euml': 'ë',
-			'igrave': 'ì',
-			'iacute': 'í',
-			'icirc': 'î',
-			'iuml': 'ï',
-			'eth': 'ð',
-			'ntilde': 'ñ',
-			'ograve': 'ò',
-			'oacute': 'ó',
-			'ocirc': 'ô',
-			'otilde': 'õ',
-			'ouml': 'ö',
-			'divide': '÷',
-			'oslash': 'ø',
-			'ugrave': 'ù',
-			'uacute': 'ú',
-			'ucirc': 'û',
-			'uuml': 'ü',
-			'yacute': 'ý',
-			'thorn': 'þ'
-		};
+		var entitesList = {"euro":"€","nbsp":" ","quot":"\"","amp":"&","lt":"<","gt":">","iexcl":"¡","cent":"¢","pound":"£","curren":"¤","yen":"¥","brvbar":"¦","sect":"§","uml":"¨","copy":"©","ordf":"ª","not":"¬","shy":"","reg":"®","macr":"¯","deg":"°","plusmn":"±","sup2":"²","sup3":"³","acute":"´","micro":"µ","para":"¶","middot":"·","cedil":"¸","sup1":"¹","ordm":"º","raquo":"»","frac14":"¼","frac12":"½","frac34":"¾","iquest":"¿","agrave":"à","aacute":"á","acirc":"â","atilde":"ã","auml":"ä","aring":"å","aelig":"æ","ccedil":"ç","egrave":"è","eacute":"é","ecirc":"ê","euml":"ë","igrave":"ì","iacute":"í","icirc":"î","iuml":"ï","eth":"ð","ntilde":"ñ","ograve":"ò","oacute":"ó","ocirc":"ô","otilde":"õ","ouml":"ö","times":"×","oslash":"ø","ugrave":"ù","uacute":"ú","ucirc":"û","uuml":"ü","yacute":"ý","thorn":"þ","szlig":"ß","divide":"÷"};
 		if (entitesList[entity]) return entitesList[entity];
-		else if (entity.match(/#\d+/)) {
+		else if (/#\d+/.test(entity)) {
 			var charCode = entity.match(/#(\d+)/)[1] - 0;
+			return String.fromCharCode(charCode);
+		}
+		else if (/#x\d+/.test(entity)) {
+			var charCode = parseInt(entity.match(/#x(\d+)/)[1] - 0, 16);
 			return String.fromCharCode(charCode);
 		}
 		else return '&' + entity + ';';
 	};
-	var result = this.replace(/&(#x?\d+|[a-zA-Z]+);/g, function(match, entity) {
-		return matchEntity(entity);
+	var result = this.replace(/&(#[xX]?\d+|[a-zA-Z]+);/g, function(match, entity) {
+		return matchEntity(entity.toLowerCase());
 	});
 	return result;
 };
@@ -390,21 +295,48 @@ function pushDialog(str) {
 	ehDownloadDialog.scrollTop = ehDownloadDialog.scrollHeight;
 }
 
+
+
+function getSafeName(str) {
+	var replaceList = {
+		':': '：',
+		'"': '＂',
+		'*': '＊',
+		'?': '？',
+		'|': '｜',
+		'<': '＜',
+		'>': '＞',
+		'/': '／',
+		'\\': '＼',
+		'\n': '-'
+	};
+	var replaceFn = function(match) {
+		if (setting['replace-with-full-width']) {
+			return replaceList[match];
+		}
+		else {
+			return '-';
+		}
+	};
+
+	return str.trim().replace(ehDownloadRegex.dangerChars, replaceFn);
+}
+
 // replace dir name and zip filename
 function getReplacedName(str) {
 	return str.replace(/\{gid\}/gi, unsafeWindow.gid)
 		.replace(/\{token\}/gi, unsafeWindow.token)
-		.replace(/\{title\}/gi, document.getElementById('gn').textContent.replace(ehDownloadRegex.dangerChars, '-'))
-		.replace(/\{subtitle\}/gi, document.getElementById('gj').textContent ? document.getElementById('gj').textContent.replace(ehDownloadRegex.dangerChars, '-') : document.getElementById('gn').textContent.replace(ehDownloadRegex.dangerChars, '-'))
+		.replace(/\{title\}/gi, getSafeName(document.getElementById('gn').textContent))
+		.replace(/\{subtitle\}/gi, document.getElementById('gj').textContent ? getSafeName(document.getElementById('gj').textContent) : getSafeName(document.getElementById('gn').textContent))
 		.replace(/\{tag\}/gi, document.querySelector('.ic').getAttribute('alt').toUpperCase())
-		.replace(/\{uploader\}/gi, document.querySelector('#gdn a').textContent.replace(ehDownloadRegex.dangerChars, '-'))
+		.replace(/\{uploader\}/gi, getSafeName(document.querySelector('#gdn a').textContent))
 		.replaceHTMLEntites();
 }
 
 function PageData(pageURL, imageURL, imageName, nextNL, realIndex, imageNumber) {
 	this.pageURL = pageURL.split('?')[0];
 	this.imageURL = imageURL;
-	this.imageName = imageName.trim().replace(ehDownloadRegex.dangerChars, '-');
+	this.imageName = getSafeName(imageName);
 	this._imageName = this.imageName;
 	this.equalCount = 1;
 	this.nextNL = nextNL;
@@ -646,9 +578,10 @@ function failedFetching(index, nodeList, forced){
 
 function saveDownloaded(forced){
 	renameImages();
+
 	for (var j = 0; j < imageData.length; j++) {
 		if (imageData[j] != null && imageData[j] !== 'Fetching') {
-			zip.folder(dirName).file(imageList[j]['imageName'], imageData[j]);
+			zip.folder(finalDirName).file(imageList[j]['imageName'], imageData[j]);
 			if (!forced) imageData[j] = null;
 		}
 	}
@@ -1057,7 +990,7 @@ function fetchOriginalImage(index, nodeList) {
 			}
 
 			//console.log('[EHD-Debug]', index, 'Available Testing Finished!', new Date().getTime());
-			imageList[index]['_imageName'] = imageList[index]['imageName'] = res.responseHeaders.match(ehDownloadRegex.resFileName) ? res.responseHeaders.match(ehDownloadRegex.resFileName)[1].trim().replace(ehDownloadRegex.dangerChars, '-') : imageList[index]['imageName'];
+			imageList[index]['_imageName'] = imageList[index]['imageName'] = res.responseHeaders.match(ehDownloadRegex.resFileName) ? getSafeName(res.responseHeaders.match(ehDownloadRegex.resFileName)[1]) : imageList[index]['imageName'];
 			//console.log('[EHD-Debug]', index, 'File name was modified!', new Date().getTime());
 
 			updateProgress(nodeList, {
@@ -1333,8 +1266,29 @@ function initEHDownload() {
 	isPausing = false;
 	zip = new JSZip();
 
-	dirName = getReplacedName(!setting['dir-name'] ? '{gid}_{token}' : setting['dir-name']);
-	fileName = getReplacedName(!setting['file-name'] ? '{title}' : setting['file-name']);
+	if (setting['recheck-file-name']) {
+		var dirNameNode = document.querySelector('.ehD-box-extend-dirname');
+		var fileNameNode = document.querySelector('.ehD-box-extend-filename');
+
+		if (dirNameNode && dirNameNode.value) {
+			dirName = getSafeName(dirNameNode.value);
+		}
+		else {
+			dirName = getReplacedName(!setting['dir-name'] ? '{gid}_{token}' : setting['dir-name']);
+		}
+
+		if (fileNameNode && fileNameNode.value) {
+			fileName = getSafeName(fileNameNode.value);
+		}
+		else {
+			fileName = getReplacedName(!setting['file-name'] ? '{title}' : setting['file-name']);
+		}
+	}
+	else {
+		dirName = getReplacedName(!setting['dir-name'] ? '{gid}_{token}' : setting['dir-name']);
+		fileName = getReplacedName(!setting['file-name'] ? '{title}' : setting['file-name']);
+	}
+
 	if (dirName === '/') dirName = '';
 	needNumberImages = ehDownloadNumberInput.querySelector('input').checked;
 
@@ -1628,8 +1582,9 @@ function showSettings() {
 				<div class="g2"><label><input type="checkbox" data-ehd-setting="number-images"> Number images (001：01.jpg, 002：01_theme.jpg, 003：02.jpg...) (Separator <input type="text" data-ehd-setting="number-separator" style="width: 46px;" placeholder="：">)</label></div>\
 				<div class="g2"><label><input type="checkbox" data-ehd-setting="number-real-index"> Number images with original page number if pages range is set</label></div>\
 				<div class="g2"><label><input type="checkbox" data-ehd-setting="number-auto-retry"> Retry automatically when images download failed</label></div>\
-				<div class="g2"><label>Set folder name as <input type="text" data-ehd-setting="dir-name" placeholder="{gid}_{token}"> (if you don\'t want to create folder, use "<code>/</code>") *</label></div>\
-				<div class="g2"><label>Set Zip file name as <input type="text" data-ehd-setting="file-name" placeholder="{title}"> *</label></div>\
+				<div class="g2"><label>Set folder name as <input type="text" data-ehd-setting="dir-name" placeholder="{gid}_{token}" style="width: 110px;"> (if you don\'t want to create folder, use "<code>/</code>") *</label></div>\
+				<div class="g2"><label>Set Zip file name as <input type="text" data-ehd-setting="file-name" placeholder="{title}" style="width: 110px;"> *</label></div>\
+				<div class="g2"><label><input type="checkbox" data-ehd-setting="recheck-file-name"> Show inputs to recheck file name and folder name before downloading</label></div>\
 				<div class="g2"><label><input type="checkbox" data-ehd-setting="ignore-torrent"> Never show notification if torrents are available</label></div>\
 				<div class="g2"><label><select data-ehd-setting="status-in-title"><option value="never">Never</option><option value="blur">When current tab is not focused</option><option value="always">Always</option></select> show download progress in title</label></div>\
 				<div class="g2"><label><input type="checkbox" data-ehd-setting="hide-image-limits"> Disable requesting and showing image limits</label></div>\
@@ -1652,6 +1607,7 @@ function showSettings() {
 				<div class="g2"' + (window.requestFileSystem ? '' : ' style="opacity: 0.5;" title="Only Chrome supports this feature"') + '><label><input type="checkbox" data-ehd-setting="store-in-fs"> Request File System to handle large Zip file +</label></div>\
 				<div class="g2"' + (window.requestFileSystem ? '' : ' style="opacity: 0.5;" title="Only Chrome supports this feature"') + '><label>Use File System if archive is larger than <input type="number" data-ehd-setting="fs-size" min="0" placeholder="200" style="width: 46px;"> MB (0 is always) +</label></div>\
 				<div class="g2"><label>Record and save gallery info as <select data-ehd-setting="save-info"><option value="file">File info.txt</option><option value="comment">Zip comment</option><option value="none">None</option></select></label></div>\
+				<div class="g2"><label><input type="checkbox" data-ehd-setting="replace-with-full-width"> Replace forbidden letters as fill-width letters instead of dash (-)</label></div>\
 				<div class="g2"><label><input type="checkbox" data-ehd-setting="force-pause"> Force drop downloading images data when pausing download</label></div>\
 				<div class="g2"><label><input type="checkbox" data-ehd-setting="image-limits-both"> I\'m in China and/or using proxy to visit g.e-hentai.org so my image limits on ExHentai is incorrect</label></div>\
 				<!--<div class="g2"><label><input type="checkbox" data-ehd-setting="auto-scale"> Auto scale Zip file at <input type="text" min="10" placeholder="250" style="width: 46px;" data-ehd-setting="scale-size"> MB if file is larger than <input type="text" min="10" placeholder="400" style="width: 46px;" data-ehd-setting="scale-reach"> MB (experiment) ***</label></div>-->\
@@ -1706,6 +1662,13 @@ function showSettings() {
 				GM_setValue('ehD-setting', JSON.stringify(setting));
 			}
 			document.body.removeChild(ehDownloadSettingPanel);
+
+			if (document.querySelector('.ehD-box-extend')) {
+				toggleFilenameConfirmInput('reset');
+			}
+			else {
+				toggleFilenameConfirmInput(!setting['recheck-file-name']);
+			}
 		}
 	});
 
@@ -1768,6 +1731,34 @@ function checkImageLimits(forced){
 	}
 }
 
+function toggleFilenameConfirmInput(hide){
+	var extendNodes = document.querySelector('.ehD-box-extend');
+	if (extendNodes) {
+		if (hide === 'reset') {
+			ehDownloadBox.removeChild(extendNodes);
+			if (setting['recheck-file-name']) toggleFilenameConfirmInput();
+		}
+		else if (hide) {
+			extendNodes.style.display = 'none';
+		}
+		else {
+			extendNodes.style.display = 'block';
+		}
+	}
+	else if (!hide) {
+		extendNodes = document.createElement('div');
+		extendNodes.className = 'ehD-box-extend';
+		extendNodes.innerHTML = '<div class="g2">' + ehDownloadArrow + ' <a>File Name <input type="text" class="ehD-box-extend-filename"></a></div>'
+		                      + '<div class="g2">' + ehDownloadArrow + ' <a>Path Name <input type="text" class="ehD-box-extend-dirname"></a></div>';
+		ehDownloadBox.appendChild(extendNodes);
+
+		dirName = getReplacedName(!setting['dir-name'] ? '{gid}_{token}' : setting['dir-name']);
+		fileName = getReplacedName(!setting['file-name'] ? '{title}' : setting['file-name']);
+		extendNodes.getElementsByClassName('ehD-box-extend-filename')[0].value = fileName;
+		extendNodes.getElementsByClassName('ehD-box-extend-dirname')[0].value = dirName;
+	}
+}
+
 // EHD Box, thanks to JingJang@GitHub, source: https://github.com/JingJang/E-Hentai-Downloader
 var ehDownloadBox = document.createElement('fieldset');
 ehDownloadBox.className = 'ehD-box';
@@ -1824,6 +1815,7 @@ ehDownloadFeedback.className = 'g2';
 ehDownloadFeedback.innerHTML = ehDownloadArrow + ' <a href="https://github.com/ccloli/E-Hentai-Downloader/issues" target="_blank">Feedback</a>';
 ehDownloadBox.appendChild(ehDownloadFeedback);
 
+if (setting['recheck-file-name']) toggleFilenameConfirmInput();
 document.body.insertBefore(ehDownloadBox, document.getElementById('asm') || document.querySelector('.gm').nextElementSibling);
 
 var ehDownloadDialog = document.createElement('div');
