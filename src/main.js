@@ -185,6 +185,7 @@ var ehDownloadStyle = '\
 	.ehD-box { margin: 20px auto; width: 732px; box-sizing: border-box; font-size: 12px; border: 1px groove #000000; }\
 	.ehD-box a { cursor: pointer; }\
 	.ehD-box .g2 { display: inline-block; margin: 10px; padding: 0; line-height: 14px; }\
+	.ehD-box legend a { color: inherit; text-decoration: none; }\
 	.ehD-box-extend input { width: 255px; }\
 	.ehD-setting { position: fixed; left: 0; right: 0; top: 0; bottom: 0; padding: 5px; border: 1px solid #000000; background: #34353b; color: #dddddd; width: 600px; height: 550px; max-width: 100%; max-height: 100%; overflow-x: hidden; overflow-y: auto; box-sizing: border-box; margin: auto; z-index: 999; text-align: left; font-size: 12px; outline: 5px rgba(0, 0, 0, 0.25) solid; }\
 	.ehD-setting-tab { list-style: none; margin: 5px 0; padding: 0 10px; border-bottom: 1px solid #cccccc; overflow: auto; }\
@@ -1588,6 +1589,7 @@ function showSettings() {
 				<div class="g2"><label><input type="checkbox" data-ehd-setting="ignore-torrent"> Never show notification if torrents are available</label></div>\
 				<div class="g2"><label><select data-ehd-setting="status-in-title"><option value="never">Never</option><option value="blur">When current tab is not focused</option><option value="always">Always</option></select> show download progress in title</label></div>\
 				<div class="g2"><label><input type="checkbox" data-ehd-setting="hide-image-limits"> Disable requesting and showing image limits</label></div>\
+				<div class="g2"><label><input type="checkbox" data-ehd-setting="hide-estimated-cost"> Disable pre-calculating image limits cost</label></div>\
 				<div class="g2">\
 					* Available templates: \
 					<span title="You can find GID and token at the address bar like this: exhentai.org/g/[GID]/[Token]/">{gid} Archive\'s GID</sapn> | \
@@ -1721,7 +1723,7 @@ function showImageLimits(){
 		return curData.cur + '/' + curData.total;
 	});
 
-	ehDownloadBoxTitle.textContent = 'E-Hentai Downloader | Image Limits: ' + list.join('; ');
+	ehDownloadBox.getElementsByClassName('ehD-box-limit')[0].innerHTML = ' | <a href="http://g.e-hentai.org/home.php">Image Limits: ' + list.join('; ') + '</a>';
 }
 
 function checkImageLimits(forced){
@@ -1759,12 +1761,29 @@ function toggleFilenameConfirmInput(hide){
 	}
 }
 
+function showPreCalcCost(){
+	var context = document.getElementById('gdd').textContent;
+	var sizeText = context.split('File Size:')[1].split('Length:')[0].trim();
+	var pageText = context.split('Length:')[1].split('page')[0].trim();
+
+	var size = 0;
+	var page = pageText - 0;
+	if (sizeText.indexOf('MB') >= 0) {
+		size = sizeText.split('MB')[0] - 0;
+	}
+	else if (sizeText.indexOf('GB') >= 0) {
+		size = (sizeText.split('GB')[0] - 0) * 1024;
+	}
+
+	ehDownloadBox.getElementsByClassName('ehD-box-cost')[0].innerHTML = ' | <a href="https://github.com/ccloli/E-Hentai-Downloader/wiki/E%E2%88%92Hentai-Image-Viewing-Limits" target="_blank">Estimated Limits Cost: ' + (parseInt(size * 5) + page) + '</a>';
+}
+
 // EHD Box, thanks to JingJang@GitHub, source: https://github.com/JingJang/E-Hentai-Downloader
 var ehDownloadBox = document.createElement('fieldset');
 ehDownloadBox.className = 'ehD-box';
 var ehDownloadBoxTitle = document.createElement('legend');
-ehDownloadBoxTitle.textContent = 'E-Hentai Downloader';
-ehDownloadBoxTitle.style.cssText = (origin.indexOf('exhentai.org') >= 0 ? 'color: #ffff00; ' : '') + 'font-weight: 700;';
+ehDownloadBoxTitle.innerHTML = 'E-Hentai Downloader <span class="ehD-box-limit"></span> <span class="ehD-box-cost"></span>';
+ehDownloadBoxTitle.style.cssText = (origin.indexOf('exhentai.org') >= 0 ? 'color: #ffff66; ' : '') + 'font-weight: 700;';
 ehDownloadBox.appendChild(ehDownloadBoxTitle);
 var ehDownloadStylesheet = document.createElement('style');
 ehDownloadStylesheet.textContent = ehDownloadStyle;
@@ -1893,6 +1912,10 @@ unsafeWindow.getzip = window.getzip = function(){
 if (!setting['hide-image-limits']) {
 	checkImageLimits(true);
 	setInterval(checkImageLimits, 60000);
+}
+
+if (!setting['hide-estimated-cost']) {
+	showPreCalcCost();
 }
 
 window.addEventListener('storage', showImageLimits);
