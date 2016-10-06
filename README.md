@@ -7,10 +7,12 @@ Download E-Hentai archive as zip file :package:
 
 - Firefox > [GreaseMonkey](https://addons.mozilla.org/en-US/firefox/addon/greasemonkey/) 3.2 beta2+ | [Tampermonkey](https://addons.mozilla.org/en-US/firefox/addon/tampermonkey/) 4.0.5054+
 - Chrome > [Tampermonkey](http://tampermonkey.net/) 3.5.3630+ | [Violentmonkey](https://chrome.google.com/webstore/detail/jinjaccalgkegednnccohejagnlnfdag)
-- Opera 15+ > [Tampermonkey BETA](https://addons.opera.com/extensions/details/tampermonkey-beta/) 3.5.3630+ | [Violentmonkey](https://addons.opera.com/extensions/details/violent-monkey/)
+- Opera 15+ > [Tampermonkey](https://addons.opera.com/extensions/details/tampermonkey-beta/) 3.5.3630+ | [Violentmonkey](https://addons.opera.com/extensions/details/violent-monkey/)
 - Maxthon > [Violentmonkey](http://extension.maxthon.cn/detail/index.php?view_id=1680)
-- Microsoft Edge > [Tampermonkey](https://www.microsoft.com/zh-cn/store/p/tampermonkey/9nblggh5162s) 4.2.5284.0+  
+- Microsoft Edge > [Tampermonkey](https://www.microsoft.com/store/p/tampermonkey/9nblggh5162s) 4.2.5284.0+  
   > You must upgrade your Windows 10 to 14393 which supports Edge extension.
+- Yandex Browser for Android > [Tampermonkey](https://addons.opera.com/zh-cn/extensions/details/tampermonkey-beta/) 4.2.5291+  
+  > Anyway it's not a good idea to use it on mobile with limited RAM resources, but it can work, so it's up to you ;-)
 
 
 ## Install This Script
