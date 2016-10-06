@@ -42,7 +42,7 @@ var ehDownloadRegex = {
 	],
 	preFetchURL: RegExp('<div class="sn"><a[\\s\\S]+?href="(' + origin.replace(/\./gi, '\\.') + '\\/s\\/\\S+?)"'),
 	nl: /return nl\('([\d-]+)'\)/,
-	fileName: /g\/l.png" \/><\/a><\/div><div>([\s\S]+?) :: /,
+	fileName: /g\/l.png"\s?\/><\/a><\/div><div>([\s\S]+?) :: /,
 	resFileName: /filename=([\s\S]+?)\n/,
 	dangerChars: /[:"*?|<>\/\\\n]/g,
 	pagesRange: /^(\d+(-\d+)?\s*?,\s*?)*\d+(-\d+)?$/,
@@ -813,7 +813,9 @@ function fetchOriginalImage(index, nodeList) {
 			var response = res.response;
 			var byteLength = response.byteLength;
 			var responseHeaders = res.responseHeaders;
-			var mime = responseHeaders.indexOf('Content-Type:') >= 0 ? responseHeaders.split('Content-Type:')[1].split('\n')[0].trim().split('/') : '';
+			
+            // use regex to fixed compatibility with http/2, as its headers are lower case (at least fixed with Yandex Turbo)
+			var mime = responseHeaders.match(/Content-Type:/i) ? responseHeaders.split(/Content-Type:/i)[1].split('\n')[0].trim().split('/') : ['', ''];
 
 			if (!response) {
 				console.log('[EHD] #' + (index + 1) + ': Empty Response (See: https://github.com/ccloli/E-Hentai-Downloader/issues/16 )');
@@ -973,7 +975,7 @@ function fetchOriginalImage(index, nodeList) {
 			}
 			// GM_xhr doesn't support xhr.getResponseHeader() function
 			//if (res.getResponseHeader('Content-Type').split('/')[0] != 'image') {
-			else if (mime[0].trim() !== 'image') {
+			else if (mime[0] !== 'image') {
 				console.log('[EHD] #' + (index + 1) + ': Wrong Content-Type');
 				console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
 
