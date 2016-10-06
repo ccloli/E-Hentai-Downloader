@@ -1671,6 +1671,7 @@ function showSettings() {
 			else {
 				toggleFilenameConfirmInput(!setting['recheck-file-name']);
 			}
+			showPreCalcCost();
 		}
 	});
 
@@ -1768,11 +1769,14 @@ function showPreCalcCost(){
 
 	var size = 0;
 	var page = pageText - 0;
-	if (sizeText.indexOf('MB') >= 0) {
-		size = sizeText.split('MB')[0] - 0;
-	}
-	else if (sizeText.indexOf('GB') >= 0) {
-		size = (sizeText.split('GB')[0] - 0) * 1024;
+
+	if (!setting['force-resized']) {
+		if (sizeText.indexOf('MB') >= 0) {
+			size = sizeText.split('MB')[0] - 0;
+		}
+		else if (sizeText.indexOf('GB') >= 0) {
+			size = (sizeText.split('GB')[0] - 0) * 1024;
+		}
 	}
 
 	ehDownloadBox.getElementsByClassName('ehD-box-cost')[0].innerHTML = ' | <a href="https://github.com/ccloli/E-Hentai-Downloader/wiki/E%E2%88%92Hentai-Image-Viewing-Limits" target="_blank">Estimated Limits Cost: ' + (parseInt(size * 5) + page) + '</a>';
