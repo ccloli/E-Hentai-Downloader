@@ -639,7 +639,7 @@ function fetchOriginalImage(index, nodeList) {
 	// https://github.com/greasemonkey/greasemonkey/issues/1834
 	//console.log(imageList[index]);
 	if (retryCount[index] === undefined) retryCount[index] = 0;
-	// if (isPausing) return;
+	if (isPausing) return;
 
 	if (nodeList === undefined) {
 		var node = progressTable.querySelector('tr[data-index="' + index + '"]');
@@ -1372,7 +1372,7 @@ function initProgressTable(){
 }
 
 function requestDownload(){
-	// if (isPausing) return;
+	if (isPausing) return;
 	var i = fetchCount, j = 0;
 	for (/*var i = fetchCount*/; i < (setting['thread-count'] !== undefined ? setting['thread-count'] : 5); i++) {
 		for (/*var j = 0*/; j < totalCount; j++) {
@@ -1389,7 +1389,7 @@ function requestDownload(){
 }
 
 function getPageData(index) {
-	// if (isPausing) return;
+	if (isPausing) return;
 
 	if (pagesRange.length) var realIndex = pagesRange[index];
 	else var realIndex = index + 1;
