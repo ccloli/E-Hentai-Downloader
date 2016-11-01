@@ -50,7 +50,7 @@ var ehDownloadRegex = {
 	imageLimits: /You are currently at <strong>(\d+)<\/strong> towards a limit of <strong>(\d+)<\/strong>/
 };
 
-window.requestFileSystem = window.requestFileSystem || window.webkitRequestFileSystem;
+var requestFileSystem = window.requestFileSystem || window.webkitRequestFileSystem;
 var ehDownloadFS = {
 	fs: undefined,
 	needFileSystem: false,
@@ -61,28 +61,23 @@ var ehDownloadFS = {
 	},
 	errorHandler: function(e) {
 		var errorMsg = 'File System Request Error > ';
-		switch (e.code) {
-			case FileError.QUOTA_EXCEEDED_ERR:
-				errorMsg += 'QUOTA_EXCEEDED_ERR';
-				break;
-			case FileError.NOT_FOUND_ERR:
-				errorMsg += 'NOT_FOUND_ERR';
-				break;
-			case FileError.SECURITY_ERR:
-				errorMsg += 'SECURITY_ERR';
-				break;
-			case FileError.INVALID_MODIFICATION_ERR:
-				errorMsg += 'INVALID_MODIFICATION_ERR';
-				break;
-			case FileError.INVALID_STATE_ERR:
-				errorMsg += 'INVALID_STATE_ERR';
-				break;
-			default:
-				errorMsg += 'Unknown Error';
+		var FileError = {
+			5: 'ENCODING_ERR',
+			9: 'INVALID_MODIFICATION_ERR',
+			7: 'INVALID_STATE_ERR',
+			6: 'NO_MODIFICATION_ALLOWED_ERR',
+			1: 'NOT_FOUND_ERR',
+			4: 'NOT_READABLE_ERR',
+			12: 'PATH_EXISTS_ERR',
+			10: 'QUOTA_EXCEEDED_ERR',
+			2: 'SECURITY_ERR',
+			11: 'TYPE_MISMATCH_ERR'
 		}
+		errorMsg += FileError[e.code] || 'Unknown Error';
+		
 		console.error('[EHD] ' + errorMsg);
 	},
-	saveAs: function(fs){
+	saveAs: function(fs, forced){
 		var fs = fs || ehDownloadFS.fs;
 		if (fs === undefined) return;
 		fs.root.getFile(unsafeWindow.gid + '.zip', {}, function (fileEntry) {
@@ -93,7 +88,7 @@ var ehDownloadFS = {
 			a.setAttribute('download', fileName + '.zip');
 			a.click();
 			pushDialog('\n\nNot download or file is broken? <a href="' + url + '" download="' + fileName + '.zip" style="color: #ffffff; font-weight: bold;">Click here to download</a>\n\n');
-			insertCloseButton();
+			if (!forced) insertCloseButton();
 		});
 	},
 	removeFile: function(fileName, fs, isEntry){
@@ -103,7 +98,7 @@ var ehDownloadFS = {
 			if (fileEntry.isFile) fileEntry.remove(function(){
 				console.log('[EHD] File', fileName, 'is removed.');
 			}, ehDownloadFS.errorHandler);
-			else fileEntry.removeRecursively(function() {
+			else if (fileEntry.isDirectory) fileEntry.removeRecursively(function() {
 				console.log('[EHD] Directory', fileName, 'is removed.');
 			}, ehDownloadFS.errorHandler);
 		};
@@ -355,7 +350,7 @@ function renameImages() {
 		// if Number Images are enabled, filename won't be changed, just numbering
 		if (!needNumberImages) {
 			for (var i = 0; i < index; i++) {
-				if (elem !== undefined && elem.imageName.toLowerCase() === imageList[i]['imageName'].toLowerCase()) {
+				if (elem !== undefined && imageList[i] !== undefined && elem.imageName.toLowerCase() === imageList[i]['imageName'].toLowerCase()) {
 					var nameParts = elem.imageName.split('.');
 					nameParts[nameParts.length - 2] += ' (' + (++imageList[i].equalCount) + ')';
 					elem.imageName = nameParts.join('.');
@@ -386,7 +381,7 @@ function storeRes(res, index) {
 
 function generateZip(isFromFS, fs, isRetry, forced){
 	// remove pause button
-	if (ehDownloadDialog.contains(ehDownloadPauseBtn)) {
+	if (!forced && ehDownloadDialog.contains(ehDownloadPauseBtn)) {
 		ehDownloadDialog.removeChild(ehDownloadPauseBtn);
 	}
 
@@ -450,7 +445,7 @@ function generateZip(isFromFS, fs, isRetry, forced){
 							data = undefined;
 							abData = undefined;
 							return setTimeout(function(){
-								ehDownloadFS.saveAs(isFromFS ? fs : undefined);
+								ehDownloadFS.saveAs(isFromFS ? fs : undefined, forced);
 							}, 1500);
 						}
 						fileWriter.seek(dataIndex);
@@ -465,7 +460,18 @@ function generateZip(isFromFS, fs, isRetry, forced){
 						setTimeout(loopWrite, 100, fileEntry);
 					}, ehDownloadFS.errorHandler);
 				};
-				fs.root.getFile(unsafeWindow.gid + '.zip', {create: true}, loopWrite, ehDownloadFS.errorHandler);
+				
+				fs.root.getFile(unsafeWindow.gid + '.zip', {create: true}, function(fileEntry){
+					if (fileEntry.isFile) fileEntry.remove(function(){
+						console.log('[EHD] File', fileName, 'is removed.');
+					}, ehDownloadFS.errorHandler);
+					else if (fileEntry.isDirectory) fileEntry.removeRecursively(function() {
+						console.log('[EHD] Directory', fileName, 'is removed.');
+					}, ehDownloadFS.errorHandler);
+					
+					fs.root.getFile(unsafeWindow.gid + '.zip', {create: true}, loopWrite, ehDownloadFS.errorHandler);
+				}, ehDownloadFS.errorHandler);
+				//fs.root.getFile(unsafeWindow.gid + '.zip', {create: true}, loopWrite, ehDownloadFS.errorHandler);
 			}
 			else { // or just using blob
 				curFile.textContent = 'Generating Blob object...';
@@ -540,7 +546,7 @@ function generateZip(isFromFS, fs, isRetry, forced){
 					}, ehDownloadFS.errorHandler);
 				}, ehDownloadFS.errorHandler);
 			};
-			window.requestFileSystem(window.TEMPORARY, 1024 * 1024 * 1024 * 1024, initFS, ehDownloadFS.errorHandler);
+			requestFileSystem(window.TEMPORARY, 1024 * 1024 * 1024 * 1024, initFS, ehDownloadFS.errorHandler);
 		}
 	}
 }
@@ -1329,7 +1335,7 @@ function initEHDownload() {
 			var requiredMBs = requiredBytes / 1024 / 1024;
 
 			if ((!setting['store-in-fs'] && requiredMBs >= 450) && !confirm('This archive is too large (original size), please consider downloading this archive in other way.\n\nMaximum allowed file size: Chrome / Opera 15+ 500MB | IE 10+ 600 MB | Firefox 20+ 800 MB\n(From FileSaver.js introduction)\n\nAre you sure to continue downloading? Please also consider your operating system\'s free memory, it may takes about double size of archive file size when generating ZIP file.\n\n* If continues, you would probably face "Failed - No File" or "Out Of Memory" and can\'t save file successfully.\n\n* If you are using Chrome, you can try enabling "Request File System to handle large Zip file" on settings page.\n\n* You can set Pages Range to download this archive into some parts. If you have already enabled it, please ignore this message.')) return;
-			else if (setting['store-in-fs'] && window.requestFileSystem && requiredMBs >= (setting['fs-size'] !== undefined ? setting['fs-size'] : 200)) {
+			else if (setting['store-in-fs'] && requestFileSystem && requiredMBs >= (setting['fs-size'] !== undefined ? setting['fs-size'] : 200)) {
 				ehDownloadFS.needFileSystem = true;
 				console.log('[EHD] Required File System Space >', requiredBytes);
 
@@ -1352,14 +1358,14 @@ function initEHDownload() {
 								}
 								else {
 									pushDialog('\n<strong>Please allow storing large content if browser asked a request.</strong>\n');
-									window.requestFileSystem(window.PERSISTENT, requiredBytes, ehDownloadFS.initHandler, ehDownloadFS.errorHandler);
+									requestFileSystem(window.PERSISTENT, requiredBytes, ehDownloadFS.initHandler, ehDownloadFS.errorHandler);
 								}
 							}, ehDownloadFS.errorHandler);
 						}
-						else window.requestFileSystem(window.TEMPORARY, requiredBytes, ehDownloadFS.initHandler, ehDownloadFS.errorHandler);
+						else requestFileSystem(window.TEMPORARY, requiredBytes, ehDownloadFS.initHandler, ehDownloadFS.errorHandler);
 					}, ehDownloadFS.errorHandler);
 				}
-				else window.requestFileSystem(window.TEMPORARY, requiredBytes, ehDownloadFS.initHandler, ehDownloadFS.errorHandler);
+				else requestFileSystem(window.TEMPORARY, requiredBytes, ehDownloadFS.initHandler, ehDownloadFS.errorHandler);
 			}
 		}
 	}
@@ -1641,8 +1647,8 @@ function showSettings() {
 				<div class="g2"><label><input type="checkbox" data-ehd-setting="force-resized"> Force download resized image (never download original image) **</label></div>\
 				<div class="g2"><label><input type="checkbox" data-ehd-setting="never-new-url"> Never get new image URL when failed downloading image **</label></div>\
 				<div class="g2"><label><input type="checkbox" data-ehd-setting="never-send-nl"> Never send "nl" GET parameter when getting new image URL **</label></div>\
-				<div class="g2"' + (window.requestFileSystem ? '' : ' style="opacity: 0.5;" title="Only Chrome supports this feature"') + '><label><input type="checkbox" data-ehd-setting="store-in-fs"> Request File System to handle large Zip file +</label></div>\
-				<div class="g2"' + (window.requestFileSystem ? '' : ' style="opacity: 0.5;" title="Only Chrome supports this feature"') + '><label>Use File System if archive is larger than <input type="number" data-ehd-setting="fs-size" min="0" placeholder="200" style="width: 46px;"> MB (0 is always) +</label></div>\
+				<div class="g2"' + (requestFileSystem ? '' : ' style="opacity: 0.5;" title="Only Chrome supports this feature"') + '><label><input type="checkbox" data-ehd-setting="store-in-fs"> Request File System to handle large Zip file +</label></div>\
+				<div class="g2"' + (requestFileSystem ? '' : ' style="opacity: 0.5;" title="Only Chrome supports this feature"') + '><label>Use File System if archive is larger than <input type="number" data-ehd-setting="fs-size" min="0" placeholder="200" style="width: 46px;"> MB (0 is always) +</label></div>\
 				<div class="g2"><label>Record and save gallery info as <select data-ehd-setting="save-info"><option value="file">File info.txt</option><option value="comment">Zip comment</option><option value="none">None</option></select></label></div>\
 				<div class="g2">...which includes <label><input type="checkbox" data-ehd-setting="save-info-list[]" value="title">Title & Gallery Link</label> <label><input type="checkbox" data-ehd-setting="save-info-list[]" value="metas">Metadatas</label> <label><input type="checkbox" data-ehd-setting="save-info-list[]" value="tags">Tags</label> <label><input type="checkbox" data-ehd-setting="save-info-list[]" value="uploader-comment">Uploader Comment</label> <label><input type="checkbox" data-ehd-setting="save-info-list[]" value="page-links">Page Links</label></div>\
 				<div class="g2"><label><input type="checkbox" data-ehd-setting="replace-with-full-width"> Replace forbidden letters as fill-width letters instead of dash (-)</label></div>\
@@ -2029,4 +2035,4 @@ window.onbeforeunload = unsafeWindow.onbeforeunload = function(){
 };
 
 // Forced request File System to check if have temp archive
-if (setting['store-in-fs'] && window.requestFileSystem) window.requestFileSystem(window.TEMPORARY, 1024 * 1024 * 1024, ehDownloadFS.initCheckerHandler, ehDownloadFS.errorHandler);
+if (setting['store-in-fs'] && requestFileSystem) requestFileSystem(window.TEMPORARY, 1024 * 1024 * 1024, ehDownloadFS.initCheckerHandler, ehDownloadFS.errorHandler);
