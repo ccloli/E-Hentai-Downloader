@@ -1,13 +1,15 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.24.1
+// @version      1.24.2
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
 // @include      http://exhentai.org/g/*
+// @include      http://e-hentai.org/g/*
 // @include      http://g.e-hentai.org/g/*
 // @include      http://r.e-hentai.org/g/*
 // @include      https://exhentai.org/g/*
+// @include      https://e-hentai.org/g/*
 // @include      https://g.e-hentai.org/g/*
 // @include      https://r.e-hentai.org/g/*
 // @namespace    http://ext.ccloli.com
@@ -12560,8 +12562,6 @@ function pushDialog(str) {
 	ehDownloadDialog.scrollTop = ehDownloadDialog.scrollHeight;
 }
 
-
-
 function getSafeName(str) {
 	var replaceList = {
 		':': '：',
@@ -13150,7 +13150,7 @@ function fetchOriginalImage(index, nodeList) {
 				byteLength === 142 ||   // Image Viewing Limits String Byte Size (exhentai)
 				byteLength === 144 ||   // Image Viewing Limits String Byte Size (g.e-hentai)
 				byteLength === 28658 || // '509 Bandwidth Exceeded' Image Byte Size
-				(mime[0] === 'text' && (new TextDecoder()).decode(new DataView(response)).indexOf('You have exceeded your image viewing limits') >= 0) // directly detect response content in case byteLength will be modified
+				(mime[0] === 'text' && (res.responseText || new TextDecoder()).decode(new DataView(response)).indexOf('You have exceeded your image viewing limits') >= 0) // directly detect response content in case byteLength will be modified
 			) {
 				// thought exceed the limits, downloading image is still accessable
 				/*for (var i = 0; i < fetchThread.length; i++) {
@@ -13675,12 +13675,12 @@ function initProgressTable(){
 	ehDownloadDialog.appendChild(ehDownloadPauseBtn);
 }
 
-function requestDownload(){
+function requestDownload(ignoreFailed){
 	if (isPausing) return;
-	var i = fetchCount, j = 0;
-	for (/*var i = fetchCount*/; i < (setting['thread-count'] !== undefined ? setting['thread-count'] : 5); i++) {
-		for (/*var j = 0*/; j < totalCount; j++) {
-			if (imageData[j] == null) {
+	
+	for (var i = fetchCount; i < (setting['thread-count'] !== undefined ? setting['thread-count'] : 5); i++) {
+		for (var j = 0; j < totalCount; j++) {
+			if (imageData[j] == null && (!ignoreFailed || imageList.retryCount < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3))) {
 				imageData[j] = 'Fetching';
 				if (imageList[j] && setting['never-new-url']) fetchOriginalImage(j);
 				else getPageData(j);
@@ -14234,7 +14234,7 @@ ehDownloadPauseBtn.addEventListener('click', function(event){
 		isPausing = false;
 		ehDownloadPauseBtn.textContent = setting['force-pause'] ? 'Pause (Downloading images will be aborted)' : 'Pause (Downloading images will keep downloading)';
 
-		requestDownload();
+		requestDownload(ignoreFailed);
 	}
 });
 
@@ -14262,6 +14262,10 @@ forceDownloadTips.getElementsByTagName('a')[0].addEventListener('click', functio
 	saveDownloaded(true);
 });
 
+var closeTips = document.createElement('div');
+closeTips.className = 'ehD-close-tips';
+closeTips.innerHTML = 'E-Hentai Downloader is still running, please don\'t close this tab before it finished downloading.<br><br>If any bug occured and the script can\'t work correctly, you can move your mouse pointer onto the progress box, and force to save downloaded images before you leave.';
+
 unsafeWindow.getzip = window.getzip = function(){
 	saveDownloaded(true);
 };
@@ -14272,7 +14276,10 @@ if (!setting['hide-image-limits']) {
 }
 
 if (!setting['hide-estimated-cost']) {
-	showPreCalcCost();
+	try {
+		showPreCalcCost();
+	}
+	catch (e) {}
 }
 
 window.addEventListener('storage', showImageLimits);
@@ -14285,14 +14292,11 @@ window.onbeforeunload = unsafeWindow.onbeforeunload = function(){
 		ehDownloadFS.removeFile(unsafeWindow.gid + '.zip');
 	}
 	if (isDownloading) {
-		var closeTips = document.createElement('div');
-		closeTips.className = 'ehD-close-tips';
-		closeTips.innerHTML = 'E-Hentai Downloader is still running, please don\'t close this tab before it finished downloading.<br><br>If any bug occured and the script can\'t work correctly, you can move your mouse pointer onto the progress box, and force to save downloaded images before you leave.';
 		document.body.appendChild(closeTips);
 
 		setTimeout(function(){
 			document.body.removeChild(closeTips);
-		}, 10);
+		}, 100);
 
 		return 'E-Hentai Downloader is still running, please don\'t close this tab before it finished downloading.';
 	}
@@ -14300,4 +14304,6 @@ window.onbeforeunload = unsafeWindow.onbeforeunload = function(){
 };
 
 // Forced request File System to check if have temp archive
-if (setting['store-in-fs'] && requestFileSystem) requestFileSystem(window.TEMPORARY, 1024 * 1024 * 1024, ehDownloadFS.initCheckerHandler, ehDownloadFS.errorHandler);
+if (setting['store-in-fs'] && requestFileSystem) {
+	requestFileSystem(window.TEMPORARY, 1024 * 1024 * 1024, ehDownloadFS.initCheckerHandler, ehDownloadFS.errorHandler);
+}
