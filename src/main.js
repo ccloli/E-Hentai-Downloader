@@ -25,22 +25,22 @@ var pretitle = document.title;
 var needTitleStatus = setting['status-in-title'] === 'always' ? true : false;
 
 // r.e-hentai.org points all links to g.e-hentai.org
-if (origin === 'http://r.e-hentai.org') {
-	origin = 'http://g.e-hentai.org';
+if (origin.indexOf('r.e-hentai.org') >= 0) {
+	origin = origin.replace(/r\.e-hentai\.org/, 'g.e-hentai.org');
 	isREH = true;
 }
 
 var ehDownloadRegex = {
 	imageURL: [
-		RegExp('<a href="(' + origin.replace(/\./gi, '\\.') + '\/fullimg\\.php\\?\\S+?)"'),
+		/<a href="(\S+?\/fullimg\.php\?\S+?)"/,
 		/<img id="img" src="(\S+?)"/,
 		/<\/iframe><a[\s\S]+?><img src="(\S+?)"/ // Sometimes preview image may not have id="img"
 	],
 	nextFetchURL: [
-		RegExp('<a id="next"[\\s\\S]+?href="(' + origin.replace(/\./gi, '\\.') + '\\/s\\/\\S+?)"'),
-		RegExp('<a href="(' + origin.replace(/\./gi, '\\.') + '\\/s\\/\\S+?)"><img src="http://ehgt.org/g/n.png"')
+		/<a id="next"[\s\S]+?href="(\S+?\/s\/\S+?)"/,
+		/<a href="(\S+?\/s\/\S+?)"><img src="http:\/\/ehgt.org\/g\/n.png"/
 	],
-	preFetchURL: RegExp('<div class="sn"><a[\\s\\S]+?href="(' + origin.replace(/\./gi, '\\.') + '\\/s\\/\\S+?)"'),
+	preFetchURL: /<div class="sn"><a[\s\S]+?href="(\S+?\/s\/\S+?)"/,
 	nl: /return nl\('([\d-]+)'\)/,
 	fileName: /g\/l.png"\s?\/><\/a><\/div><div>([\s\S]+?) :: /,
 	resFileName: /filename=([\s\S]+?)\n/,
@@ -1461,7 +1461,7 @@ function getPageData(index) {
 	};
 
 	var retryCount = 0;
-	var fetchURL = imageList[index] ? (imageList[index]['pageURL'] + ((!setting['never-send-nl'] && imageList[index]['nextNL']) ? (imageList[index]['pageURL'].indexOf('?') >= 0 ? '&' : '?') + 'nl=' + imageList[index]['nextNL'] : '')).replaceHTMLEntites() : pageURLsList[realIndex - 1];
+	var fetchURL = (imageList[index] ? (imageList[index]['pageURL'] + ((!setting['never-send-nl'] && imageList[index]['nextNL']) ? (imageList[index]['pageURL'].indexOf('?') >= 0 ? '&' : '?') + 'nl=' + imageList[index]['nextNL'] : '')).replaceHTMLEntites() : pageURLsList[realIndex - 1]).replace(/^https?:/, '');
 
 	// assign to fetchThread, so that we can abort them and all GM_xhr by one command fetchThread[i].abort()
 	var xhr = fetchThread[index] = new XMLHttpRequest();
