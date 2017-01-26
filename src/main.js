@@ -883,7 +883,7 @@ function fetchOriginalImage(index, nodeList) {
 				byteLength === 142 ||   // Image Viewing Limits String Byte Size (exhentai)
 				byteLength === 144 ||   // Image Viewing Limits String Byte Size (g.e-hentai)
 				byteLength === 28658 || // '509 Bandwidth Exceeded' Image Byte Size
-				(mime[0] === 'text' && (res.responseText || new TextDecoder()).decode(new DataView(response)).indexOf('You have exceeded your image viewing limits') >= 0) // directly detect response content in case byteLength will be modified
+				(mime[0] === 'text' && (res.responseText || new TextDecoder().decode(new DataView(response))).indexOf('You have exceeded your image viewing limits') >= 0) // directly detect response content in case byteLength will be modified
 			) {
 				// thought exceed the limits, downloading image is still accessable
 				/*for (var i = 0; i < fetchThread.length; i++) {
