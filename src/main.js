@@ -1967,7 +1967,7 @@ ehDownloadPauseBtn.addEventListener('click', function(event){
 		isPausing = false;
 		ehDownloadPauseBtn.textContent = setting['force-pause'] ? 'Pause (Downloading images will be aborted)' : 'Pause (Downloading images will keep downloading)';
 
-		requestDownload(ignoreFailed);
+		requestDownload(true);
 	}
 });
 
