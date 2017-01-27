@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.24.2
+// @version      1.24.3
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -12292,22 +12292,22 @@ var pretitle = document.title;
 var needTitleStatus = setting['status-in-title'] === 'always' ? true : false;
 
 // r.e-hentai.org points all links to g.e-hentai.org
-if (origin === 'http://r.e-hentai.org') {
-	origin = 'http://g.e-hentai.org';
+if (origin.indexOf('r.e-hentai.org') >= 0) {
+	origin = origin.replace(/r\.e-hentai\.org/, 'g.e-hentai.org');
 	isREH = true;
 }
 
 var ehDownloadRegex = {
 	imageURL: [
-		RegExp('<a href="(' + origin.replace(/\./gi, '\\.') + '\/fullimg\\.php\\?\\S+?)"'),
+		/<a href="(\S+?\/fullimg\.php\?\S+?)"/,
 		/<img id="img" src="(\S+?)"/,
 		/<\/iframe><a[\s\S]+?><img src="(\S+?)"/ // Sometimes preview image may not have id="img"
 	],
 	nextFetchURL: [
-		RegExp('<a id="next"[\\s\\S]+?href="(' + origin.replace(/\./gi, '\\.') + '\\/s\\/\\S+?)"'),
-		RegExp('<a href="(' + origin.replace(/\./gi, '\\.') + '\\/s\\/\\S+?)"><img src="http://ehgt.org/g/n.png"')
+		/<a id="next"[\s\S]+?href="(\S+?\/s\/\S+?)"/,
+		/<a href="(\S+?\/s\/\S+?)"><img src="http:\/\/ehgt.org\/g\/n.png"/
 	],
-	preFetchURL: RegExp('<div class="sn"><a[\\s\\S]+?href="(' + origin.replace(/\./gi, '\\.') + '\\/s\\/\\S+?)"'),
+	preFetchURL: /<div class="sn"><a[\s\S]+?href="(\S+?\/s\/\S+?)"/,
 	nl: /return nl\('([\d-]+)'\)/,
 	fileName: /g\/l.png"\s?\/><\/a><\/div><div>([\s\S]+?) :: /,
 	resFileName: /filename=([\s\S]+?)\n/,
@@ -12848,7 +12848,7 @@ function failedFetching(index, nodeList, forced){
 
 		imageList[index]['imageFinalURL'] = null;
 		failedCount++;
-		fetchCount--;
+		if (!isPausing || !setting['force-pause']) fetchCount--;
 
 		updateTotalStatus();
 		checkFailed();
@@ -13150,7 +13150,7 @@ function fetchOriginalImage(index, nodeList) {
 				byteLength === 142 ||   // Image Viewing Limits String Byte Size (exhentai)
 				byteLength === 144 ||   // Image Viewing Limits String Byte Size (g.e-hentai)
 				byteLength === 28658 || // '509 Bandwidth Exceeded' Image Byte Size
-				(mime[0] === 'text' && (res.responseText || new TextDecoder()).decode(new DataView(response)).indexOf('You have exceeded your image viewing limits') >= 0) // directly detect response content in case byteLength will be modified
+				(mime[0] === 'text' && (res.responseText || new TextDecoder().decode(new DataView(response))).indexOf('You have exceeded your image viewing limits') >= 0) // directly detect response content in case byteLength will be modified
 			) {
 				// thought exceed the limits, downloading image is still accessable
 				/*for (var i = 0; i < fetchThread.length; i++) {
@@ -13678,9 +13678,10 @@ function initProgressTable(){
 function requestDownload(ignoreFailed){
 	if (isPausing) return;
 	
+	var j = 0;
 	for (var i = fetchCount; i < (setting['thread-count'] !== undefined ? setting['thread-count'] : 5); i++) {
-		for (var j = 0; j < totalCount; j++) {
-			if (imageData[j] == null && (!ignoreFailed || imageList.retryCount < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3))) {
+		for (/*var j = 0*/; j < totalCount; j++) {
+			if (imageData[j] == null && (!ignoreFailed || (retryCount[j] || 0) < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3))) {
 				imageData[j] = 'Fetching';
 				if (imageList[j] && setting['never-new-url']) fetchOriginalImage(j);
 				else getPageData(j);
@@ -13727,18 +13728,18 @@ function getPageData(index) {
 		abort: node.getElementsByClassName('ehD-pt-abort')[0]
 	};
 
-	var retryCount = 0;
-	var fetchURL = imageList[index] ? (imageList[index]['pageURL'] + ((!setting['never-send-nl'] && imageList[index]['nextNL']) ? (imageList[index]['pageURL'].indexOf('?') >= 0 ? '&' : '?') + 'nl=' + imageList[index]['nextNL'] : '')).replaceHTMLEntites() : pageURLsList[realIndex - 1];
+	retryCount[index] = 0;
+	var fetchURL = (imageList[index] ? (imageList[index]['pageURL'] + ((!setting['never-send-nl'] && imageList[index]['nextNL']) ? (imageList[index]['pageURL'].indexOf('?') >= 0 ? '&' : '?') + 'nl=' + imageList[index]['nextNL'] : '')).replaceHTMLEntites() : pageURLsList[realIndex - 1]).replace(/^https?:/, '');
 
 	// assign to fetchThread, so that we can abort them and all GM_xhr by one command fetchThread[i].abort()
 	var xhr = fetchThread[index] = new XMLHttpRequest();
 	xhr.onload = function() {
 		if (xhr.status !== 200 || !xhr.responseText) {
-			if (retryCount < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
-				retryCount++;
+			if (retryCount[index] < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
+				retryCount[index]++;
 
 				updateProgress(nodeList, {
-					status: 'Retrying (' + retryCount + '/' + (setting['retry-count'] !== undefined ? setting['retry-count'] : 3) + ')...',
+					status: 'Retrying (' + retryCount[index] + '/' + (setting['retry-count'] !== undefined ? setting['retry-count'] : 3) + ')...',
 					progress: '',
 					progressText: '',
 					class: 'ehD-pt-warning'
@@ -13773,11 +13774,11 @@ function getPageData(index) {
 		}
 		catch (error) {
 			console.error('[EHD] Response content is not correct!', error);
-			if (retryCount < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
-				retryCount++;
+			if (retryCount[index] < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
+				retryCount[index]++;
 
 				updateProgress(nodeList, {
-					status: 'Retrying (' + retryCount + '/' + (setting['retry-count'] !== undefined ? setting['retry-count'] : 3) + ')...',
+					status: 'Retrying (' + retryCount[index] + '/' + (setting['retry-count'] !== undefined ? setting['retry-count'] : 3) + ')...',
 					progress: '',
 					progressText: '',
 					class: 'ehD-pt-warning'
@@ -13835,11 +13836,11 @@ function getPageData(index) {
 
 	};
 	xhr.onerror = xhr.ontimeout = function() {
-		if (retryCount < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
-			retryCount++;
+		if (retryCount[index] < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
+			retryCount[index]++;
 
 			updateProgress(nodeList, {
-				status: 'Retrying (' + retryCount + '/' + (setting['retry-count'] !== undefined ? setting['retry-count'] : 3) + ')...',
+				status: 'Retrying (' + retryCount[index] + '/' + (setting['retry-count'] !== undefined ? setting['retry-count'] : 3) + ')...',
 				progress: '',
 				progressText: '',
 				class: 'ehD-pt-warning'
@@ -14224,7 +14225,12 @@ ehDownloadPauseBtn.addEventListener('click', function(event){
 						if (!elem) continue;
 						elem.textContent = 'Force Paused';
 						imageData[i] = null;
-						fetchCount = 0; // fixed for async
+						//fetchCount = 0; // fixed for async
+						fetchCount--;
+
+						console.log(imageData[i], imageList[i]);
+
+						updateTotalStatus();
 					}
 				}
 			}, 0);
@@ -14234,7 +14240,7 @@ ehDownloadPauseBtn.addEventListener('click', function(event){
 		isPausing = false;
 		ehDownloadPauseBtn.textContent = setting['force-pause'] ? 'Pause (Downloading images will be aborted)' : 'Pause (Downloading images will keep downloading)';
 
-		requestDownload(ignoreFailed);
+		requestDownload(true);
 	}
 });
 
