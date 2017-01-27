@@ -581,7 +581,7 @@ function failedFetching(index, nodeList, forced){
 
 		imageList[index]['imageFinalURL'] = null;
 		failedCount++;
-		fetchCount--;
+		if (!isPausing || !setting['force-pause']) fetchCount--;
 
 		updateTotalStatus();
 		checkFailed();
@@ -1411,9 +1411,10 @@ function initProgressTable(){
 function requestDownload(ignoreFailed){
 	if (isPausing) return;
 	
+	var j = 0;
 	for (var i = fetchCount; i < (setting['thread-count'] !== undefined ? setting['thread-count'] : 5); i++) {
-		for (var j = 0; j < totalCount; j++) {
-			if (imageData[j] == null && (!ignoreFailed || imageList.retryCount < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3))) {
+		for (/*var j = 0*/; j < totalCount; j++) {
+			if (imageData[j] == null && (!ignoreFailed || (retryCount[j] || 0) < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3))) {
 				imageData[j] = 'Fetching';
 				if (imageList[j] && setting['never-new-url']) fetchOriginalImage(j);
 				else getPageData(j);
@@ -1460,18 +1461,18 @@ function getPageData(index) {
 		abort: node.getElementsByClassName('ehD-pt-abort')[0]
 	};
 
-	var retryCount = 0;
+	retryCount[index] = 0;
 	var fetchURL = (imageList[index] ? (imageList[index]['pageURL'] + ((!setting['never-send-nl'] && imageList[index]['nextNL']) ? (imageList[index]['pageURL'].indexOf('?') >= 0 ? '&' : '?') + 'nl=' + imageList[index]['nextNL'] : '')).replaceHTMLEntites() : pageURLsList[realIndex - 1]).replace(/^https?:/, '');
 
 	// assign to fetchThread, so that we can abort them and all GM_xhr by one command fetchThread[i].abort()
 	var xhr = fetchThread[index] = new XMLHttpRequest();
 	xhr.onload = function() {
 		if (xhr.status !== 200 || !xhr.responseText) {
-			if (retryCount < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
-				retryCount++;
+			if (retryCount[index] < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
+				retryCount[index]++;
 
 				updateProgress(nodeList, {
-					status: 'Retrying (' + retryCount + '/' + (setting['retry-count'] !== undefined ? setting['retry-count'] : 3) + ')...',
+					status: 'Retrying (' + retryCount[index] + '/' + (setting['retry-count'] !== undefined ? setting['retry-count'] : 3) + ')...',
 					progress: '',
 					progressText: '',
 					class: 'ehD-pt-warning'
@@ -1506,11 +1507,11 @@ function getPageData(index) {
 		}
 		catch (error) {
 			console.error('[EHD] Response content is not correct!', error);
-			if (retryCount < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
-				retryCount++;
+			if (retryCount[index] < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
+				retryCount[index]++;
 
 				updateProgress(nodeList, {
-					status: 'Retrying (' + retryCount + '/' + (setting['retry-count'] !== undefined ? setting['retry-count'] : 3) + ')...',
+					status: 'Retrying (' + retryCount[index] + '/' + (setting['retry-count'] !== undefined ? setting['retry-count'] : 3) + ')...',
 					progress: '',
 					progressText: '',
 					class: 'ehD-pt-warning'
@@ -1568,11 +1569,11 @@ function getPageData(index) {
 
 	};
 	xhr.onerror = xhr.ontimeout = function() {
-		if (retryCount < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
-			retryCount++;
+		if (retryCount[index] < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
+			retryCount[index]++;
 
 			updateProgress(nodeList, {
-				status: 'Retrying (' + retryCount + '/' + (setting['retry-count'] !== undefined ? setting['retry-count'] : 3) + ')...',
+				status: 'Retrying (' + retryCount[index] + '/' + (setting['retry-count'] !== undefined ? setting['retry-count'] : 3) + ')...',
 				progress: '',
 				progressText: '',
 				class: 'ehD-pt-warning'
@@ -1957,7 +1958,12 @@ ehDownloadPauseBtn.addEventListener('click', function(event){
 						if (!elem) continue;
 						elem.textContent = 'Force Paused';
 						imageData[i] = null;
-						fetchCount = 0; // fixed for async
+						//fetchCount = 0; // fixed for async
+						fetchCount--;
+
+						console.log(imageData[i], imageList[i]);
+
+						updateTotalStatus();
 					}
 				}
 			}, 0);
