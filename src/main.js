@@ -23,6 +23,7 @@ var pageURLsList = [];
 var getAllPagesURLFin = false;
 var pretitle = document.title;
 var needTitleStatus = setting['status-in-title'] === 'always' ? true : false;
+var fetchPagesXHR = new XMLHttpRequest();
 
 // r.e-hentai.org points all links to g.e-hentai.org
 if (origin.indexOf('r.e-hentai.org') >= 0) {
@@ -1169,7 +1170,7 @@ function getAllPagesURL() {
 		var curPage = 0;
 		retryCount = 0;
 
-		var xhr = new XMLHttpRequest();
+		var xhr = fetchPagesXHR;
 		xhr.onload = function(){
 			if (xhr.status !== 200 || !xhr.responseText) {
 				if (retryCount < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
@@ -1290,6 +1291,7 @@ function initEHDownload() {
 	isPausing = false;
 	zip = new JSZip();
 	infoStr = '';
+	fetchPagesXHR.abort();
 
 	if (setting['recheck-file-name']) {
 		var dirNameNode = document.querySelector('.ehD-box-extend-dirname');
