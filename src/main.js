@@ -47,7 +47,8 @@ var ehDownloadRegex = {
 	dangerChars: /[:"*?|<>\/\\\n]/g,
 	pagesRange: /^(\d*(-\d*)?\s*?,\s*?)*\d*(-\d*)?$/,
 	pagesURL: /(?:<a href=").+?(?=")/gi,
-	imageLimits: /You are currently at <strong>(\d+)<\/strong> towards a limit of <strong>(\d+)<\/strong>/
+	imageLimits: /You are currently at <strong>(\d+)<\/strong> towards a limit of <strong>(\d+)<\/strong>/,
+	pagesLength: /<table class="ptt"(?:[\s\S]+?(\d+)<\/a>)*[\s\S+]+<\/table>/
 };
 
 var requestFileSystem = window.requestFileSystem || window.webkitRequestFileSystem;
@@ -1156,11 +1157,15 @@ function getAllPagesURL() {
 	ehDownloadDialog.style.display = 'block';
 	if (!getAllPagesURLFin) {
 		pageURLsList = [];
-		var pagesLength = [].reduce.call(document.querySelectorAll('.ptt td'), function(x, y){
-			var i = Number(y.textContent);
-			if (!isNaN(i)) return x > i ? x : i;
-			else return x;
-		});
+		var pagesLength;
+		try { // in case pages has been modified like #56
+			pagesLength = [].reduce.call(document.querySelectorAll('.ptt td'), function(x, y){
+				var i = Number(y.textContent);
+				if (!isNaN(i)) return x > i ? x : i;
+				else return x;
+			});
+		}
+		catch (error) {}
 		var curPage = 0;
 		retryCount = 0;
 
@@ -1205,6 +1210,11 @@ function getAllPagesURL() {
 			pushDialog('Succeed!');
 
 			curPage++;
+			
+			if (!pagesLength) { // can't get pagesLength correctly before
+				pagesLength = xhr.responseText.match(ehDownloadRegex.pagesLength)[1] - 0;
+			}
+		
 			if (curPage === pagesLength) {
 				getAllPagesURLFin = true;
 				var wrongPages = pagesRange.filter(function(elem){ return elem > pageURLsList.length; });
