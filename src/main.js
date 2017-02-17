@@ -1928,7 +1928,7 @@ ehDownloadBox.appendChild(ehDownloadNumberInput);
 
 var ehDownloadRange = document.createElement('div');
 ehDownloadRange.className = 'g2';
-ehDownloadRange.innerHTML = ehDownloadArrow + ' <a><label>Pages Range <input type="text" placeholder="eg. 1-10,12,14-20,27,30"></label></a>';
+ehDownloadRange.innerHTML = ehDownloadArrow + ' <a><label>Pages Range <input type="text" placeholder="eg. -10,12,14-20,27,30-"></label></a>';
 ehDownloadBox.appendChild(ehDownloadRange);
 
 var ehDownloadSetting = document.createElement('div');
