@@ -34,7 +34,7 @@ var ehDownloadRegex = {
 	imageURL: [
 		/<a href="(\S+?\/fullimg\.php\?\S+?)"/,
 		/<img id="img" src="(\S+?)"/,
-		/<\/iframe><a[\s\S]+?><img src="(\S+?)"/ // Sometimes preview image may not have id="img"
+		/<\/(?:script|iframe)><a[\s\S]+?><img src="(\S+?)"/ // Sometimes preview image may not have id="img"
 	],
 	nextFetchURL: [
 		/<a id="next"[\s\S]+?href="(\S+?\/s\/\S+?)"/,
