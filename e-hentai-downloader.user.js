@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.24.3
+// @version      1.25
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -12290,6 +12290,7 @@ var pageURLsList = [];
 var getAllPagesURLFin = false;
 var pretitle = document.title;
 var needTitleStatus = setting['status-in-title'] === 'always' ? true : false;
+var fetchPagesXHR = new XMLHttpRequest();
 
 // r.e-hentai.org points all links to g.e-hentai.org
 if (origin.indexOf('r.e-hentai.org') >= 0) {
@@ -12301,7 +12302,7 @@ var ehDownloadRegex = {
 	imageURL: [
 		/<a href="(\S+?\/fullimg\.php\?\S+?)"/,
 		/<img id="img" src="(\S+?)"/,
-		/<\/iframe><a[\s\S]+?><img src="(\S+?)"/ // Sometimes preview image may not have id="img"
+		/<\/(?:script|iframe)><a[\s\S]+?><img src="(\S+?)"/ // Sometimes preview image may not have id="img"
 	],
 	nextFetchURL: [
 		/<a id="next"[\s\S]+?href="(\S+?\/s\/\S+?)"/,
@@ -12312,9 +12313,10 @@ var ehDownloadRegex = {
 	fileName: /g\/l.png"\s?\/><\/a><\/div><div>([\s\S]+?) :: /,
 	resFileName: /filename=([\s\S]+?)\n/,
 	dangerChars: /[:"*?|<>\/\\\n]/g,
-	pagesRange: /^(\d+(-\d+)?\s*?,\s*?)*\d+(-\d+)?$/,
+	pagesRange: /^(\d*(-\d*)?\s*?,\s*?)*\d*(-\d*)?$/,
 	pagesURL: /(?:<a href=").+?(?=")/gi,
-	imageLimits: /You are currently at <strong>(\d+)<\/strong> towards a limit of <strong>(\d+)<\/strong>/
+	imageLimits: /You are currently at <strong>(\d+)<\/strong> towards a limit of <strong>(\d+)<\/strong>/,
+	pagesLength: /<table class="ptt"(?:[\s\S]+?(\d+)<\/a>)*[\s\S+]+<\/table>/
 };
 
 var requestFileSystem = window.requestFileSystem || window.webkitRequestFileSystem;
@@ -13404,14 +13406,14 @@ function getAllPagesURL() {
 		console.log('[EHD] Pages Range >', pagesRangeText);
 		if (!ehDownloadRegex.pagesRange.test(pagesRangeText)) return alert('Pages Range is not correct.');
 
-		var pagesRangeScale = pagesRangeText.match(/\d+-\d+|\d+/g);
+		var pagesRangeScale = pagesRangeText.match(/\d*-\d*|\d+/g);
 		pagesRangeScale.forEach(function(elem){
 			if (elem.indexOf('-') < 0) {
 				var curElem = Number(elem);
 				if (!pagesRange.some(function(e){ return curElem === e; })) pagesRange.push(curElem);
 			}
 			else {
-				var curElem = [Number(elem.split('-')[0]), Number(elem.split('-')[1])].sort(function(a, b){ return a - b; });
+				var curElem = [Number(elem.split('-')[0] || 1), Number(elem.split('-')[1] || getFileSizeAndLength().page)].sort(function(a, b){ return a - b; });
 				for (var i = curElem[0]; i <= curElem[1]; i++) {
 					if (!pagesRange.some(function(e){ return i === e; })) pagesRange.push(i);
 				}
@@ -13423,15 +13425,19 @@ function getAllPagesURL() {
 	ehDownloadDialog.style.display = 'block';
 	if (!getAllPagesURLFin) {
 		pageURLsList = [];
-		var pagesLength = [].reduce.call(document.querySelectorAll('.ptt td'), function(x, y){
-			var i = Number(y.textContent);
-			if (!isNaN(i)) return x > i ? x : i;
-			else return x;
-		});
+		var pagesLength;
+		try { // in case pages has been modified like #56
+			pagesLength = [].reduce.call(document.querySelectorAll('.ptt td'), function(x, y){
+				var i = Number(y.textContent);
+				if (!isNaN(i)) return x > i ? x : i;
+				else return x;
+			});
+		}
+		catch (error) {}
 		var curPage = 0;
 		retryCount = 0;
 
-		var xhr = new XMLHttpRequest();
+		var xhr = fetchPagesXHR;
 		xhr.onload = function(){
 			if (xhr.status !== 200 || !xhr.responseText) {
 				if (retryCount < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
@@ -13472,6 +13478,11 @@ function getAllPagesURL() {
 			pushDialog('Succeed!');
 
 			curPage++;
+			
+			if (!pagesLength) { // can't get pagesLength correctly before
+				pagesLength = xhr.responseText.match(ehDownloadRegex.pagesLength)[1] - 0;
+			}
+		
 			if (curPage === pagesLength) {
 				getAllPagesURLFin = true;
 				var wrongPages = pagesRange.filter(function(elem){ return elem > pageURLsList.length; });
@@ -13547,6 +13558,7 @@ function initEHDownload() {
 	isPausing = false;
 	zip = new JSZip();
 	infoStr = '';
+	fetchPagesXHR.abort();
 
 	if (setting['recheck-file-name']) {
 		var dirNameNode = document.querySelector('.ehD-box-extend-dirname');
@@ -13574,6 +13586,42 @@ function initEHDownload() {
 	if (dirName === '/') dirName = '';
 	needNumberImages = ehDownloadNumberInput.querySelector('input').checked;
 
+	var requiredBytes = getFileSizeAndLength().size + 100 * 1024;
+	var requiredMBs = getFileSizeAndLength().sizeMB + 0.1;
+
+	if ((!setting['store-in-fs'] && requiredMBs >= 300) && !confirm('This archive is too large (original size), please consider downloading this archive in other way.\n\nMaximum allowed file size: Chrome / Opera 15+ 500MB | IE 10+ 600 MB | Firefox 20+ 800 MB\n(From FileSaver.js introduction)\n\nPlease also consider your operating system\'s free memory (RAM), it may takes about DOUBLE size of archive file size when generating ZIP file.\n\n* If continues, you would probably face "Failed - No File" or "Out Of Memory" if you don\'t have enough RAM and can\'t save file successfully.\n\n* If you are using Chrome, you can try enabling "Request File System to handle large Zip file" on settings page.\n\n* You can set Pages Range to download this archive into some parts. If you have already enabled it, please ignore this message.\n\nAre you sure to continue downloading?')) return;
+	else if (setting['store-in-fs'] && requestFileSystem && requiredMBs >= (setting['fs-size'] !== undefined ? setting['fs-size'] : 200)) {
+		ehDownloadFS.needFileSystem = true;
+		console.log('[EHD] Required File System Space >', requiredBytes);
+
+		// Chrome can use about 10% of free space of disk where Chrome User Data stored in as TEMPORARY File System Storage.
+		if (navigator.webkitTemporaryStorage) { // if support navigator.webkitTemporaryStorage to check usable space
+			navigator.webkitTemporaryStorage.requestQuota(requiredBytes , function (grantedBytes) {
+				console.log('[EHD] Free TEMPORARY File System Space >', grantedBytes);
+				if (grantedBytes < requiredBytes) {
+					console.log('[EHD] Free TEMPORARY File System Space is not enough.');
+
+					// free space is not enough, then use persistent space
+					// in fact, free space of persisent file storage is always 10GiB, even free disk space is not enough
+					navigator.webkitPersistentStorage.requestQuota(requiredBytes , function (grantedBytes) {
+						console.log('[EHD] Free PERSISTENT File System Space >', grantedBytes);
+						if (grantedBytes < requiredBytes) {
+							// roll back and use Blob to handle file
+							ehDownloadFS.needFileSystem = false;
+							alert('You don\'t have enough free space where Chrome stored user data in (Default is system disk, normally it\'s C: ), please delete some file.\n\nNeeds more than ' + (requiredBytes - grantedBytes) + ' Bytes.\n\nRoll back and use Blob to handle file.');
+						}
+						else {
+							pushDialog('\n<strong>Please allow storing large content if browser asked a request.</strong>\n');
+							requestFileSystem(window.PERSISTENT, requiredBytes, ehDownloadFS.initHandler, ehDownloadFS.errorHandler);
+						}
+					}, ehDownloadFS.errorHandler);
+				}
+				else requestFileSystem(window.TEMPORARY, requiredBytes, ehDownloadFS.initHandler, ehDownloadFS.errorHandler);
+			}, ehDownloadFS.errorHandler);
+		}
+		else requestFileSystem(window.TEMPORARY, requiredBytes, ehDownloadFS.initHandler, ehDownloadFS.errorHandler);
+	}
+
 	// Array.prototype.some() is a bit ugly, so we use toString().indexOf() lol
 	var infoNeeds = setting['save-info-list'].toString();
 	if (infoNeeds.indexOf('title') >= 0) {
@@ -13591,48 +13639,6 @@ function initEHDownload() {
 		var c1 = metaNodes[i].getElementsByClassName('gdt1')[0].textContent.replaceHTMLEntites();
 		var c2 = metaNodes[i].getElementsByClassName('gdt2')[0].textContent.replaceHTMLEntites();
 		if (infoNeeds.indexOf('metas') >= 0) infoStr += c1 + ' ' + c2 + '\n';
-		if (c1 === 'File Size:') { // && (c2.indexOf('GB') > 0 || (c2.indexOf('MB') > 0 && parseFloat(c2) >= 200))
-			var requiredBytes = parseInt(
-				c2.indexOf('GB') > 0 ? (parseFloat(c2) + 0.01) * 1024 * 1024 * 1024 :
-				c2.indexOf('MB') > 0 ? (parseFloat(c2) + 0.01) * 1024 * 1024 :
-				parseFloat(c2) * 1024
-			) + 100 * 1024;
-			var requiredMBs = requiredBytes / 1024 / 1024;
-
-			if ((!setting['store-in-fs'] && requiredMBs >= 450) && !confirm('This archive is too large (original size), please consider downloading this archive in other way.\n\nMaximum allowed file size: Chrome / Opera 15+ 500MB | IE 10+ 600 MB | Firefox 20+ 800 MB\n(From FileSaver.js introduction)\n\nAre you sure to continue downloading? Please also consider your operating system\'s free memory, it may takes about double size of archive file size when generating ZIP file.\n\n* If continues, you would probably face "Failed - No File" or "Out Of Memory" and can\'t save file successfully.\n\n* If you are using Chrome, you can try enabling "Request File System to handle large Zip file" on settings page.\n\n* You can set Pages Range to download this archive into some parts. If you have already enabled it, please ignore this message.')) return;
-			else if (setting['store-in-fs'] && requestFileSystem && requiredMBs >= (setting['fs-size'] !== undefined ? setting['fs-size'] : 200)) {
-				ehDownloadFS.needFileSystem = true;
-				console.log('[EHD] Required File System Space >', requiredBytes);
-
-				// Chrome can use about 10% of free space of disk where Chrome User Data stored in as TEMPORARY File System Storage.
-				if (navigator.webkitTemporaryStorage) { // if support navigator.webkitTemporaryStorage to check usable space
-					navigator.webkitTemporaryStorage.requestQuota(requiredBytes , function (grantedBytes) {
-						console.log('[EHD] Free TEMPORARY File System Space >', grantedBytes);
-						if (grantedBytes < requiredBytes) {
-							console.log('[EHD] Free TEMPORARY File System Space is not enough.');
-
-							// free space is not enough, then use persistent space
-							// in fact, free space of persisent file storage is always 10GiB, even free disk space is not enough
-							navigator.webkitPersistentStorage.requestQuota(requiredBytes , function (grantedBytes) {
-								console.log('[EHD] Free PERSISTENT File System Space >', grantedBytes);
-								if (grantedBytes < requiredBytes) {
-									// roll back and use Blob to handle file
-									ehDownloadFS.needFileSystem = false;
-									alert('You don\'t have enough free space where Chrome stored user data in (Default is system disk, normally it\'s C: ), please delete some file.\n\nNeeds more than ' + (requiredBytes - grantedBytes) + ' Bytes.\n\nRoll back and use Blob to handle file.');
-									if (requiredMBs >= 450 && !confirm('This archive is too large (original size), please consider downloading this archive in other way.\n\nMaximum allowed file size: Chrome / Opera 15+ 500MB | IE 10+ 600 MB | Firefox 20+ 800 MB\n(From FileSaver.js introduction)\n\nAre you sure to continue downloading? Please also consider your operating system\'s free memory, it may takes about double size of archive file size when generating ZIP file.\n\n* If continues, you would probably face "Failed - No File" or "Out Of Memory" and can\'t save file successfully.\n\n* You can set Pages Range to download this archive into some parts. If you have already enabled it, please ignore this message.')) return;
-								}
-								else {
-									pushDialog('\n<strong>Please allow storing large content if browser asked a request.</strong>\n');
-									requestFileSystem(window.PERSISTENT, requiredBytes, ehDownloadFS.initHandler, ehDownloadFS.errorHandler);
-								}
-							}, ehDownloadFS.errorHandler);
-						}
-						else requestFileSystem(window.TEMPORARY, requiredBytes, ehDownloadFS.initHandler, ehDownloadFS.errorHandler);
-					}, ehDownloadFS.errorHandler);
-				}
-				else requestFileSystem(window.TEMPORARY, requiredBytes, ehDownloadFS.initHandler, ehDownloadFS.errorHandler);
-			}
-		}
 	}
 	if (infoNeeds.indexOf('metas') >= 0) infoStr += 'Rating: ' + unsafeWindow.average_rating + '\n\n';
 
@@ -14088,6 +14094,41 @@ function checkImageLimits(forced){
 	}
 }
 
+function getFileSizeAndLength() {
+	var context = document.getElementById('gdd').textContent;
+	var sizeText = context.split('File Size:')[1].split('Length:')[0].trim();
+	var pageText = context.split('Length:')[1].split('page')[0].trim();
+
+	var sizeMB, sizeKB;
+	var page = pageText - 0;
+
+	if (sizeText.indexOf('MB') >= 0) {
+		sizeMB = parseFloat(sizeText) + 0.01;
+		sizeKB = sizeMB * 1024;
+	}
+	else if (sizeText.indexOf('GB') >= 0) {
+		sizeMB = (parseFloat(sizeText) + 0.01) * 1024;
+		sizeKB = sizeMB * 1024;
+	}
+	else {
+		sizeMB = 1;
+		sizeKB = parseFloat(sizeText);
+	}
+
+	var result = {
+		sizeMB: sizeMB,
+		sizeKB: sizeKB,
+		size: sizeKB * 1024,
+		page: page
+	};
+
+	getFileSizeAndLength = function(){
+		return result;
+	};
+
+	return result;
+}
+
 function toggleFilenameConfirmInput(hide){
 	var extendNodes = document.querySelector('.ehD-box-extend');
 	if (extendNodes) {
@@ -14117,20 +14158,11 @@ function toggleFilenameConfirmInput(hide){
 }
 
 function showPreCalcCost(){
-	var context = document.getElementById('gdd').textContent;
-	var sizeText = context.split('File Size:')[1].split('Length:')[0].trim();
-	var pageText = context.split('Length:')[1].split('page')[0].trim();
-
 	var size = 0;
-	var page = pageText - 0;
+	var page = getFileSizeAndLength().page;
 
 	if (!setting['force-resized']) {
-		if (sizeText.indexOf('MB') >= 0) {
-			size = sizeText.split('MB')[0] - 0;
-		}
-		else if (sizeText.indexOf('GB') >= 0) {
-			size = (sizeText.split('GB')[0] - 0) * 1024;
-		}
+		size = getFileSizeAndLength().sizeMB;
 	}
 
 	ehDownloadBox.getElementsByClassName('ehD-box-cost')[0].innerHTML = ' | <a href="https://github.com/ccloli/E-Hentai-Downloader/wiki/E%E2%88%92Hentai-Image-Viewing-Limits" target="_blank">Estimated Limits Cost: ' + (parseInt(size * 5) + page) + '</a>';
@@ -14175,7 +14207,7 @@ ehDownloadBox.appendChild(ehDownloadNumberInput);
 
 var ehDownloadRange = document.createElement('div');
 ehDownloadRange.className = 'g2';
-ehDownloadRange.innerHTML = ehDownloadArrow + ' <a><label>Pages Range <input type="text" placeholder="eg. 1-10,12,14-20,27,30"></label></a>';
+ehDownloadRange.innerHTML = ehDownloadArrow + ' <a><label>Pages Range <input type="text" placeholder="eg. -10,12,14-20,27,30-"></label></a>';
 ehDownloadBox.appendChild(ehDownloadRange);
 
 var ehDownloadSetting = document.createElement('div');
@@ -14227,8 +14259,6 @@ ehDownloadPauseBtn.addEventListener('click', function(event){
 						imageData[i] = null;
 						//fetchCount = 0; // fixed for async
 						fetchCount--;
-
-						console.log(imageData[i], imageList[i]);
 
 						updateTotalStatus();
 					}
