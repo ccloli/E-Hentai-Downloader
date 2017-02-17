@@ -1257,7 +1257,7 @@ function getAllPagesURL() {
 		xhr.open('GET', location.pathname + '?p=' + curPage);
 		xhr.timeout = 30000;
 		xhr.send();
-		pushDialog('\nFetching Gallery Pages URL (' + (curPage + 1) + '/' + pagesLength + ') ... ');
+		pushDialog('\nFetching Gallery Pages URL (' + (curPage + 1) + '/' + (pagesLength || '?') + ') ... ');
 	}
 	else {
 		var wrongPages = pagesRange.filter(function(elem){ return elem > pageURLsList.length; });
