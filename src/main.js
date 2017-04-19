@@ -297,7 +297,7 @@ function pushDialog(str) {
 	ehDownloadDialog.scrollTop = ehDownloadDialog.scrollHeight;
 }
 
-function getSafeName(str) {
+function getSafeName(str, ignoreSlash) {
 	var replaceList = {
 		':': '：',
 		'"': '＂',
@@ -311,7 +311,10 @@ function getSafeName(str) {
 		'\n': '-'
 	};
 	var replaceFn = function(match) {
-		if (setting['replace-with-full-width']) {
+		if (ignoreSlash && (match === '/' || match === '\\')) {
+			return match;
+		}
+		else if (setting['replace-with-full-width']) {
 			return replaceList[match];
 		}
 		else {
@@ -1298,7 +1301,7 @@ function initEHDownload() {
 		var fileNameNode = document.querySelector('.ehD-box-extend-filename');
 
 		if (dirNameNode && dirNameNode.value) {
-			dirName = getSafeName(dirNameNode.value);
+			dirName = getSafeName(dirNameNode.value, true);
 		}
 		else {
 			dirName = getReplacedName(!setting['dir-name'] ? '{gid}_{token}' : setting['dir-name']);
