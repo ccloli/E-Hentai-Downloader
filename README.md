@@ -11,6 +11,8 @@ Download E-Hentai archive as zip file :package:
 - Maxthon > [Violentmonkey](http://extension.maxthon.cn/detail/index.php?view_id=1680)
 - Microsoft Edge > [Tampermonkey](https://www.microsoft.com/store/p/tampermonkey/9nblggh5162s) 4.2.5284.0+  
   > You must upgrade your Windows 10 to 14393 which supports Edge extension.
+- Safari 10.1+ > [Tampermonkey](https://tampermonkey.net/?browser=safari) 4.3.5421+  
+  > You must upgrade your macOS to 10.12.4 which supports `download` attribute of `<a>`.
 - Yandex Browser for Android > [Tampermonkey](https://addons.opera.com/zh-cn/extensions/details/tampermonkey-beta/) 4.2.5291+  
   > Anyway it's not a good idea to use it on mobile with limited RAM resources, but it can work, so it's up to you ;-)
 
