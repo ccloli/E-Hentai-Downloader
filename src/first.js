@@ -35,4 +35,10 @@ else if (
 	console.error('[EHD] GreaseMonkey doesn\'t support E-Hentai Downloader. GreaseMonkey Version > ' + GM_info.version);
 }
 
+// Tampermonkey for Safari has a bug with Promise (Tampermonkey/tampermonkey#375), so JSZip won't work when packaging.
+// As Tampermonkey not solve the bug right now, a fast fix is use unsafeWindow.Promise
+if (!Promise || !Promise.resolve) {
+	var Promise = unsafeWindow.Promise;
+}
+
 // GreasyFork doesn't allow obfuscated or minified script, so if you want to see the main function, please see src/main.js at GitHub
