@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.26.1
+// @version      1.26.2
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -12174,7 +12174,7 @@ function generateZip(isFromFS, fs, isRetry, forced){
 				curFile.textContent = ' ';
 
 				var fs = fs || ehDownloadFS.fs;
-				pushDialog('\n\nSlicing and storing Zip file...');
+				pushDialog('\n\nSpliting and storing Zip file to FileSystem...');
 				var data = abData;
 				var dataIndex = 0;
 				var dataLength = data.byteLength;
@@ -12227,15 +12227,19 @@ function generateZip(isFromFS, fs, isRetry, forced){
 					blob = createBlob([abData], {type: 'application/zip'});
 					saveAs(blob, fileName + '.zip');
 
-					if ('close' in blob) blob.close();
-					blob = null;
+					setTimeout(function(){
+						if ('close' in blob) blob.close();
+						blob = null;
+					}, 10e3); // 10s to fixed Chrome delay downloads
 				});
 				ehDownloadDialog.appendChild(redownloadBtn);
 
 				if (!forced) insertCloseButton();
 
-				if ('close' in blob) blob.close();
-				blob = null;
+				setTimeout(function(){
+					if ('close' in blob) blob.close();
+					blob = null;
+				}, 10e3); // 10s to fixed Chrome delay downloads
 			}
 		});
 	}

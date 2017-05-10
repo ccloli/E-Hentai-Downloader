@@ -436,7 +436,7 @@ function generateZip(isFromFS, fs, isRetry, forced){
 				curFile.textContent = ' ';
 
 				var fs = fs || ehDownloadFS.fs;
-				pushDialog('\n\nSlicing and storing Zip file...');
+				pushDialog('\n\nSpliting and storing Zip file to FileSystem...');
 				var data = abData;
 				var dataIndex = 0;
 				var dataLength = data.byteLength;
@@ -489,15 +489,19 @@ function generateZip(isFromFS, fs, isRetry, forced){
 					blob = createBlob([abData], {type: 'application/zip'});
 					saveAs(blob, fileName + '.zip');
 
-					if ('close' in blob) blob.close();
-					blob = null;
+					setTimeout(function(){
+						if ('close' in blob) blob.close();
+						blob = null;
+					}, 10e3); // 10s to fixed Chrome delay downloads
 				});
 				ehDownloadDialog.appendChild(redownloadBtn);
 
 				if (!forced) insertCloseButton();
 
-				if ('close' in blob) blob.close();
-				blob = null;
+				setTimeout(function(){
+					if ('close' in blob) blob.close();
+					blob = null;
+				}, 10e3); // 10s to fixed Chrome delay downloads
 			}
 		});
 	}
