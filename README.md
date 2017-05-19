@@ -30,6 +30,7 @@ Download E-Hentai archive as zip file :package:
 3. Click "Download Archive" in E-Hentai Downloader box
 4. Have a cup of coffee :coffee:
 5. Save the Zip file
+6. Fap fap fap
 
 ![E-Hentai Downloader box](https://cloud.githubusercontent.com/assets/8115912/10636596/56c9073c-7833-11e5-9161-c2c9f1a288a7.png)
 
