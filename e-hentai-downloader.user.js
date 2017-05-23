@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.26.2
+// @version      1.26.3
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -12021,6 +12021,8 @@ function createBlob(abdata, config) {
 
 // show info in dialog box
 function pushDialog(str) {
+	var needScrollIntoView = ehDownloadDialog.clientHeight + ehDownloadDialog.scrollTop >= ehDownloadDialog.scrollHeight;
+
 	if (typeof str === 'string') {
 		var tn = document.createElement('span');
 		tn.innerHTML += str.replace(/\n/gi, '<br>');
@@ -12032,7 +12034,9 @@ function pushDialog(str) {
 		ehDownloadDialog.appendChild(ehDownloadPauseBtn);
 	}
 
-	ehDownloadDialog.scrollTop = ehDownloadDialog.scrollHeight;
+	if (needScrollIntoView) {
+		ehDownloadDialog.scrollTop = ehDownloadDialog.scrollHeight;
+	}
 }
 
 function getSafeName(str, ignoreSlash) {
@@ -12399,6 +12403,8 @@ function fetchOriginalImage(index, nodeList) {
 	if (retryCount[index] === undefined) retryCount[index] = 0;
 	if (isPausing) return;
 
+	var needScrollIntoView = ehDownloadDialog.clientHeight + ehDownloadDialog.scrollTop >= ehDownloadDialog.scrollHeight;
+
 	if (nodeList === undefined) {
 		var node = progressTable.querySelector('tr[data-index="' + index + '"]');
 		if (!node) {
@@ -12435,7 +12441,9 @@ function fetchOriginalImage(index, nodeList) {
 		expiredDetect: null
 	};
 
-	ehDownloadDialog.scrollTop = ehDownloadDialog.scrollHeight;
+	if (needScrollIntoView) {
+		ehDownloadDialog.scrollTop = ehDownloadDialog.scrollHeight;
+	}
 
 	var zeroSpeedHandler = function(res){
 		if (imageData[index] instanceof ArrayBuffer) { // Has already downloaded
@@ -12751,7 +12759,7 @@ function fetchOriginalImage(index, nodeList) {
 			}
 
 			//console.log('[EHD-Debug]', index, 'Available Testing Finished!', new Date().getTime());
-			imageList[index]['_imageName'] = imageList[index]['imageName'] = res.responseHeaders.match(ehDownloadRegex.resFileName) ? getSafeName(res.responseHeaders.match(ehDownloadRegex.resFileName)[1]) : imageList[index]['imageName'];
+			imageList[index]['_imageName'] = imageList[index]['imageName'] = res.responseHeaders.match(ehDownloadRegex.resFileName) ? getSafeName(res.responseHeaders.match(ehDownloadRegex.resFileName)[1].trim()) : imageList[index]['imageName'];
 			//console.log('[EHD-Debug]', index, 'File name was modified!', new Date().getTime());
 
 			updateProgress(nodeList, {
@@ -13165,7 +13173,7 @@ function requestDownload(ignoreFailed){
 	var j = 0;
 	for (var i = fetchCount; i < (setting['thread-count'] !== undefined ? setting['thread-count'] : 5); i++) {
 		for (/*var j = 0*/; j < totalCount; j++) {
-			if (imageData[j] == null && (!ignoreFailed || (retryCount[j] || 0) < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3))) {
+			if (imageData[j] == null && (ignoreFailed || (retryCount[j] || 0) <= (setting['retry-count'] !== undefined ? setting['retry-count'] : 3))) {
 				imageData[j] = 'Fetching';
 				if (imageList[j] && setting['never-new-url']) fetchOriginalImage(j);
 				else getPageData(j);
@@ -13182,6 +13190,8 @@ function getPageData(index) {
 
 	if (pagesRange.length) var realIndex = pagesRange[index];
 	else var realIndex = index + 1;
+
+	var needScrollIntoView = ehDownloadDialog.clientHeight + ehDownloadDialog.scrollTop >= ehDownloadDialog.scrollHeight;
 
 	var node = progressTable.querySelector('tr[data-index="' + index + '"]');
 	if (!node) {
@@ -13200,7 +13210,9 @@ function getPageData(index) {
 			</td>';
 		progressTable.appendChild(node);
 	}
-	ehDownloadDialog.scrollTop = ehDownloadDialog.scrollHeight;
+	if (needScrollIntoView) {
+		ehDownloadDialog.scrollTop = ehDownloadDialog.scrollHeight;
+	}
 
 	var nodeList = {
 		current: node,
@@ -13732,8 +13744,11 @@ ehDownloadPauseBtn.addEventListener('click', function(event){
 
 					if (imageData[i] === 'Fetching') {
 						var elem = progressTable.querySelector('tr[data-index="' + i + '"] .ehD-pt-status-text');
-						if (!elem) continue;
-						elem.textContent = 'Force Paused';
+						if (elem) elem.textContent = 'Force Paused';
+
+						elem = progressTable.querySelector('tr[data-index="' + i + '"] .ehD-pt-progress-text');
+						if (elem) elem.textContent = '';
+
 						imageData[i] = null;
 						//fetchCount = 0; // fixed for async
 						fetchCount--;
@@ -13748,7 +13763,7 @@ ehDownloadPauseBtn.addEventListener('click', function(event){
 		isPausing = false;
 		ehDownloadPauseBtn.textContent = setting['force-pause'] ? 'Pause (Downloading images will be aborted)' : 'Pause (Downloading images will keep downloading)';
 
-		requestDownload(true);
+		requestDownload();
 	}
 });
 
