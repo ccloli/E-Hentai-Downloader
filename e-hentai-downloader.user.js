@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.26.3
+// @version      1.26.4
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -11782,7 +11782,7 @@ var ehDownloadRegex = {
 	preFetchURL: /<div class="sn"><a[\s\S]+?href="(\S+?\/s\/\S+?)"/,
 	nl: /return nl\('([\d-]+)'\)/,
 	fileName: /g\/l.png"\s?\/><\/a><\/div><div>([\s\S]+?) :: /,
-	resFileName: /filename=([\s\S]+?)\n/,
+	resFileName: /filename=['"]?([\s\S]+?)['"]?$/m,
 	dangerChars: /[:"*?|<>\/\\\n]/g,
 	pagesRange: /^(\d*(-\d*)?\s*?,\s*?)*\d*(-\d*)?$/,
 	pagesURL: /(?:<a href=").+?(?=")/gi,
@@ -11812,7 +11812,7 @@ var ehDownloadFS = {
 			10: 'QUOTA_EXCEEDED_ERR',
 			2: 'SECURITY_ERR',
 			11: 'TYPE_MISMATCH_ERR'
-		}
+		};
 		errorMsg += FileError[e.code] || 'Unknown Error';
 		
 		console.error('[EHD] ' + errorMsg);
@@ -12403,6 +12403,7 @@ function fetchOriginalImage(index, nodeList) {
 	if (retryCount[index] === undefined) retryCount[index] = 0;
 	if (isPausing) return;
 
+	var requestURL = imageList[index]['imageFinalURL'] || imageList[index]['imageURL'];
 	var needScrollIntoView = ehDownloadDialog.clientHeight + ehDownloadDialog.scrollTop >= ehDownloadDialog.scrollHeight;
 
 	if (nodeList === undefined) {
@@ -12485,7 +12486,7 @@ function fetchOriginalImage(index, nodeList) {
 		if (typeof fetchThread[index] !== 'undefined' && 'abort' in fetchThread[index]) fetchThread[index].abort();
 
 		console.log('[EHD] #' + (index + 1) + ': Speed Too Low');
-		console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
+		console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL, '\nResposeHeaders >' + res.responseHeaders);
 
 		updateProgress(nodeList, {
 			status: 'Failed! (Low Speed)',
@@ -12517,7 +12518,7 @@ function fetchOriginalImage(index, nodeList) {
 
 	fetchThread[index] = GM_xmlhttpRequest({
 		method: 'GET',
-		url: imageList[index]['imageFinalURL'] || imageList[index]['imageURL'],
+		url: requestURL,
 		responseType: 'arraybuffer',
 		timeout: (setting['timeout'] !== undefined) ? Number(setting['timeout']) * 1000 : 300000,
 		headers: {
@@ -12585,7 +12586,7 @@ function fetchOriginalImage(index, nodeList) {
 
 			if (!response) {
 				console.log('[EHD] #' + (index + 1) + ': Empty Response (See: https://github.com/ccloli/E-Hentai-Downloader/issues/16 )');
-				console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
+				console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL, '\nResposeHeaders >' + res.responseHeaders);
 
 				updateProgress(nodeList, {
 					status: 'Failed! (Empty Response)',
@@ -12604,7 +12605,7 @@ function fetchOriginalImage(index, nodeList) {
 			else if (byteLength === 925) { // '403 Access Denied' Image Byte Size
 				// GM_xhr only support abort()
 				console.log('[EHD] #' + (index + 1) + ': 403 Access Denied');
-				console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
+				console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL + '\nResposeHeaders >' + res.responseHeaders);
 
 				updateProgress(nodeList, {
 					status: 'Failed! (Error 403)',
@@ -12620,7 +12621,7 @@ function fetchOriginalImage(index, nodeList) {
 			}
 			else if (byteLength === 28) { // 'An error has occurred. (403)' Length
 				console.log('[EHD] #' + (index + 1) + ': An error has occurred. (403)');
-				console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
+				console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL + '\nResposeHeaders >' + res.responseHeaders);
 				
 				updateProgress(nodeList, {
 					status: 'Failed! (Error 403)',
@@ -12645,7 +12646,7 @@ function fetchOriginalImage(index, nodeList) {
 					if (typeof fetchThread[i] !== 'undefined' && 'abort' in fetchThread[i]) fetchThread[i].abort();
 				}*/
 				console.log('[EHD] #' + (index + 1) + ': Exceed Image Viewing Limits / 509 Bandwidth Exceeded');
-				console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
+				console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL + '\nResposeHeaders >' + res.responseHeaders);
 
 				updateProgress(nodeList, {
 					status: 'Failed! (Exceed Limits)',
@@ -12725,7 +12726,7 @@ function fetchOriginalImage(index, nodeList) {
 			// res.status should be detected at here, because we should know are we reached image limits at first
 			else if (res.status !== 200) {
 				console.log('[EHD] #' + (index + 1) + ': Wrong Response Status');
-				console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
+				console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL + '\nResposeHeaders >' + res.responseHeaders);
 
 				updateProgress(nodeList, {
 					status: 'Failed! (Wrong Status)',
@@ -12743,7 +12744,7 @@ function fetchOriginalImage(index, nodeList) {
 			//if (res.getResponseHeader('Content-Type').split('/')[0] != 'image') {
 			else if (mime[0] !== 'image') {
 				console.log('[EHD] #' + (index + 1) + ': Wrong Content-Type');
-				console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
+				console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL + '\nResposeHeaders >' + res.responseHeaders);
 
 				updateProgress(nodeList, {
 					status: 'Failed! (Wrong MIME)',
@@ -12785,7 +12786,7 @@ function fetchOriginalImage(index, nodeList) {
 			if (!isDownloading || imageData[index] instanceof ArrayBuffer) return; // Temporarily fixes #31
 
 			console.log('[EHD] #' + (index + 1) + ': Network Error');
-			console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
+			console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL, '\nResposeHeaders >' + res.responseHeaders);
 
 			updateProgress(nodeList, {
 				status: 'Failed! (Network Error)',
@@ -12807,7 +12808,7 @@ function fetchOriginalImage(index, nodeList) {
 			if (!isDownloading || imageData[index] instanceof ArrayBuffer) return; // Temporarily fixes #31
 
 			console.log('[EHD] #' + (index + 1) + ': Timed Out');
-			console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nResposeHeaders >' + res.responseHeaders);
+			console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL, '\nResposeHeaders >' + res.responseHeaders);
 
 			updateProgress(nodeList, {
 				status: 'Failed! (Timed Out)',
@@ -12879,7 +12880,7 @@ function insertCloseButton() {
 	ehDownloadDialog.appendChild(exitButton);
 	ehDownloadDialog.scrollTop = ehDownloadDialog.scrollHeight;
 
-	if (ehDownloadDialog.contains(forceDownloadTips)) ehDownloadDialog.removeChild(forceDownloadTips)
+	if (ehDownloadDialog.contains(forceDownloadTips)) ehDownloadDialog.removeChild(forceDownloadTips);
 }
 
 // /*if pages range is set, then*/ get all pages URL to select needed pages
@@ -13165,6 +13166,7 @@ function initProgressTable(){
 	ehDownloadDialog.appendChild(progressTable);
 	ehDownloadDialog.appendChild(forceDownloadTips);
 	ehDownloadDialog.appendChild(ehDownloadPauseBtn);
+	ehDownloadDialog.scrollTop = ehDownloadDialog.scrollHeight;
 }
 
 function requestDownload(ignoreFailed){
@@ -13504,7 +13506,7 @@ function showSettings() {
 					else if (inputs[i].getAttribute('type') === 'number') {
 						setting[curSettingName] = Number(inputs[i].value);
 						if (isNaN(setting[curSettingName])) {
-							setting[curSettingName] = Number(inputs[i].getAttribute('placeholder'))
+							setting[curSettingName] = Number(inputs[i].getAttribute('placeholder'));
 						}
 					}
 					else {
@@ -13537,7 +13539,7 @@ function showSettings() {
 function getImageLimits(host, forced){
 	var host = host || location.hostname;
 	if (host === 'exhentai.org') {
-		host = 'g.e-hentai.org';
+		host = 'e-hentai.org';
 	}
 	var url = 'http://' + host + '/home.php';
 
