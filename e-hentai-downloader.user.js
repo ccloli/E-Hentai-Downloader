@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.26.4
+// @version      1.26.5
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -11757,6 +11757,7 @@ var needNumberImages = setting['number-images'];
 var pagesRange = [];
 var isDownloading = false;
 var isPausing = false;
+var isSaving = false;
 var pageURLsList = [];
 var getAllPagesURLFin = false;
 var pretitle = document.title;
@@ -12125,6 +12126,8 @@ function storeRes(res, index) {
 }
 
 function generateZip(isFromFS, fs, isRetry, forced){
+	isSaving = true;
+
 	// remove pause button
 	if (!forced && ehDownloadDialog.contains(ehDownloadPauseBtn)) {
 		ehDownloadDialog.removeChild(ehDownloadPauseBtn);
@@ -12191,6 +12194,7 @@ function generateZip(isFromFS, fs, isRetry, forced){
 							abData = undefined;
 							return setTimeout(function(){
 								ehDownloadFS.saveAs(isFromFS ? fs : undefined, forced);
+								isSaving = false;
 							}, 1500);
 						}
 						fileWriter.seek(dataIndex);
@@ -12239,6 +12243,7 @@ function generateZip(isFromFS, fs, isRetry, forced){
 				ehDownloadDialog.appendChild(redownloadBtn);
 
 				if (!forced) insertCloseButton();
+				isSaving = false;
 
 				setTimeout(function(){
 					if ('close' in blob) blob.close();
@@ -12289,6 +12294,7 @@ function generateZip(isFromFS, fs, isRetry, forced){
 										zip.remove(elem);
 									});
 									zip = undefined;
+									isSaving = false;
 								});
 							});
 						}
@@ -13822,7 +13828,7 @@ window.onbeforeunload = unsafeWindow.onbeforeunload = function(){
 		}
 		ehDownloadFS.removeFile(unsafeWindow.gid + '.zip');
 	}
-	if (isDownloading) {
+	if (isDownloading || isPausing || isSaving) {
 		document.body.appendChild(closeTips);
 
 		setTimeout(function(){
