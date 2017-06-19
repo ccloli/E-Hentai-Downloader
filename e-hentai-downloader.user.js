@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.26.5
+// @version      1.26.6
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -11802,21 +11802,24 @@ var ehDownloadFS = {
 	},
 	errorHandler: function(e) {
 		var errorMsg = 'File System Request Error > ';
-		var FileError = {
-			5: 'ENCODING_ERR',
-			9: 'INVALID_MODIFICATION_ERR',
-			7: 'INVALID_STATE_ERR',
-			6: 'NO_MODIFICATION_ALLOWED_ERR',
-			1: 'NOT_FOUND_ERR',
-			4: 'NOT_READABLE_ERR',
-			12: 'PATH_EXISTS_ERR',
-			10: 'QUOTA_EXCEEDED_ERR',
-			2: 'SECURITY_ERR',
-			11: 'TYPE_MISMATCH_ERR'
-		};
-		errorMsg += FileError[e.code] || 'Unknown Error';
+		errorMsg += e.name || 'Unknown Error';
 		
-		console.error('[EHD] ' + errorMsg);
+		console.error('[EHD] ' + errorMsg, e.message);
+		console.error(e);
+
+		ehDownloadFS.removeAllFiles();
+
+		if (confirm('An error occured when storing files to FileSystem.\n' +
+					'Error Name: ' + (e.name || 'Unknown Error') + '\n' +
+					'Error Message: ' + e.message + '\n\n' +
+					'Should I try FileSystem again (Yes) or redirect to try using Blob (No)? \n' +
+					'* If the error message shows it\'s due to no more free disk space, try removing some files from the disk where Chrome installed (mostly C: on Windows)')) {
+			generateZip(true, ehDownloadFS.fs, true);
+		}
+		else {
+			ehDownloadFS.needFileSystem = false;
+			generateZip(false, undefined, true);
+		}
 	},
 	saveAs: function(fs, forced){
 		var fs = fs || ehDownloadFS.fs;
@@ -11962,6 +11965,9 @@ var ehDownloadStyle = '\
 if (setting['status-in-title'] === true) setting['status-in-title'] = 'blur';
 if (!setting['save-info-list']) {
 	setting['save-info-list'] = ['title', 'metas', 'uploader-comment', 'page-links'];
+}
+if (localStorage.getItem('ehd-image-limits-g.e-hentai.org')) {
+	localStorage.removeItem('ehd-image-limits-g.e-hentai.org');
 }
 
 // log information
