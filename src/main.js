@@ -50,7 +50,7 @@ var ehDownloadRegex = {
 	pagesRange: /^(\d*(-\d*)?\s*?,\s*?)*\d*(-\d*)?$/,
 	pagesURL: /(?:<a href=").+?(?=")/gi,
 	imageLimits: /You are currently at <strong>(\d+)<\/strong> towards a limit of <strong>(\d+)<\/strong>/,
-	pagesLength: /<table class="ptt"(?:[\s\S]+?(\d+)<\/a>)*[\s\S+]+<\/table>/
+	pagesLength: /<table class="ptt".+(\d+)<\/a>.+?<\/table>/
 };
 
 var requestFileSystem = window.requestFileSystem || window.webkitRequestFileSystem;
@@ -103,13 +103,13 @@ var ehDownloadFS = {
 		var removeFunction = function(fileEntry){
 			if (fileEntry.isFile) fileEntry.remove(function(){
 				console.log('[EHD] File', fileName, 'is removed.');
-			}, ehDownloadFS.errorHandler);
+			});
 			else if (fileEntry.isDirectory) fileEntry.removeRecursively(function() {
 				console.log('[EHD] Directory', fileName, 'is removed.');
-			}, ehDownloadFS.errorHandler);
+			});
 		};
 		if (isEntry) removeFunction(fileName);
-		else fs.root.getFile(fileName, {create: false}, removeFunction, ehDownloadFS.errorHandler);
+		else fs.root.getFile(fileName, {create: false}, removeFunction);
 	},
 	removeAllFiles: function(fs){
 		var fs = fs || ehDownloadFS.fs;
