@@ -12692,12 +12692,12 @@ function fetchOriginalImage(index, nodeList) {
 					- Check back in a few hours, and you will be able to download more (reduce 3 points per minute by default).\n\
 					- You can reset your image viewing limits to continue by paying your GPs or credits.\n\n\
 					If you want to reset your limits by paying your GPs or credits right now, choose YES, and you can reset it on opened window. Or if you want to wait a few minutes until you have enough free limits, then continue, choose NO.')) {
-					window.open('http://g.e-hentai.org/home.php');
+					window.open('http://e-hentai.org/home.php');
 				}
 
 				var resetButton = document.createElement('a');
 				resetButton.innerHTML = '<button>Reset Limits</button>';
-				resetButton.setAttribute('href', 'http://g.e-hentai.org/home.php');
+				resetButton.setAttribute('href', 'http://e-hentai.org/home.php');
 				resetButton.setAttribute('target', '_blank');
 				ehDownloadDialog.appendChild(resetButton);
 
@@ -13429,7 +13429,7 @@ function showSettings() {
 				<div class="g2">...which includes <label><input type="checkbox" data-ehd-setting="save-info-list[]" value="title">Title & Gallery Link</label> <label><input type="checkbox" data-ehd-setting="save-info-list[]" value="metas">Metadatas</label> <label><input type="checkbox" data-ehd-setting="save-info-list[]" value="tags">Tags</label> <label><input type="checkbox" data-ehd-setting="save-info-list[]" value="uploader-comment">Uploader Comment</label> <label><input type="checkbox" data-ehd-setting="save-info-list[]" value="page-links">Page Links</label></div>\
 				<div class="g2"><label><input type="checkbox" data-ehd-setting="replace-with-full-width"> Replace forbidden letters as full-width letters instead of dash (-)</label></div>\
 				<div class="g2"><label><input type="checkbox" data-ehd-setting="force-pause"> Force drop downloading images data when pausing download</label></div>\
-				<div class="g2"><label><input type="checkbox" data-ehd-setting="image-limits-both"> I\'m in China and/or using proxy to visit g.e-hentai.org so my image limits on ExHentai is incorrect</label></div>\
+				<div class="g2"><label><input type="checkbox" data-ehd-setting="image-limits-both"> I\'m in China and/or using proxy to visit exhentai.org so my image limits on ExHentai is incorrect</label></div>\
 				<!--<div class="g2"><label><input type="checkbox" data-ehd-setting="auto-scale"> Auto scale Zip file at <input type="text" min="10" placeholder="250" style="width: 46px;" data-ehd-setting="scale-size"> MB if file is larger than <input type="text" min="10" placeholder="400" style="width: 46px;" data-ehd-setting="scale-reach"> MB (experiment) ***</label></div>-->\
 				<div class="g2">\
 					* This may reduce memory usage but some program might not support the Zip file. See <a href="http://stuk.github.io/jszip/documentation/api_jszip/generate_async.html" target="_blank" style="color: #ffffff;">JSZip Docs</a> for more info.\
@@ -13588,7 +13588,7 @@ function showImageLimits(){
 		return curData.cur + '/' + curData.total;
 	});
 
-	ehDownloadBox.getElementsByClassName('ehD-box-limit')[0].innerHTML = ' | <a href="http://g.e-hentai.org/home.php">Image Limits: ' + list.join('; ') + '</a>';
+	ehDownloadBox.getElementsByClassName('ehD-box-limit')[0].innerHTML = ' | <a href="http://e-hentai.org/home.php">Image Limits: ' + list.join('; ') + '</a>';
 }
 
 function checkImageLimits(forced){
