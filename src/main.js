@@ -954,12 +954,12 @@ function fetchOriginalImage(index, nodeList) {
 					- Check back in a few hours, and you will be able to download more (reduce 3 points per minute by default).\n\
 					- You can reset your image viewing limits to continue by paying your GPs or credits.\n\n\
 					If you want to reset your limits by paying your GPs or credits right now, choose YES, and you can reset it on opened window. Or if you want to wait a few minutes until you have enough free limits, then continue, choose NO.')) {
-					window.open('http://g.e-hentai.org/home.php');
+					window.open('http://e-hentai.org/home.php');
 				}
 
 				var resetButton = document.createElement('a');
 				resetButton.innerHTML = '<button>Reset Limits</button>';
-				resetButton.setAttribute('href', 'http://g.e-hentai.org/home.php');
+				resetButton.setAttribute('href', 'http://e-hentai.org/home.php');
 				resetButton.setAttribute('target', '_blank');
 				ehDownloadDialog.appendChild(resetButton);
 
@@ -1850,7 +1850,7 @@ function showImageLimits(){
 		return curData.cur + '/' + curData.total;
 	});
 
-	ehDownloadBox.getElementsByClassName('ehD-box-limit')[0].innerHTML = ' | <a href="http://g.e-hentai.org/home.php">Image Limits: ' + list.join('; ') + '</a>';
+	ehDownloadBox.getElementsByClassName('ehD-box-limit')[0].innerHTML = ' | <a href="http://e-hentai.org/home.php">Image Limits: ' + list.join('; ') + '</a>';
 }
 
 function checkImageLimits(forced){
