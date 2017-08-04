@@ -68,20 +68,6 @@ var ehDownloadFS = {
 		
 		console.error('[EHD] ' + errorMsg, e.message);
 		console.error(e);
-
-		ehDownloadFS.removeAllFiles();
-
-		if (confirm('An error occured when storing files to FileSystem.\n' +
-					'Error Name: ' + (e.name || 'Unknown Error') + '\n' +
-					'Error Message: ' + e.message + '\n\n' +
-					'Should I try FileSystem again (Yes) or redirect to try using Blob (No)? \n' +
-					'* If the error message shows it\'s due to no more free disk space, try removing some files from the disk where Chrome installed (mostly C: on Windows)')) {
-			generateZip(true, ehDownloadFS.fs, true);
-		}
-		else {
-			ehDownloadFS.needFileSystem = false;
-			generateZip(false, undefined, true);
-		}
 	},
 	saveAs: function(fs, forced){
 		var fs = fs || ehDownloadFS.fs;
@@ -425,6 +411,98 @@ function generateZip(isFromFS, fs, isRetry, forced){
 	ehDownloadDialog.appendChild(progress);
 	ehDownloadDialog.appendChild(curFile);
 
+	var saveToFileSystem = function(abData) {
+		curFile.textContent = ' ';
+
+		var fsErrorHandler = function(error) {
+			ehDownloadFS.errorHandler(error);
+			ehDownloadFS.removeAllFiles();
+
+			if (confirm('An error occured when storing files to FileSystem.\n' +
+						'Error Name: ' + (error.name || 'Unknown Error') + '\n' +
+						'Error Message: ' + error.message + '\n\n' +
+						'Should I try FileSystem again (Yes) or redirect to try using Blob (No)? \n' +
+						'* If the error message shows it\'s due to no more free disk space, try removing some files from the disk where Chrome installed (mostly C: on Windows)')) {
+				saveToFileSystem(abData);
+			}
+			else {
+				ehDownloadFS.needFileSystem = false;
+				saveToBlob(abData);
+			}
+		};
+
+		var fs = fs || ehDownloadFS.fs;
+		pushDialog('\n\nSpliting and storing Zip file to FileSystem...');
+		var data = abData;
+		var dataIndex = 0;
+		var dataLength = data.byteLength;
+		var loopWrite = function(fileEntry){
+			fileEntry.createWriter(function(fileWriter){
+				//fileWriter.seek(fileWriter.length);
+				dataIndex = fileWriter.length;
+				if (dataIndex >= dataLength) {
+					data = undefined;
+					abData = undefined;
+					return setTimeout(function(){
+						ehDownloadFS.saveAs(isFromFS ? fs : undefined, forced);
+						isSaving = false;
+					}, 1500);
+				}
+				fileWriter.seek(dataIndex);
+				var dataLastIndex = dataIndex + 1024 * 1024 * 10;
+				// I tried setting it as 100MB but some parts were still gone, so I have to make it smaller.
+				console.log('[EHD] DataIndex >', dataIndex, '| DataLastIndex >', dataLastIndex, '| FileWriterLength >', fileWriter.length, '| DataLength >', dataLength);
+				pushDialog('\n' + dataIndex + '-' + dataLastIndex + '/' + dataLength);
+				var blob = createBlob([data.slice(dataIndex, dataLastIndex)], {type: 'application/zip'});
+				fileWriter.write(blob);
+				if ('close' in blob) blob.close(); // File Blob.close() API, not supported by all the browser now
+				blob = null;
+				setTimeout(loopWrite, 100, fileEntry);
+			}, fsErrorHandler);
+		};
+		
+		fs.root.getFile(unsafeWindow.gid + '.zip', {create: true}, function(fileEntry){
+			if (fileEntry.isFile) fileEntry.remove(function(){
+				console.log('[EHD] File', fileName, 'is removed.');
+			}, fsErrorHandler);
+			else if (fileEntry.isDirectory) fileEntry.removeRecursively(function() {
+				console.log('[EHD] Directory', fileName, 'is removed.');
+			}, fsErrorHandler);
+			
+			fs.root.getFile(unsafeWindow.gid + '.zip', {create: true}, loopWrite, fsErrorHandler);
+		}, fsErrorHandler);
+		//fs.root.getFile(unsafeWindow.gid + '.zip', {create: true}, loopWrite, fsErrorHandler);
+	};
+
+	var saveToBlob = function(abData){
+		curFile.textContent = 'Generating Blob object...';
+		var blob = createBlob([abData], {type: 'application/zip'});
+		curFile.textContent = ' ';
+		saveAs(blob, fileName + '.zip');
+
+		var redownloadBtn = document.createElement('button');
+		redownloadBtn.textContent = 'Not download? Click here to download';
+		redownloadBtn.addEventListener('click', function(){
+			// rebuild blob object if "File is not exist" occured
+			blob = createBlob([abData], {type: 'application/zip'});
+			saveAs(blob, fileName + '.zip');
+
+			setTimeout(function(){
+				if ('close' in blob) blob.close();
+				blob = null;
+			}, 10e3); // 10s to fixed Chrome delay downloads
+		});
+		ehDownloadDialog.appendChild(redownloadBtn);
+
+		if (!forced) insertCloseButton();
+		isSaving = false;
+
+		setTimeout(function(){
+			if ('close' in blob) blob.close();
+			blob = null;
+		}, 10e3); // 10s to fixed Chrome delay downloads
+	}
+
 	try {
 		// build arraybuffer object to detect if it generates successfully
 		zip.generateAsync({
@@ -438,85 +516,19 @@ function generateZip(isFromFS, fs, isRetry, forced){
 		}, function(meta){
 			progress.value = meta.percent / 100;
 			curFile.textContent = meta.currentFile || 'Calculating extra data...';
+			ehDownloadDialog.scrollTop = ehDownloadDialog.scrollHeight;
 		}).then(function(abData){
+			if (isFromFS || ehDownloadFS.needFileSystem) { // using filesystem to save file is needed
+				saveToFileSystem(abData);
+			}
+			else { // or just using blob
+				saveToBlob(abData);
+			}
+
 			if (!forced) {
 				zip.file(/.*/).forEach(function(elem){
 					zip.remove(elem);
 				});
-			}
-
-			if (isFromFS || ehDownloadFS.needFileSystem) { // using filesystem to save file is needed
-				curFile.textContent = ' ';
-
-				var fs = fs || ehDownloadFS.fs;
-				pushDialog('\n\nSpliting and storing Zip file to FileSystem...');
-				var data = abData;
-				var dataIndex = 0;
-				var dataLength = data.byteLength;
-				var loopWrite = function(fileEntry){
-					fileEntry.createWriter(function(fileWriter){
-						//fileWriter.seek(fileWriter.length);
-						dataIndex = fileWriter.length;
-						if (dataIndex >= dataLength) {
-							data = undefined;
-							abData = undefined;
-							return setTimeout(function(){
-								ehDownloadFS.saveAs(isFromFS ? fs : undefined, forced);
-								isSaving = false;
-							}, 1500);
-						}
-						fileWriter.seek(dataIndex);
-						var dataLastIndex = dataIndex + 1024 * 1024 * 10;
-						// I tried setting it as 100MB but some parts were still gone, so I have to make it smaller.
-						console.log('[EHD] DataIndex >', dataIndex, '| DataLastIndex >', dataLastIndex, '| FileWriterLength >', fileWriter.length, '| DataLength >', dataLength);
-						pushDialog('\n' + dataIndex + '-' + dataLastIndex + '/' + dataLength);
-						var blob = createBlob([data.slice(dataIndex, dataLastIndex)], {type: 'application/zip'});
-						fileWriter.write(blob);
-						if ('close' in blob) blob.close(); // File Blob.close() API, not supported by all the browser now
-						blob = null;
-						setTimeout(loopWrite, 100, fileEntry);
-					}, ehDownloadFS.errorHandler);
-				};
-				
-				fs.root.getFile(unsafeWindow.gid + '.zip', {create: true}, function(fileEntry){
-					if (fileEntry.isFile) fileEntry.remove(function(){
-						console.log('[EHD] File', fileName, 'is removed.');
-					}, ehDownloadFS.errorHandler);
-					else if (fileEntry.isDirectory) fileEntry.removeRecursively(function() {
-						console.log('[EHD] Directory', fileName, 'is removed.');
-					}, ehDownloadFS.errorHandler);
-					
-					fs.root.getFile(unsafeWindow.gid + '.zip', {create: true}, loopWrite, ehDownloadFS.errorHandler);
-				}, ehDownloadFS.errorHandler);
-				//fs.root.getFile(unsafeWindow.gid + '.zip', {create: true}, loopWrite, ehDownloadFS.errorHandler);
-			}
-			else { // or just using blob
-				curFile.textContent = 'Generating Blob object...';
-				var blob = createBlob([abData], {type: 'application/zip'});
-				curFile.textContent = ' ';
-				saveAs(blob, fileName + '.zip');
-
-				var redownloadBtn = document.createElement('button');
-				redownloadBtn.textContent = 'Not download? Click here to download';
-				redownloadBtn.addEventListener('click', function(){
-					// rebuild blob object if "File is not exist" occured
-					blob = createBlob([abData], {type: 'application/zip'});
-					saveAs(blob, fileName + '.zip');
-
-					setTimeout(function(){
-						if ('close' in blob) blob.close();
-						blob = null;
-					}, 10e3); // 10s to fixed Chrome delay downloads
-				});
-				ehDownloadDialog.appendChild(redownloadBtn);
-
-				if (!forced) insertCloseButton();
-				isSaving = false;
-
-				setTimeout(function(){
-					if ('close' in blob) blob.close();
-					blob = null;
-				}, 10e3); // 10s to fixed Chrome delay downloads
 			}
 		});
 	}
@@ -528,6 +540,19 @@ function generateZip(isFromFS, fs, isRetry, forced){
 		console.error(error);
 		if (confirm('An error occurred when generating Zip file as ArrayBuffer. Try again?')) return generateZip(isFromFS, fs, 1);
 
+		var fsErrorHandler = function(error) {
+			ehDownloadFS.errorHandler(error);
+			ehDownloadFS.removeAllFiles();
+
+			if (confirm('An error occured when storing files to FileSystem.\n' +
+						'Error Name: ' + (error.name || 'Unknown Error') + '\n' +
+						'Error Message: ' + error.message + '\n\n' +
+						'Should I try again (Yes) or stop it (No, and the downloaded file will be removed)? \n' +
+						'* If the error message shows it\'s due to no more free disk space, try removing some files from the disk where Chrome installed (mostly C: on Windows)')) {
+				generateZip(isFromFS, fs, isRetry, forced);
+			}
+		};
+
 		if (isFromFS || ehDownloadFS.needFileSystem) {
 			// if enabled file system, then store all files into file system
 			pushDialog('Storing files into File System...');
@@ -536,7 +561,7 @@ function generateZip(isFromFS, fs, isRetry, forced){
 			var filesLength = files.length;
 			var initFS = function(r){
 				fs = r;
-				fs.root.getDirectory('raw', {create: true}, loopWrite, ehDownloadFS.errorHandler);
+				fs.root.getDirectory('raw', {create: true}, loopWrite, fsErrorHandler);
 			};
 			var loopWrite = function(){
 				fs.root.getFile('raw/' + files[fileIndex]['name'], {create: true}, function(fileEntry){
@@ -566,10 +591,10 @@ function generateZip(isFromFS, fs, isRetry, forced){
 								});
 							});
 						}
-					}, ehDownloadFS.errorHandler);
-				}, ehDownloadFS.errorHandler);
+					}, fsErrorHandler);
+				}, fsErrorHandler);
 			};
-			requestFileSystem(window.TEMPORARY, 1024 * 1024 * 1024 * 1024, initFS, ehDownloadFS.errorHandler);
+			requestFileSystem(window.TEMPORARY, 1024 * 1024 * 1024 * 1024, initFS, fsErrorHandler);
 		}
 	}
 }
@@ -1350,6 +1375,17 @@ function initEHDownload() {
 	var requiredBytes = Math.ceil(getFileSizeAndLength().size + 100 * 1024);
 	var requiredMBs = getFileSizeAndLength().sizeMB + 0.1;
 
+	var fsErrorHandler = function (error) {
+		ehDownloadFS.errorHandler(error);
+
+		// roll back and use Blob to handle file
+		ehDownloadFS.needFileSystem = false;
+		alert('An error occured when requesting FileSystem.\n' +
+			'Error Name: ' + (e.name || 'Unknown Error') + '\n' +
+			'Error Message: ' + e.message + '\n\n' +
+			'Roll back and use Blob to handle file.');
+	}
+
 	if ((!setting['store-in-fs'] && requiredMBs >= 300) && !confirm('This archive is too large (original size), please consider downloading this archive in other way.\n\nMaximum allowed file size: Chrome / Opera 15+ 500MB | IE 10+ 600 MB | Firefox 20+ 800 MB\n(From FileSaver.js introduction)\n\nPlease also consider your operating system\'s free memory (RAM), it may takes about DOUBLE size of archive file size when generating ZIP file.\n\n* If continues, you would probably face "Failed - No File" or "Out Of Memory" if you don\'t have enough RAM and can\'t save file successfully.\n\n* If you are using Chrome, you can try enabling "Request File System to handle large Zip file" on settings page.\n\n* You can set Pages Range to download this archive into some parts. If you have already enabled it, please ignore this message.\n\nAre you sure to continue downloading?')) return;
 	else if (setting['store-in-fs'] && requestFileSystem && requiredMBs >= (setting['fs-size'] !== undefined ? setting['fs-size'] : 200)) {
 		ehDownloadFS.needFileSystem = true;
@@ -1373,14 +1409,14 @@ function initEHDownload() {
 						}
 						else {
 							pushDialog('\n<strong>Please allow storing large content if browser asked a request.</strong>\n');
-							requestFileSystem(window.PERSISTENT, requiredBytes, ehDownloadFS.initHandler, ehDownloadFS.errorHandler);
+							requestFileSystem(window.PERSISTENT, requiredBytes, ehDownloadFS.initHandler, fsErrorHandler);
 						}
-					}, ehDownloadFS.errorHandler);
+					}, fsErrorHandler);
 				}
-				else requestFileSystem(window.TEMPORARY, requiredBytes, ehDownloadFS.initHandler, ehDownloadFS.errorHandler);
-			}, ehDownloadFS.errorHandler);
+				else requestFileSystem(window.TEMPORARY, requiredBytes, ehDownloadFS.initHandler, fsErrorHandler);
+			}, fsErrorHandler);
 		}
-		else requestFileSystem(window.TEMPORARY, requiredBytes, ehDownloadFS.initHandler, ehDownloadFS.errorHandler);
+		else requestFileSystem(window.TEMPORARY, requiredBytes, ehDownloadFS.initHandler, fsErrorHandler);
 	}
 
 	// Array.prototype.some() is a bit ugly, so we use toString().indexOf() lol
