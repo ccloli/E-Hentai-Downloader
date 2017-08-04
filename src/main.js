@@ -25,6 +25,9 @@ var getAllPagesURLFin = false;
 var pretitle = document.title;
 var needTitleStatus = setting['status-in-title'] === 'always' ? true : false;
 var fetchPagesXHR = new XMLHttpRequest();
+var audioCtx = new(unsafeWindow.AudioContext||unsafeWindow.webkitAudioContext)
+var oscillator;
+var gainNode;
 
 // r.e-hentai.org points all links to g.e-hentai.org
 if (origin.indexOf('r.e-hentai.org') >= 0) {
@@ -80,7 +83,10 @@ var ehDownloadFS = {
 			a.setAttribute('download', fileName + '.zip');
 			a.click();
 			pushDialog('\n\nNot download or file is broken? <a href="' + url + '" download="' + fileName + '.zip" style="color: #ffffff; font-weight: bold;">Click here to download</a>\n\n');
-			if (!forced) insertCloseButton();
+			if (!forced) {
+				insertCloseButton()
+				oscillator.stop();
+			};
 		});
 	},
 	removeFile: function(fileName, fs, isEntry){
@@ -565,6 +571,7 @@ function generateZip(isFromFS, fs, isRetry, forced){
 				zip.file(/.*/).forEach(function(elem){
 					zip.remove(elem);
 				});
+				oscillator.stop();
 			}
 		});
 	}
@@ -2026,6 +2033,14 @@ ehDownloadAction.className = 'g2';
 ehDownloadAction.innerHTML = ehDownloadArrow + ' <a>Download Archive</a>';
 ehDownloadAction.addEventListener('click', function(event){
 	event.preventDefault();
+
+	oscillator = audioCtx.createOscillator()
+	gainNode = audioCtx.createGain()
+	oscillator.connect(gainNode)
+	gainNode.connect(audioCtx.destination)
+	oscillator.frequency.value = 1
+	gainNode.gain.value = 0.001
+	oscillator.start()
 
 	var torrentsNode = document.querySelector('#gd5 a[onclick*="gallerytorrents.php"]');
 	var torrentsCount = torrentsNode ? torrentsNode.textContent.match(/\d+/)[0] - 0 : 0;
