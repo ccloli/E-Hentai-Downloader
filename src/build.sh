@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+cd `dirname $(pwd)/$0`
 output_path="../e-hentai-downloader.user.js"
 meta_js_path="../e-hentai-downloader.meta.js"
 parts_js_dir="./"
