@@ -25,7 +25,7 @@ var getAllPagesURLFin = false;
 var pretitle = document.title;
 var needTitleStatus = setting['status-in-title'] === 'always' ? true : false;
 var fetchPagesXHR = new XMLHttpRequest();
-var audioCtx = new(unsafeWindow.AudioContext||unsafeWindow.webkitAudioContext)
+var audioCtx = !setting['play-silent-music'] || new(unsafeWindow.AudioContext || unsafeWindow.webkitAudioContext)
 var oscillator;
 var gainNode;
 
@@ -85,7 +85,7 @@ var ehDownloadFS = {
 			pushDialog('\n\nNot download or file is broken? <a href="' + url + '" download="' + fileName + '.zip" style="color: #ffffff; font-weight: bold;">Click here to download</a>\n\n');
 			if (!forced) {
 				insertCloseButton()
-				oscillator.stop();
+				if (setting['play-silent-music']) oscillator.stop();
 			};
 		});
 	},
@@ -1768,12 +1768,13 @@ function showSettings() {
 				<div class="g2"><label><input type="checkbox" data-ehd-setting="never-send-nl"> Never send "nl" GET parameter when getting new image URL </label><sup>(2)<sup></div>\
 				<div class="g2"' + (requestFileSystem ? '' : ' style="opacity: 0.5;" title="Only Chrome supports this feature"') + '><label><input type="checkbox" data-ehd-setting="store-in-fs"> Request File System to handle large Zip file </label><sup>(3)<sup></div>\
 				<div class="g2"' + (requestFileSystem ? '' : ' style="opacity: 0.5;" title="Only Chrome supports this feature"') + '><label>Use File System if archive is larger than <input type="number" data-ehd-setting="fs-size" min="0" placeholder="200" style="width: 46px;"> MB (0 is always) </label><sup>(3)<sup></div>\
+				<div class="g2"><label><input type="checkbox" data-ehd-setting="play-silent-music"> Play silent music during the process </label><sup>(4)<sup></div>\
 				<div class="g2"><label>Record and save gallery info as <select data-ehd-setting="save-info"><option value="file">File info.txt</option><option value="comment">Zip comment</option><option value="none">None</option></select></label></div>\
 				<div class="g2">...which includes <label><input type="checkbox" data-ehd-setting="save-info-list[]" value="title">Title & Gallery Link</label> <label><input type="checkbox" data-ehd-setting="save-info-list[]" value="metas">Metadatas</label> <label><input type="checkbox" data-ehd-setting="save-info-list[]" value="tags">Tags</label> <label><input type="checkbox" data-ehd-setting="save-info-list[]" value="uploader-comment">Uploader Comment</label> <label><input type="checkbox" data-ehd-setting="save-info-list[]" value="page-links">Page Links</label></div>\
 				<div class="g2"><label><input type="checkbox" data-ehd-setting="replace-with-full-width"> Replace forbidden letters as full-width letters instead of dash (-)</label></div>\
 				<div class="g2"><label><input type="checkbox" data-ehd-setting="force-pause"> Force drop downloading images data when pausing download</label></div>\
 				<div class="g2"><label><input type="checkbox" data-ehd-setting="image-limits-both"> I\'m in China and/or using proxy to visit e-hentai.org so my image limits on ExHentai is incorrect</label></div>\
-				<!--<div class="g2"><label><input type="checkbox" data-ehd-setting="auto-scale"> Auto scale Zip file at <input type="text" min="10" placeholder="250" style="width: 46px;" data-ehd-setting="scale-size"> MB if file is larger than <input type="text" min="10" placeholder="400" style="width: 46px;" data-ehd-setting="scale-reach"> MB (experiment) </label><sup>(4)<sup></div>-->\
+				<!--<div class="g2"><label><input type="checkbox" data-ehd-setting="auto-scale"> Auto scale Zip file at <input type="text" min="10" placeholder="250" style="width: 46px;" data-ehd-setting="scale-size"> MB if file is larger than <input type="text" min="10" placeholder="400" style="width: 46px;" data-ehd-setting="scale-reach"> MB (experiment) </label><sup>(5)<sup></div>-->\
 				<div class="g2">\
 					(1) This may reduce memory usage but some program might not support the Zip file. See <a href="http://stuk.github.io/jszip/documentation/api_jszip/generate_async.html" target="_blank" style="color: #ffffff;">JSZip Docs</a> for more info.\
 				</div>\
@@ -1783,8 +1784,11 @@ function showSettings() {
 				<div class="g2">\
 					(3) If enabled you can save larger Zip files (probably ~1GB).\
 				</div>\
+				<div class="g2">\
+					(4) If enabled will play slient music that might avoid downloading or freeze when page is in background.\
+				</div>\
 				<!--<div class="g2">\
-					(4) <strong>This function is an experimental feature and may cause bug. </strong>Different browsers have different limit, See wiki for details.\
+					(5) <strong>This function is an experimental feature and may cause bug. </strong>Different browsers have different limit, See wiki for details.\
 				</div>-->\
 			</div>\
 		</div>\
@@ -2034,13 +2038,16 @@ ehDownloadAction.innerHTML = ehDownloadArrow + ' <a>Download Archive</a>';
 ehDownloadAction.addEventListener('click', function(event){
 	event.preventDefault();
 
-	oscillator = audioCtx.createOscillator()
-	gainNode = audioCtx.createGain()
-	oscillator.connect(gainNode)
-	gainNode.connect(audioCtx.destination)
-	oscillator.frequency.value = 1
-	gainNode.gain.value = 0.001
-	oscillator.start()
+	if (setting['play-silent-music']) {
+    oscillator = audioCtx.createOscillator()
+    gainNode = audioCtx.createGain()
+    oscillator.connect(gainNode)
+    gainNode.connect(audioCtx.destination)
+    oscillator.frequency.value = 1
+    gainNode.gain.value = 0.001
+    oscillator.start()
+	}
+
 
 	var torrentsNode = document.querySelector('#gd5 a[onclick*="gallerytorrents.php"]');
 	var torrentsCount = torrentsNode ? torrentsNode.textContent.match(/\d+/)[0] - 0 : 0;
