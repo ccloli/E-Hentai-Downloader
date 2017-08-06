@@ -50,7 +50,7 @@ var ehDownloadRegex = {
 	pagesRange: /^(\d*(-\d*)?\s*?,\s*?)*\d*(-\d*)?$/,
 	pagesURL: /(?:<a href=").+?(?=")/gi,
 	imageLimits: /You are currently at <strong>(\d+)<\/strong> towards a limit of <strong>(\d+)<\/strong>/,
-	pagesLength: /<table class="ptt".+(\d+)<\/a>.+?<\/table>/
+	pagesLength: /<table class="ptt".+>(\d+)<\/a>.+?<\/table>/
 };
 
 var requestFileSystem = window.requestFileSystem || window.webkitRequestFileSystem;
