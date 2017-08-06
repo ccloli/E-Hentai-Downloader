@@ -223,6 +223,10 @@ var ehDownloadStyle = '\
 	.ehD-close-tips { position: fixed; left: 0; right: 0; bottom: 0; padding: 10px; border: 1px solid #000000; background: #34353b; color: #dddddd; width: 732px; max-width: 100%; max-height: 100%; overflow-x: hidden; overflow-y: auto; box-sizing: border-box; margin: auto; z-index: 1000; text-align: left; font-size: 14px; outline: 5px rgba(0, 0, 0, 0.25) solid; }\
 	';
 
+if (location.hostname === 'exhentai.org') {
+	ehDownloadStyle+='	.ehD-pt-progress-text { color: #ffffff; }'
+}
+
 // overwrite settings or set default settings
 if (setting['status-in-title'] === true) setting['status-in-title'] = 'blur';
 if (!setting['save-info-list']) {
