@@ -11763,9 +11763,7 @@ var getAllPagesURLFin = false;
 var pretitle = document.title;
 var needTitleStatus = setting['status-in-title'] === 'always' ? true : false;
 var fetchPagesXHR = new XMLHttpRequest();
-var audioCtx = !setting['play-silent-music'] || new(unsafeWindow.AudioContext || unsafeWindow.webkitAudioContext)
 var oscillator;
-var gainNode;
 
 // r.e-hentai.org points all links to g.e-hentai.org
 if (origin.indexOf('r.e-hentai.org') >= 0) {
@@ -13777,8 +13775,9 @@ ehDownloadAction.addEventListener('click', function(event){
 	event.preventDefault();
 
 	if (setting['play-silent-music']) {
+	var audioCtx = new(unsafeWindow.AudioContext || unsafeWindow.webkitAudioContext)
 	oscillator = audioCtx.createOscillator();
-	gainNode = audioCtx.createGain();
+	var gainNode = audioCtx.createGain();
 	oscillator.connect(gainNode);
 	gainNode.connect(audioCtx.destination);
 	oscillator.frequency.value = 1;
