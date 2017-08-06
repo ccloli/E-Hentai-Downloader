@@ -13777,13 +13777,13 @@ ehDownloadAction.addEventListener('click', function(event){
 	event.preventDefault();
 
 	if (setting['play-silent-music']) {
-    oscillator = audioCtx.createOscillator()
-    gainNode = audioCtx.createGain()
-    oscillator.connect(gainNode)
-    gainNode.connect(audioCtx.destination)
-    oscillator.frequency.value = 1
-    gainNode.gain.value = 0.001
-    oscillator.start()
+	oscillator = audioCtx.createOscillator();
+	gainNode = audioCtx.createGain();
+	oscillator.connect(gainNode);
+	gainNode.connect(audioCtx.destination);
+	oscillator.frequency.value = 1;
+	gainNode.gain.value = 0.001;
+	oscillator.start();
 	}
 
 
