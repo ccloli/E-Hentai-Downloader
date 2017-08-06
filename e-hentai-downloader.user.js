@@ -13523,7 +13523,7 @@ function showSettings() {
 					(3) If enabled you can save larger Zip files (probably ~1GB).\
 				</div>\
 				<div class="g2">\
-					(4) If enabled will play slient music that might avoid downloading freeze when page is in background. Might stop the script due to reach hardware limitation. \
+					(4) If enabled will play slient music that might avoid downloading freeze when page is in background. Might stop the script on Chrome due to reaching audio hardware limitation if too many pages are downloading. \
 				</div>\
 				<!--<div class="g2">\
 					(5) <strong>This function is an experimental feature and may cause bug. </strong>Different browsers have different limit, See wiki for details.\
