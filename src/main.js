@@ -504,6 +504,7 @@ function generateZip(isFromFS, fs, isRetry, forced){
 	}
 
 	try {
+		var lastMetaTime = 0;
 		// build arraybuffer object to detect if it generates successfully
 		zip.generateAsync({
 			type: 'arraybuffer',
@@ -514,10 +515,19 @@ function generateZip(isFromFS, fs, isRetry, forced){
 			streamFiles: setting['file-descriptor'] ? true : false,
 			comment: setting['save-info'] === 'comment' ? infoStr.replace(/\n/gi, '\r\n') : undefined
 		}, function(meta){
+			// meta update function will be called nearly every 1ms, for performance, update every 300ms
+			// anyway it's still too fast so that you may still cannot see the update
+			var thisMetaTime = Date.now();
+			if (thisMetaTime - lastMetaTime < 300) {
+				return;
+			}
+			lastMetaTime = thisMetaTime;
 			progress.value = meta.percent / 100;
 			curFile.textContent = meta.currentFile || 'Calculating extra data...';
 			ehDownloadDialog.scrollTop = ehDownloadDialog.scrollHeight;
 		}).then(function(abData){
+			progress.value = 1;
+			
 			if (isFromFS || ehDownloadFS.needFileSystem) { // using filesystem to save file is needed
 				saveToFileSystem(abData);
 			}
