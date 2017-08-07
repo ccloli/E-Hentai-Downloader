@@ -1393,19 +1393,21 @@ function initEHDownload() {
 
 		// Chrome can use about 10% of free space of disk where Chrome User Data stored in as TEMPORARY File System Storage.
 		if (navigator.webkitTemporaryStorage) { // if support navigator.webkitTemporaryStorage to check usable space
-			navigator.webkitTemporaryStorage.requestQuota(requiredBytes , function (grantedBytes) {
-				console.log('[EHD] Free TEMPORARY File System Space >', grantedBytes);
-				if (grantedBytes < requiredBytes) {
+			// use `queryUsageAndQuota` instead of `requestQuota` to check storage space, 
+			// because `requestQuota` is incorrect when harddisk is full, says have about 5GB storage
+			navigator.webkitTemporaryStorage.queryUsageAndQuota(function (usage, quota) {
+				console.log('[EHD] Free TEMPORARY File System Space >', quota - usage);
+				if (quota - usage < requiredBytes) {
 					console.log('[EHD] Free TEMPORARY File System Space is not enough.');
 
 					// free space is not enough, then use persistent space
 					// in fact, free space of persisent file storage is always 10GiB, even free disk space is not enough
-					navigator.webkitPersistentStorage.requestQuota(requiredBytes , function (grantedBytes) {
-						console.log('[EHD] Free PERSISTENT File System Space >', grantedBytes);
-						if (grantedBytes < requiredBytes) {
+					navigator.webkitPersistentStorage.queryUsageAndQuota(function (usage, quota) {
+						console.log('[EHD] Free PERSISTENT File System Space >', quota - usage);
+						if (quota - usage < requiredBytes) {
 							// roll back and use Blob to handle file
 							ehDownloadFS.needFileSystem = false;
-							alert('You don\'t have enough free space where Chrome stored user data in (Default is system disk, normally it\'s C: ), please delete some file.\n\nNeeds more than ' + (requiredBytes - grantedBytes) + ' Bytes.\n\nRoll back and use Blob to handle file.');
+							alert('You don\'t have enough free space where Chrome stored user data in (Default is system disk, normally it\'s C: ), please delete some file.\n\nNeeds more than ' + (requiredBytes - (quota - usage)) + ' Bytes.\n\nRoll back and use Blob to handle file.');
 						}
 						else {
 							pushDialog('\n<strong>Please allow storing large content if browser asked a request.</strong>\n');
