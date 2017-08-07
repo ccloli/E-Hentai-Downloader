@@ -169,6 +169,26 @@ var ehDownloadFS = {
 };
 
 var ehDownloadStyle = '\
+	@-webkit-keyframes progress { \
+		from { -webkit-transform: translateX(-50%) scaleX(0); transform: translateX(-50%) scaleX(0); } \
+		50% { -webkit-transform: translateX(0%) scaleX(1); transform: translateX(0%) scaleX(1); } \
+		to { -webkit-transform: translateX(50%) scaleX(0); transform: translateX(50%) scaleX(0); } \
+	} \
+	@-moz-keyframes progress { \
+		from { -moz-transform: translateX(-50%) scaleX(0); transform: translateX(-50%) scaleX(0); } \
+		50% { -moz-transform: translateX(0%) scaleX(1); transform: translateX(0%) scaleX(1); } \
+		to { -moz-transform: translateX(50%) scaleX(0); transform: translateX(50%) scaleX(0); } \
+	} \
+	@-ms-keyframes progress { \
+		from { -ms-transform: translateX(-50%) scaleX(0); transform: translateX(-50%) scaleX(0); } \
+		50% { -ms-transform: translateX(0%) scaleX(1); transform: translateX(0%) scaleX(1); } \
+		to { -ms-transform: translateX(50%) scaleX(0); transform: translateX(50%) scaleX(0); } \
+	} \
+	@keyframes progress { \
+		from { -webkit-transform: translateX(-50%) scaleX(0); transform: translateX(-50%) scaleX(0); } \
+		50% { -webkit-transform: translateX(0%) scaleX(1); transform: translateX(0%) scaleX(1); } \
+		to { -webkit-transform: translateX(50%) scaleX(0); transform: translateX(50%) scaleX(0); } \
+	} \
 	.ehD-box { margin: 20px auto; width: 732px; box-sizing: border-box; font-size: 12px; border: 1px groove #000000; }\
 	.ehD-box a { cursor: pointer; }\
 	.ehD-box .g2 { display: inline-block; margin: 10px; padding: 0; line-height: 14px; }\
@@ -185,11 +205,17 @@ var ehDownloadStyle = '\
 	.ehD-setting input, .ehD-box input { vertical-align: middle; }\
 	.ehD-setting input[type="text"], .ehD-box input[type="text"], .ehD-setting input[type="number"] { height: 13px; }\
 	.ehD-box input[type="number"] { height: 17px; }\
+	.ehD-dialog progress { height: 12px; -webkit-appearance: none; border: 1px solid #4f535b; background: #34353b; position: relative; } \
+	.ehD-dialog progress::-webkit-progress-bar { background: #34353b; } \
+	.ehD-dialog progress::-webkit-progress-value { background: #4f535b; -webkit-transition: all 0.2s ease; transition: all 0.2s ease; } \
+	.ehD-dialog progress::-moz-progress-bar { background: #4f535b; -moz-transition: all 0.2s ease; transition: all 0.2s ease; } \
+	.ehD-dialog progress::-ms-fill { background: #4f535b; -ms-transition: all 0.2s ease; transition: all 0.2s ease; } \
+	.ehD-dialog progress:not([value])::after { content: ""; will-change: transform; width: 100%; height: 100%; left: 0; top: 0; display: block; background: #4f535b; position: absolute; -webkit-animation: progress 1s ease-in-out alternate infinite; -moz-animation: progress 1s ease-in-out alternate infinite; -ms-animation: progress 1s ease-in-out alternate infinite; animation: progress 1s ease-in-out alternate infinite; } \
 	.ehD-pt { table-layout: fixed; width: 100%; }\
 	.ehD-pt-name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }\
 	.ehD-pt-progress-outer { width: 160px; position: relative; }\
 	.ehD-pt-progress { width: 150px; }\
-	.ehD-pt-progress-text { position: absolute; width: 100%; text-align: center; color: #34353b; left: 0; right: 0; }\
+	.ehD-pt-progress-text { position: absolute; width: 100%; text-align: center; color: #b8b8b8; left: 0; right: 0; }\
 	.ehD-pt-status { width: 130px; }\
 	.ehD-pt-succeed .ehD-pt-status { color: #00ff00; }\
 	.ehD-pt-warning .ehD-pt-status { color: #ffff00; }\
@@ -527,7 +553,7 @@ function generateZip(isFromFS, fs, isRetry, forced){
 			ehDownloadDialog.scrollTop = ehDownloadDialog.scrollHeight;
 		}).then(function(abData){
 			progress.value = 1;
-			
+
 			if (isFromFS || ehDownloadFS.needFileSystem) { // using filesystem to save file is needed
 				saveToFileSystem(abData);
 			}
