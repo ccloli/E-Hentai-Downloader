@@ -41,57 +41,66 @@ if (!Promise || !Promise.resolve) {
 	var Promise = unsafeWindow.Promise;
 }
 
+var setTimeout = window.setTimeout;
+var clearTimeout = window.clearTimeout;
+
 // timer overrides with Web Worker
 // https://gist.github.com/BinaryMuse/19aa812cd2277d8c9555
+function overrideTimer() {
+	var timeoutId = 0;
+	var timeouts = {};
 
-var timerWorker = new Worker(URL.createObjectURL(createBlob(['\
-	var timers = {};\
-	\
-	function fireTimeout(id) {\
-		this.postMessage({id: id});\
-		delete timers[id];\
-	}\
-	\
-	this.addEventListener("message", function(evt) {\
-	var data = evt.data;\
-	\
-	switch (data.command) {\
-		case "setTimeout":\
-			var time = parseInt(data.timeout || 0, 10),\
-				timer = setTimeout(fireTimeout.bind(null, data.id), time);\
-			timers[data.id] = timer;\
-			break;\
-		case "clearTimeout":\
-			var timer = timers[data.id];\
-			if (timer) clearTimeout(timer);\
-			delete timers[data.id];\
+	var timerWorker = new Worker(URL.createObjectURL(createBlob(['\
+		var timers = {};\
+		\
+		function fireTimeout(id) {\
+			this.postMessage({id: id});\
+			delete timers[id];\
 		}\
-	});\
-'], { type: 'application/javascript' })));
+		\
+		this.addEventListener("message", function(evt) {\
+			var data = evt.data;\
+			\
+			switch (data.command) {\
+				case "setTimeout":\
+					var time = parseInt(data.timeout || 0, 10),\
+						timer = setTimeout(fireTimeout.bind(null, data.id), time);\
+					timers[data.id] = timer;\
+					break;\
+				case "clearTimeout":\
+					var timer = timers[data.id];\
+					if (timer) clearTimeout(timer);\
+					delete timers[data.id];\
+			}\
+		});\
+	'], { type: 'application/javascript' })));
 
-timerWorker.addEventListener('message', function(evt) {
-	var data = evt.data,
-		id = data.id,
-		fn = timeouts[id].fn,
-		args = timeouts[id].args;
+	timerWorker.addEventListener('message', function(evt) {
+		var data = evt.data,
+			id = data.id,
+			fn = timeouts[id].fn,
+			args = timeouts[id].args;
 
-	fn.apply(null, args);
-	delete timeouts[id];
-});
+		fn.apply(null, args);
+		delete timeouts[id];
+	});
 
-setTimeout = function(fn, delay) {
-	var args = Array.prototype.slice.call(arguments, 2);
-	timeoutId += 1;
-	delay = delay || 0;
-	var id = timeoutId;
-	timeouts[id] = {fn: fn, args: args};
-	timerWorker.postMessage({command: 'setTimeout', id: id, timeout: delay});
-	return id;
-};
+	setTimeout = function(fn, delay) {
+		var args = Array.prototype.slice.call(arguments, 2);
+		timeoutId += 1;
+		delay = delay || 0;
+		var id = timeoutId;
+		timeouts[id] = {fn: fn, args: args};
+		timerWorker.postMessage({command: 'setTimeout', id: id, timeout: delay});
+		return id;
+	};
 
-clearTimeout = function(id) {
-	timerWorker.postMessage({command: 'clearTimeout', id: id});
-	delete timeouts[id];
-};
+	clearTimeout = function(id) {
+		timerWorker.postMessage({command: 'clearTimeout', id: id});
+		delete timeouts[id];
+	};
+}
+
+overrideTimer();
 
 // GreasyFork doesn't allow obfuscated or minified script, so if you want to see the main function, please see src/main.js at GitHub
