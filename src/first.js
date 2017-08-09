@@ -5,7 +5,7 @@
 
 console.log('[EHD] E-Hentai Downloader is running.');
 console.log('[EHD] Bugs Report >', 'https://github.com/ccloli/E-Hentai-Downloader/issues | https://greasyfork.org/scripts/10379-e-hentai-downloader/feedback');
-console.log('[EHD] To report a bug, showing all the "[EHD]" logs is wonderful. =w=');
+console.log('[EHD] To report a bug, it\'s recommended to provide the logs started with "[EHD]", thanks. =w=');
 
 // Opera 12- (Presto) doesn't support generating blob url, and if generate as data url, it may cause crashes.
 if (navigator.userAgent.indexOf('Presto') >= 0) {

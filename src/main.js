@@ -126,7 +126,7 @@ var ehDownloadFS = {
 					var value = this.result;
 					if (value === '' || value == null) return;
 					var data = JSON.parse(value);
-					if (data && confirm('You have an undownload archive, download it?\n\nFile Name: ' + data.fileName + '\n\n* If you have already downloaded it, click cancel to remove this cached archive.')) {
+					if (data && confirm('You have an archive that is not downloaded, save it?\n\nFile Name: ' + data.fileName + '\n\n* If you have already downloaded it, click cancel to remove the cached archive file.')) {
 						fileName = data.fileName;
 						dirName = data.dirName;
 						ehDownloadFS.storeTempArchive(data, fs);
@@ -462,7 +462,7 @@ function generateZip(isFromFS, fs, isRetry, forced){
 						'Error Name: ' + (error.name || 'Unknown Error') + '\n' +
 						'Error Message: ' + error.message + '\n\n' +
 						'Should I try FileSystem again (Yes) or redirect to try using Blob (No)? \n' +
-						'* If the error message shows it\'s due to no more free disk space, try removing some files from the disk where Chrome installed (mostly C: on Windows)')) {
+						'* If the error message shows there\'s no more free disk space, try removing some files from the drive where Chrome installed (mostly C: on Windows)')) {
 				saveToFileSystem(abData);
 			}
 			else {
@@ -472,7 +472,7 @@ function generateZip(isFromFS, fs, isRetry, forced){
 		};
 
 		var fs = fs || ehDownloadFS.fs;
-		pushDialog('\n\nSpliting and storing Zip file to FileSystem...');
+		pushDialog('\n\nSlicing and storing Zip file to FileSystem...');
 		var data = abData;
 		var dataIndex = 0;
 		var dataLength = data.byteLength;
@@ -602,7 +602,7 @@ function generateZip(isFromFS, fs, isRetry, forced){
 						'Error Name: ' + (error.name || 'Unknown Error') + '\n' +
 						'Error Message: ' + error.message + '\n\n' +
 						'Should I try again (Yes) or stop it (No, and the downloaded file will be removed)? \n' +
-						'* If the error message shows it\'s due to no more free disk space, try removing some files from the disk where Chrome installed (mostly C: on Windows)')) {
+						'* If the error message shows there\'s no more free disk space, try removing some files from the drive where Chrome installed (mostly C: on Windows)')) {
 				generateZip(isFromFS, fs, isRetry, forced);
 			}
 		};
@@ -1035,7 +1035,7 @@ function fetchOriginalImage(index, nodeList) {
 					- You can run the Hentai@Home to support E-Hentai and get some points which you can pay to increase your limit.\n\
 					- Check back in a few hours, and you will be able to download more (reduce 3 points per minute by default).\n\
 					- You can reset your image viewing limits to continue by paying your GPs or credits.\n\n\
-					If you want to reset your limits by paying your GPs or credits right now, choose YES, and you can reset it on opened window. Or if you want to wait a few minutes until you have enough free limits, then continue, choose NO.')) {
+					If you want to reset your limits by paying your GPs or credits right now, choose YES, and you can reset it in opened window. Or if you want to wait a few minutes until you have enough free limits, then continue, choose NO.')) {
 					window.open('http://e-hentai.org/home.php');
 				}
 
@@ -1247,7 +1247,7 @@ function getAllPagesURL() {
 
 	if (pagesRangeText) { // if pages range is defined
 		console.log('[EHD] Pages Range >', pagesRangeText);
-		if (!ehDownloadRegex.pagesRange.test(pagesRangeText)) return alert('Pages Range is not correct.');
+		if (!ehDownloadRegex.pagesRange.test(pagesRangeText)) return alert('The format of Pages Range is incorrect.');
 
 		var pagesRangeScale = pagesRangeText.match(/\d*-\d*|\d+/g);
 		pagesRangeScale.forEach(function(elem){
@@ -1300,7 +1300,7 @@ function getAllPagesURL() {
 
 			var pagesURL = xhr.responseText.split('<div id="gdt">')[1].split('<div class="c">')[0].match(ehDownloadRegex.pagesURL);
 			if (!pagesURL) {
-				console.error('[EHD] Response content is not correct!');
+				console.error('[EHD] Response content is incorrect!');
 				if (retryCount < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
 					pushDialog('Failed! Retrying... ');
 					retryCount++;
@@ -1333,8 +1333,8 @@ function getAllPagesURL() {
 					pagesRange = pagesRange.filter(function(elem){ return elem <= pageURLsList.length; });
 					pushDialog('\nPage ' + wrongPages.join(', ') + (wrongPages.length > 1 ? ' are' : ' is') + ' not exist, and will be ignored.\n');
 					if (pagesRange.length === 0) {
-						pushDialog('There is no content that matching pages range.');
-						alert('There is no content that matching pages range.');
+						pushDialog('Nothing matches provided pages range, stop downloading.');
+						alert('Nothing matches provided pages range, stop downloading.');
 						insertCloseButton();
 						return;
 					}
@@ -1375,8 +1375,8 @@ function getAllPagesURL() {
 			pagesRange = pagesRange.filter(function(elem){ return elem <= pageURLsList.length; });
 			pushDialog('\nPage ' + wrongPages.join(', ') + (wrongPages.length > 1 ? ' are' : ' is') + ' not exist, and will be ignored.\n');
 			if (pagesRange.length === 0) {
-				pushDialog('There is no content that matching pages range.');
-				alert('There is no content that matching pages range.');
+				pushDialog('Nothing matches provided pages range, stop downloading.');
+				alert('Nothing matches provided pages range, stop downloading.');
 				insertCloseButton();
 				return;
 			}
@@ -1443,7 +1443,7 @@ function initEHDownload() {
 			'Roll back and use Blob to handle file.');
 	}
 
-	if ((!setting['store-in-fs'] && requiredMBs >= 300) && !confirm('This archive is too large (original size), please consider downloading this archive in other way.\n\nMaximum allowed file size: Chrome / Opera 15+ 500MB | IE 10+ 600 MB | Firefox 20+ 800 MB\n(From FileSaver.js introduction)\n\nPlease also consider your operating system\'s free memory (RAM), it may takes about DOUBLE size of archive file size when generating ZIP file.\n\n* If continues, you would probably face "Failed - No File" or "Out Of Memory" if you don\'t have enough RAM and can\'t save file successfully.\n\n* If you are using Chrome, you can try enabling "Request File System to handle large Zip file" on settings page.\n\n* You can set Pages Range to download this archive into some parts. If you have already enabled it, please ignore this message.\n\nAre you sure to continue downloading?')) return;
+	if ((!setting['store-in-fs'] && requiredMBs >= 300) && !confirm('This archive is too large (original size), please consider downloading this archive in other way.\n\nMaximum allowed file size: Chrome / Opera 15+ 500MB | IE 10+ 600 MB | Firefox 20+ 800 MB\n(From FileSaver.js introduction)\n\nPlease also consider your operating system\'s free memory (RAM), it may takes about DOUBLE size of archive file size when generating ZIP file.\n\n* If continues, you would probably get an error likes "Failed - No File" or "Out Of Memory" if you don\'t have enough RAM and can\'t save file successfully.\n\n* If you are using Chrome, you can try enabling "Request File System to handle large Zip file" on settings page.\n\n* You can set Pages Range to download this archive into some parts. If you have already enabled it, please ignore this message.\n\nAre you sure to continue downloading?')) return;
 	else if (setting['store-in-fs'] && requestFileSystem && requiredMBs >= (setting['fs-size'] !== undefined ? setting['fs-size'] : 200)) {
 		ehDownloadFS.needFileSystem = true;
 		console.log('[EHD] Required File System Space >', requiredBytes);
@@ -1464,10 +1464,10 @@ function initEHDownload() {
 						if (quota - usage < requiredBytes) {
 							// roll back and use Blob to handle file
 							ehDownloadFS.needFileSystem = false;
-							alert('You don\'t have enough free space where Chrome stored user data in (Default is system disk, normally it\'s C: ), please delete some file.\n\nNeeds more than ' + (requiredBytes - (quota - usage)) + ' Bytes.\n\nRoll back and use Blob to handle file.');
+							alert('You don\'t have enough free space on the drive where Chrome stores user data (Default is system drive, normally it\'s C: ), please delete some file.\n\nNeeds more than ' + (requiredBytes - (quota - usage)) + ' Bytes.\n\nRoll back and use Blob to handle file.');
 						}
 						else {
-							pushDialog('\n<strong>Please allow storing large content if browser asked a request.</strong>\n');
+							pushDialog('\n<strong>Please allow storing large content if browser asked the request.</strong>\n');
 							requestFileSystem(window.PERSISTENT, requiredBytes, ehDownloadFS.initHandler, fsErrorHandler);
 						}
 					}, fsErrorHandler);
@@ -1800,7 +1800,7 @@ function showSettings() {
 					<div class="g2"><label>Download <input type="number" data-ehd-setting="thread-count" min="1" placeholder="5" style="width: 46px;"> images at the same time (<=5 is advised)</label></div>\
 					<div class="g2"' + ((GM_info.scriptHandler && GM_info.scriptHandler === 'Violentmonkey') ? ' style="opacity: 0.5;" title="Violentmonkey may not support this feature"' : '') + '><label>Abort downloading current image after <input type="number" data-ehd-setting="timeout" min="0" placeholder="300" style="width: 46px;"> second(s) (0 is never abort)</label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="speed-detect"> Abort downloading current image if speed is less than <input type="number" data-ehd-setting="speed-min" min="0" placeholder="5" style="width: 46px;"> KB/s in <input type="number" data-ehd-setting="speed-expired" min="1" placeholder="30" style="width: 46px;"> second(s)</label></div>\
-					<div class="g2"><label>Skip current image when retried <input type="number" data-ehd-setting="retry-count" min="1" placeholder="3" style="width: 46px;"> time(s)</label></div>\
+					<div class="g2"><label>Skip current image after retried <input type="number" data-ehd-setting="retry-count" min="1" placeholder="3" style="width: 46px;"> time(s)</label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="number-images"> Number images (001：01.jpg, 002：01_theme.jpg, 003：02.jpg...) (Separator <input type="text" data-ehd-setting="number-separator" style="width: 46px;" placeholder="：">)</label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="number-real-index"> Number images with original page number if pages range is set</label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="number-auto-retry"> Retry automatically when images download failed</label></div>\
@@ -1827,23 +1827,23 @@ function showSettings() {
 					<div class="g2"><label>Set compression level as <input type="number" data-ehd-setting="compression-level" min="0" max="9" placeholder="0" style="width: 46px;"> (0 ~ 9, 0 is only store, not recommended to enable)</label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="file-descriptor"> Stream files and create Zip with file descriptors </label><sup>(1)</sup></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="force-resized"> Force download resized image (never download original image) </label><sup>(2)</sup></div>\
-					<div class="g2"><label><input type="checkbox" data-ehd-setting="never-new-url"> Never get new image URL when failed downloading image </label><sup>(2)</sup></div>\
+					<div class="g2"><label><input type="checkbox" data-ehd-setting="never-new-url"> Never get new image URL when failed to download image </label><sup>(2)</sup></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="never-send-nl"> Never send "nl" GET parameter when getting new image URL </label><sup>(2)</sup></div>\
 					<div class="g2"' + (requestFileSystem ? '' : ' style="opacity: 0.5;" title="Only Chrome supports this feature"') + '><label><input type="checkbox" data-ehd-setting="store-in-fs"> Request File System to handle large Zip file </label><sup>(3)</sup></div>\
 					<div class="g2"' + (requestFileSystem ? '' : ' style="opacity: 0.5;" title="Only Chrome supports this feature"') + '><label>Use File System if archive is larger than <input type="number" data-ehd-setting="fs-size" min="0" placeholder="200" style="width: 46px;"> MB (0 is always) </label><sup>(3)</sup></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="play-silent-music"> Play silent music during the process to avoid downloading freeze </label><sup>(4)</sup></div>\
 					<div class="g2"><label>Record and save gallery info as <select data-ehd-setting="save-info"><option value="file">File info.txt</option><option value="comment">Zip comment</option><option value="none">None</option></select></label></div>\
 					<div class="g2">...which includes <label><input type="checkbox" data-ehd-setting="save-info-list[]" value="title">Title & Gallery Link</label> <label><input type="checkbox" data-ehd-setting="save-info-list[]" value="metas">Metadatas</label> <label><input type="checkbox" data-ehd-setting="save-info-list[]" value="tags">Tags</label> <label><input type="checkbox" data-ehd-setting="save-info-list[]" value="uploader-comment">Uploader Comment</label> <label><input type="checkbox" data-ehd-setting="save-info-list[]" value="page-links">Page Links</label></div>\
-					<div class="g2"><label><input type="checkbox" data-ehd-setting="replace-with-full-width"> Replace forbidden letters as full-width letters instead of dash (-)</label></div>\
-					<div class="g2"><label><input type="checkbox" data-ehd-setting="force-pause"> Force drop downloading images data when pausing download</label></div>\
+					<div class="g2"><label><input type="checkbox" data-ehd-setting="replace-with-full-width"> Replace forbidden characters with full-width characters instead of dash (-)</label></div>\
+					<div class="g2"><label><input type="checkbox" data-ehd-setting="force-pause"> Force drop downloaded images data when pausing download</label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="image-limits-both"> I\'m in China and/or using proxy to visit e-hentai.org so my image limits on ExHentai is incorrect</label></div>\
 					<!--<div class="g2"><label><input type="checkbox" data-ehd-setting="auto-scale"> Auto scale Zip file at <input type="text" min="10" placeholder="250" style="width: 46px;" data-ehd-setting="scale-size"> MB if file is larger than <input type="text" min="10" placeholder="400" style="width: 46px;" data-ehd-setting="scale-reach"> MB (experiment) </label><sup>(5)</sup></div>-->\
 					<div class="ehD-setting-note">\
 						<div class="g2">\
-							(1) This may reduce memory usage but some program might not support the Zip file. See <a href="http://stuk.github.io/jszip/documentation/api_jszip/generate_async.html" target="_blank" style="color: #ffffff;">JSZip Docs</a> for more info.\
+							(1) This may reduce memory usage but some decompress softwares may not support the Zip file. See <a href="http://stuk.github.io/jszip/documentation/api_jszip/generate_async.html" target="_blank" style="color: #ffffff;">JSZip Docs</a> for more info.\
 						</div>\
 						<div class="g2">\
-							(2) Enable these options may save your image viewing limits <i><a href="https://github.com/ccloli/E-Hentai-Downloader/wiki/E%E2%88%92Hentai-Image-Viewing-Limits" target="_blank" style="color: #ffffff;">(See wiki)</a></i>, but may also cause some download problems.\
+							(2) Enable these options may save your image viewing limits <a href="https://github.com/ccloli/E-Hentai-Downloader/wiki/E%E2%88%92Hentai-Image-Viewing-Limits" target="_blank" style="color: #ffffff;">(See wiki)</a>, but may also cause some download problems.\
 						</div>\
 						<div class="g2">\
 							(3) If enabled you can save larger Zip files (probably ~1GB).\
