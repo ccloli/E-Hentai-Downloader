@@ -11763,7 +11763,8 @@ var getAllPagesURLFin = false;
 var pretitle = document.title;
 var needTitleStatus = setting['status-in-title'] === 'always' ? true : false;
 var fetchPagesXHR = new XMLHttpRequest();
-var oscillator;
+var emptyAudio;
+var emptyAudioFile = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU3LjcxLjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAEAAABVgANTU1NTU1Q0NDQ0NDUFBQUFBQXl5eXl5ea2tra2tra3l5eXl5eYaGhoaGhpSUlJSUlKGhoaGhoaGvr6+vr6+8vLy8vLzKysrKysrX19fX19fX5eXl5eXl8vLy8vLy////////AAAAAExhdmM1Ny44OQAAAAAAAAAAAAAAACQCgAAAAAAAAAVY82AhbwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/+MYxAALACwAAP/AADwQKVE9YWDGPkQWpT66yk4+zIiYPoTUaT3tnU487uNhOvEmQDaCm1Yz1c6DPjbs6zdZVBk0pdGpMzxF/+MYxA8L0DU0AP+0ANkwmYaAMkOKDDjmYoMtwNMyDxMzDHE/MEsLow9AtDnBlQgDhTx+Eye0GgMHoCyDC8gUswJcMVMABBGj/+MYxBoK4DVpQP8iAtVmDk7LPgi8wvDzI4/MWAwK1T7rxOQwtsItMMQBazAowc4wZMC5MF4AeQAGDpruNuMEzyfjLBJhACU+/+MYxCkJ4DVcAP8MAO9J9THVg6oxRMGNMIqCCTAEwzwwBkINOPAs/iwjgBnMepYyId0PhWo+80PXMVsBFzD/AiwwfcKGMEJB/+MYxDwKKDVkAP8eAF8wMwIxMlpU/OaDPLpNKkEw4dRoBh6qP2FC8jCJQFcweQIPMHOBtTBoAVcwOoCNMYDI0u0Dd8ANTIsy/+MYxE4KUDVsAP8eAFBVpgVVPjdGeTEWQr0wdcDtMCeBgDBkgRgwFYB7Pv/zqx0yQQMCCgKNgonHKj6RRVkxM0GwML0AhDAN/+MYxF8KCDVwAP8MAIHZMDDA3DArAQo3K+TF5WOBDQw0lgcKQUJxhT5sxRcwQQI+EIPWMA7AVBoTABgTgzfBN+ajn3c0lZMe/+MYxHEJyDV0AP7MAA4eEwsqP/PDmzC/gNcwXUGaMBVBIwMEsmB6gaxhVuGkpoqMZMQjooTBwM0+S8FTMC0BcjBTgPwwOQDm/+MYxIQKKDV4AP8WADAzAKQwI4CGPhWOEwCFAiBAYQnQMT+uwXUeGzjBWQVkwTcENMBzA2zAGgFEJfSPkPSZzPXgqFy2h0xB/+MYxJYJCDV8AP7WAE0+7kK7MQrATDAvQRIwOADKMBuA9TAYQNM3AiOSPjGxowgHMKFGcBNMQU1FMy45OS41VVU/31eYM4sK/+MYxKwJaDV8AP7SAI4y1Yq0MmOIADGwBZwwlgIJMztCM0qU5TQPG/MSkn8yEROzCdAxECVMQU1FMy45OS41VTe7Ohk+Pqcx/+MYxMEJMDWAAP6MADVLDFUx+4J6Mq7NsjN2zXo8V5fjVJCXNOhwM0vTCDAxFpMYYQU+RlVMQU1FMy45OS41VVVVVVVVVVVV/+MYxNcJADWAAP7EAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+MYxOsJwDWEAP7SAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+MYxPMLoDV8AP+eAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+MYxPQL0DVcAP+0AFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV';
 
 // r.e-hentai.org points all links to g.e-hentai.org
 if (origin.indexOf('r.e-hentai.org') >= 0) {
@@ -11820,8 +11821,10 @@ var ehDownloadFS = {
 			a.click();
 			pushDialog('\n\nNot download or file is broken? <a href="' + url + '" download="' + fileName + '.zip" style="color: #ffffff; font-weight: bold;">Click here to download</a>\n\n');
 			if (!forced) {
-				insertCloseButton()
-				if (setting['play-silent-music']) oscillator.stop();
+				insertCloseButton();
+				if (emptyAudio) {
+					emptyAudio.pause();
+				}
 			};
 		});
 	},
@@ -12296,6 +12299,12 @@ function generateZip(isFromFS, fs, isRetry, forced){
 		}).then(function(abData){
 			progress.value = 1;
 
+			if (!forced) {
+				if (emptyAudio) {
+					emptyAudio.pause();
+				}
+			}
+
 			if (isFromFS || ehDownloadFS.needFileSystem) { // using filesystem to save file is needed
 				saveToFileSystem(abData);
 			}
@@ -12307,7 +12316,6 @@ function generateZip(isFromFS, fs, isRetry, forced){
 				zip.file(/.*/).forEach(function(elem){
 					zip.remove(elem);
 				});
-				oscillator.stop();
 			}
 		});
 	}
@@ -12747,6 +12755,9 @@ function fetchOriginalImage(index, nodeList) {
 				pushDialog('You have exceeded your image viewing limits.\n');
 				isPausing = true;
 				updateTotalStatus();
+				if (emptyAudio) {
+					emptyAudio.pause();
+				}
 
 				if (ehDownloadDialog.contains(ehDownloadPauseBtn)) {
 					ehDownloadDialog.removeChild(ehDownloadPauseBtn);
@@ -13248,6 +13259,52 @@ function initEHDownload() {
 
 	// get all pages url to fix 403 forbidden (download request was timed out)
 	getAllPagesURL();
+
+	// init playing music
+	if (setting['play-silent-music']) {
+		emptyAudio = new Audio(emptyAudioFile);
+		emptyAudio.loop = true;
+
+		var hidden, visibilityChange;
+		if (typeof document.hidden !== 'undefined') { // Opera 12.10 and Firefox 18 and later support 
+			hidden = 'hidden';
+			visibilityChange = 'visibilitychange';
+		}
+		else if (typeof document.mozHidden !== 'undefined') {
+			hidden = 'mozHidden';
+			visibilityChange = 'mozvisibilitychange';
+		}
+		else if (typeof document.webkitHidden !== 'undefined') {
+			hidden = 'webkitHidden';
+			visibilityChange = 'webkitvisibilitychange';
+		}
+
+		var visibilityChangeHandler = function(isHidden) {
+			if (typeof isHidden !== 'boolean') {
+				isHidden = document[hidden];
+			}
+			if (isHidden) {
+				emptyAudio.play();
+			}
+			else {
+				emptyAudio.pause();
+			}
+		};
+
+		if (visibilityChange) {
+			window.addEventListener(visibilityChange, visibilityChangeHandler);
+		}
+		else {
+			window.addEventListener('focus', function() {
+				visibilityChangeHandler(false);
+			});
+			window.addEventListener('blur', function() {
+				visibilityChangeHandler(true);
+			});
+		}
+
+		visibilityChangeHandler();
+	}
 }
 
 function initProgressTable(){
@@ -13504,7 +13561,7 @@ function showSettings() {
 				<div class="g2"><label><input type="checkbox" data-ehd-setting="never-send-nl"> Never send "nl" GET parameter when getting new image URL </label><sup>(2)<sup></div>\
 				<div class="g2"' + (requestFileSystem ? '' : ' style="opacity: 0.5;" title="Only Chrome supports this feature"') + '><label><input type="checkbox" data-ehd-setting="store-in-fs"> Request File System to handle large Zip file </label><sup>(3)<sup></div>\
 				<div class="g2"' + (requestFileSystem ? '' : ' style="opacity: 0.5;" title="Only Chrome supports this feature"') + '><label>Use File System if archive is larger than <input type="number" data-ehd-setting="fs-size" min="0" placeholder="200" style="width: 46px;"> MB (0 is always) </label><sup>(3)<sup></div>\
-				<div class="g2"><label><input type="checkbox" data-ehd-setting="play-silent-music"> Play silent music during the process </label><sup>(4)<sup></div>\
+				<div class="g2"><label><input type="checkbox" data-ehd-setting="play-silent-music"> Play silent music during the process to avoid downloading freeze </label><sup>(4)<sup></div>\
 				<div class="g2"><label>Record and save gallery info as <select data-ehd-setting="save-info"><option value="file">File info.txt</option><option value="comment">Zip comment</option><option value="none">None</option></select></label></div>\
 				<div class="g2">...which includes <label><input type="checkbox" data-ehd-setting="save-info-list[]" value="title">Title & Gallery Link</label> <label><input type="checkbox" data-ehd-setting="save-info-list[]" value="metas">Metadatas</label> <label><input type="checkbox" data-ehd-setting="save-info-list[]" value="tags">Tags</label> <label><input type="checkbox" data-ehd-setting="save-info-list[]" value="uploader-comment">Uploader Comment</label> <label><input type="checkbox" data-ehd-setting="save-info-list[]" value="page-links">Page Links</label></div>\
 				<div class="g2"><label><input type="checkbox" data-ehd-setting="replace-with-full-width"> Replace forbidden letters as full-width letters instead of dash (-)</label></div>\
@@ -13521,7 +13578,7 @@ function showSettings() {
 					(3) If enabled you can save larger Zip files (probably ~1GB).\
 				</div>\
 				<div class="g2">\
-					(4) If enabled will play slient music that might avoid downloading freeze when page is in background.\
+					(4) If enabled will play slient music to avoid downloading freeze when page is in background <a href="https://github.com/ccloli/E-Hentai-Downloader/issues/65" target="_blank">(See issue)</a>. Only needed if you have the problem, because the audio-playing icon maybe annoying.\
 				</div>\
 				<!--<div class="g2">\
 					(5) <strong>This function is an experimental feature and may cause bug. </strong>Different browsers have different limit, See wiki for details.\
@@ -13774,18 +13831,6 @@ ehDownloadAction.innerHTML = ehDownloadArrow + ' <a>Download Archive</a>';
 ehDownloadAction.addEventListener('click', function(event){
 	event.preventDefault();
 
-	if (setting['play-silent-music']) {
-	var audioCtx = new(unsafeWindow.AudioContext || unsafeWindow.webkitAudioContext)
-	oscillator = audioCtx.createOscillator();
-	var gainNode = audioCtx.createGain();
-	oscillator.connect(gainNode);
-	gainNode.connect(audioCtx.destination);
-	oscillator.frequency.value = 1;
-	gainNode.gain.value = 0.001;
-	oscillator.start();
-	}
-
-
 	var torrentsNode = document.querySelector('#gd5 a[onclick*="gallerytorrents.php"]');
 	var torrentsCount = torrentsNode ? torrentsNode.textContent.match(/\d+/)[0] - 0 : 0;
 	if (isDownloading && !confirm('E-Hentai Downloader is working now, are you sure to stop downloading and start a new download?')) return;
@@ -13866,6 +13911,10 @@ ehDownloadPauseBtn.addEventListener('click', function(event){
 					}
 				}
 			}, 0);
+		}
+
+		if (emptyAudio) {
+			emptyAudio.pause();
 		}
 	}
 	else {
