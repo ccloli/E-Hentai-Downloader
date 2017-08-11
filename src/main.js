@@ -1550,7 +1550,7 @@ function initEHDownload() {
 			if (typeof isHidden !== 'boolean') {
 				isHidden = document[hidden];
 			}
-			if (isHidden) {
+			if (isHidden && ((isDownloading && !isPausing) || isSaving)) {
 				emptyAudio.play();
 			}
 			else {
