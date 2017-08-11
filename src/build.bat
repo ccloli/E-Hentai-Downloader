@@ -1,3 +1,6 @@
+:: cd to /src
+cd /d %~dp0
+
 set output_path=..\e-hentai-downloader.user.js
 set meta_js_path=..\e-hentai-downloader.meta.js
 set parts_js_dir=.\
