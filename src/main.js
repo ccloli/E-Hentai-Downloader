@@ -1052,10 +1052,6 @@ function fetchOriginalImage(index, nodeList) {
 					isPausing = false;
 					initProgressTable();
 					requestDownload();
-					
-					if (emptyAudio) {
-						emptyAudio.play();
-					}
 				});
 				ehDownloadDialog.appendChild(continueButton);
 
@@ -1530,7 +1526,46 @@ function initEHDownload() {
 	if (setting['play-silent-music']) {
 		emptyAudio = new Audio(emptyAudioFile);
 		emptyAudio.loop = true;
-		emptyAudio.play();
+
+		var hidden, visibilityChange;
+		if (typeof document.hidden !== 'undefined') { // Opera 12.10 and Firefox 18 and later support 
+			hidden = 'hidden';
+			visibilityChange = 'visibilitychange';
+		}
+		else if (typeof document.mozHidden !== 'undefined') {
+			hidden = 'mozHidden';
+			visibilityChange = 'mozvisibilitychange';
+		}
+		else if (typeof document.webkitHidden !== 'undefined') {
+			hidden = 'webkitHidden';
+			visibilityChange = 'webkitvisibilitychange';
+		}
+
+		var visibilityChangeHandler = function(isHidden) {
+			if (typeof isHidden !== 'boolean') {
+				isHidden = document[hidden];
+			}
+			if (isHidden) {
+				emptyAudio.play();
+			}
+			else {
+				emptyAudio.pause();
+			}
+		};
+
+		if (visibilityChange) {
+			window.addEventListener(visibilityChange, visibilityChangeHandler);
+		}
+		else {
+			window.addEventListener('focus', function() {
+				visibilityChangeHandler(false);
+			});
+			window.addEventListener('blur', function() {
+				visibilityChangeHandler(true);
+			});
+		}
+
+		visibilityChangeHandler();
 	}
 }
 
@@ -2149,9 +2184,6 @@ ehDownloadPauseBtn.addEventListener('click', function(event){
 		ehDownloadPauseBtn.textContent = setting['force-pause'] ? 'Pause (Downloading images will be aborted)' : 'Pause (Downloading images will keep downloading)';
 
 		requestDownload();
-		if (emptyAudio) {
-			emptyAudio.play();
-		}
 	}
 });
 
