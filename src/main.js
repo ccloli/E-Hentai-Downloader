@@ -14,7 +14,6 @@ var fetchThread = [];
 var dirName;
 var fileName;
 var progressTable = null;
-var isREH = false;
 var needNumberImages = setting['number-images'];
 var pagesRange = [];
 var isDownloading = false;
@@ -28,10 +27,13 @@ var fetchPagesXHR = new XMLHttpRequest();
 var emptyAudio;
 var emptyAudioFile = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU3LjcxLjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAEAAABVgANTU1NTU1Q0NDQ0NDUFBQUFBQXl5eXl5ea2tra2tra3l5eXl5eYaGhoaGhpSUlJSUlKGhoaGhoaGvr6+vr6+8vLy8vLzKysrKysrX19fX19fX5eXl5eXl8vLy8vLy////////AAAAAExhdmM1Ny44OQAAAAAAAAAAAAAAACQCgAAAAAAAAAVY82AhbwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/+MYxAALACwAAP/AADwQKVE9YWDGPkQWpT66yk4+zIiYPoTUaT3tnU487uNhOvEmQDaCm1Yz1c6DPjbs6zdZVBk0pdGpMzxF/+MYxA8L0DU0AP+0ANkwmYaAMkOKDDjmYoMtwNMyDxMzDHE/MEsLow9AtDnBlQgDhTx+Eye0GgMHoCyDC8gUswJcMVMABBGj/+MYxBoK4DVpQP8iAtVmDk7LPgi8wvDzI4/MWAwK1T7rxOQwtsItMMQBazAowc4wZMC5MF4AeQAGDpruNuMEzyfjLBJhACU+/+MYxCkJ4DVcAP8MAO9J9THVg6oxRMGNMIqCCTAEwzwwBkINOPAs/iwjgBnMepYyId0PhWo+80PXMVsBFzD/AiwwfcKGMEJB/+MYxDwKKDVkAP8eAF8wMwIxMlpU/OaDPLpNKkEw4dRoBh6qP2FC8jCJQFcweQIPMHOBtTBoAVcwOoCNMYDI0u0Dd8ANTIsy/+MYxE4KUDVsAP8eAFBVpgVVPjdGeTEWQr0wdcDtMCeBgDBkgRgwFYB7Pv/zqx0yQQMCCgKNgonHKj6RRVkxM0GwML0AhDAN/+MYxF8KCDVwAP8MAIHZMDDA3DArAQo3K+TF5WOBDQw0lgcKQUJxhT5sxRcwQQI+EIPWMA7AVBoTABgTgzfBN+ajn3c0lZMe/+MYxHEJyDV0AP7MAA4eEwsqP/PDmzC/gNcwXUGaMBVBIwMEsmB6gaxhVuGkpoqMZMQjooTBwM0+S8FTMC0BcjBTgPwwOQDm/+MYxIQKKDV4AP8WADAzAKQwI4CGPhWOEwCFAiBAYQnQMT+uwXUeGzjBWQVkwTcENMBzA2zAGgFEJfSPkPSZzPXgqFy2h0xB/+MYxJYJCDV8AP7WAE0+7kK7MQrATDAvQRIwOADKMBuA9TAYQNM3AiOSPjGxowgHMKFGcBNMQU1FMy45OS41VVU/31eYM4sK/+MYxKwJaDV8AP7SAI4y1Yq0MmOIADGwBZwwlgIJMztCM0qU5TQPG/MSkn8yEROzCdAxECVMQU1FMy45OS41VTe7Ohk+Pqcx/+MYxMEJMDWAAP6MADVLDFUx+4J6Mq7NsjN2zXo8V5fjVJCXNOhwM0vTCDAxFpMYYQU+RlVMQU1FMy45OS41VVVVVVVVVVVV/+MYxNcJADWAAP7EAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+MYxOsJwDWEAP7SAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+MYxPMLoDV8AP+eAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+MYxPQL0DVcAP+0AFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV';
 
-// r.e-hentai.org points all links to g.e-hentai.org
-if (origin.indexOf('r.e-hentai.org') >= 0) {
-	origin = origin.replace(/r\.e-hentai\.org/, 'g.e-hentai.org');
-	isREH = true;
+// remove config of get image limits from r.e-hentai.org
+if (setting['image-limits-both']) {
+	delete setting['image-limits-both'];
+	GM_setValue('ehD-setting', JSON.stringify(setting));
+}
+if (localStorage.getItem('ehd-image-limits-r.e-hentai.org')) {
+	localStorage.removeItem('ehd-image-limits-r.e-hentai.org');
 }
 
 var ehDownloadRegex = {
@@ -42,7 +44,7 @@ var ehDownloadRegex = {
 	],
 	nextFetchURL: [
 		/<a id="next"[\s\S]+?href="(\S+?\/s\/\S+?)"/,
-		/<a href="(\S+?\/s\/\S+?)"><img src="http:\/\/ehgt.org\/g\/n.png"/
+		/<a href="(\S+?\/s\/\S+?)"><img src="https?:\/\/ehgt.org\/g\/n.png"/
 	],
 	preFetchURL: /<div class="sn"><a[\s\S]+?href="(\S+?\/s\/\S+?)"/,
 	nl: /return nl\('([\d-]+)'\)/,
@@ -291,12 +293,6 @@ String.prototype.replaceHTMLEntites = function() {
 	});
 	return result;
 };
-
-// Fixed cross origin in r.e-hentai.org
-function replaceOrigin(str) {
-	if (isREH) return str.replace('g.e-hentai.org', 'r.e-hentai.org');
-	return str;
-}
 
 function createBlob(abdata, config) {
 	try { // to detect if blob generates successfully
@@ -934,7 +930,7 @@ function fetchOriginalImage(index, nodeList) {
 			var byteLength = response.byteLength;
 			var responseHeaders = res.responseHeaders;
 			
-            // use regex to fixed compatibility with http/2, as its headers are lower case (at least fixed with Yandex Turbo)
+			// use regex to fixed compatibility with http/2, as its headers are lower case (at least fixed with Yandex Turbo)
 			var mime = responseHeaders.match(/Content-Type:/i) ? responseHeaders.split(/Content-Type:/i)[1].split('\n')[0].trim().split('/') : ['', ''];
 
 			if (!response) {
@@ -1036,12 +1032,12 @@ function fetchOriginalImage(index, nodeList) {
 					- Check back in a few hours, and you will be able to download more (reduce 3 points per minute by default).\n\
 					- You can reset your image viewing limits to continue by paying your GPs or credits.\n\n\
 					If you want to reset your limits by paying your GPs or credits right now, choose YES, and you can reset it in opened window. Or if you want to wait a few minutes until you have enough free limits, then continue, choose NO.')) {
-					window.open('http://e-hentai.org/home.php');
+					window.open('https://e-hentai.org/home.php');
 				}
 
 				var resetButton = document.createElement('a');
 				resetButton.innerHTML = '<button>Reset Limits</button>';
-				resetButton.setAttribute('href', 'http://e-hentai.org/home.php');
+				resetButton.setAttribute('href', 'https://e-hentai.org/home.php');
 				resetButton.setAttribute('target', '_blank');
 				ehDownloadDialog.appendChild(resetButton);
 
@@ -1316,7 +1312,7 @@ function getAllPagesURL() {
 				return;
 			}
 			for (var i = 0; i < pagesURL.length; i++) {
-				pageURLsList.push(replaceOrigin(pagesURL[i].split('"')[1].replaceHTMLEntites()));
+				pageURLsList.push(pagesURL[i].split('"')[1].replaceHTMLEntites());
 			}
 			pushDialog('Succeed!');
 
@@ -1680,7 +1676,7 @@ function getPageData(index) {
 		}
 
 		try {
-			var imageURL = (unsafeWindow.apiuid !== -1 && xhr.responseText.indexOf('fullimg.php') >= 0 && !setting['force-resized']) ? replaceOrigin(xhr.responseText.match(ehDownloadRegex.imageURL[0])[1].replaceHTMLEntites()) : xhr.responseText.indexOf('id="img"') > -1 ? xhr.responseText.match(ehDownloadRegex.imageURL[1])[1].replaceHTMLEntites() : xhr.responseText.match(ehDownloadRegex.imageURL[2])[1].replaceHTMLEntites();
+			var imageURL = (unsafeWindow.apiuid !== -1 && xhr.responseText.indexOf('fullimg.php') >= 0 && !setting['force-resized']) ? xhr.responseText.match(ehDownloadRegex.imageURL[0])[1].replaceHTMLEntites() : xhr.responseText.indexOf('id="img"') > -1 ? xhr.responseText.match(ehDownloadRegex.imageURL[1])[1].replaceHTMLEntites() : xhr.responseText.match(ehDownloadRegex.imageURL[2])[1].replaceHTMLEntites();
 			var fileName = xhr.responseText.match(ehDownloadRegex.fileName)[1].replaceHTMLEntites();
 			var nextNL = ehDownloadRegex.nl.test(xhr.responseText) ? xhr.responseText.match(ehDownloadRegex.nl)[1] : null;
 			var imageNumber = '';
@@ -1836,11 +1832,10 @@ function showSettings() {
 					<div class="g2">...which includes <label><input type="checkbox" data-ehd-setting="save-info-list[]" value="title">Title & Gallery Link</label> <label><input type="checkbox" data-ehd-setting="save-info-list[]" value="metas">Metadatas</label> <label><input type="checkbox" data-ehd-setting="save-info-list[]" value="tags">Tags</label> <label><input type="checkbox" data-ehd-setting="save-info-list[]" value="uploader-comment">Uploader Comment</label> <label><input type="checkbox" data-ehd-setting="save-info-list[]" value="page-links">Page Links</label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="replace-with-full-width"> Replace forbidden characters with full-width characters instead of dash (-)</label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="force-pause"> Force drop downloaded images data when pausing download</label></div>\
-					<div class="g2"><label><input type="checkbox" data-ehd-setting="image-limits-both"> I\'m in China and/or using proxy to visit e-hentai.org so my image limits on ExHentai is incorrect</label></div>\
 					<!--<div class="g2"><label><input type="checkbox" data-ehd-setting="auto-scale"> Auto scale Zip file at <input type="text" min="10" placeholder="250" style="width: 46px;" data-ehd-setting="scale-size"> MB if file is larger than <input type="text" min="10" placeholder="400" style="width: 46px;" data-ehd-setting="scale-reach"> MB (experiment) </label><sup>(5)</sup></div>-->\
 					<div class="ehD-setting-note">\
 						<div class="g2">\
-							(1) This may reduce memory usage but some decompress softwares may not support the Zip file. See <a href="http://stuk.github.io/jszip/documentation/api_jszip/generate_async.html" target="_blank" style="color: #ffffff;">JSZip Docs</a> for more info.\
+							(1) This may reduce memory usage but some decompress softwares may not support the Zip file. See <a href="https://stuk.github.io/jszip/documentation/api_jszip/generate_async.html" target="_blank" style="color: #ffffff;">JSZip Docs</a> for more info.\
 						</div>\
 						<div class="g2">\
 							(2) Enable these options may save your image viewing limits <a href="https://github.com/ccloli/E-Hentai-Downloader/wiki/E%E2%88%92Hentai-Image-Viewing-Limits" target="_blank" style="color: #ffffff;">(See wiki)</a>, but may also cause some download problems.\
@@ -1961,12 +1956,12 @@ function showSettings() {
 	});
 }
 
-function getImageLimits(host, forced){
+function getImageLimits(forced, host){
 	var host = host || location.hostname;
 	if (host === 'exhentai.org') {
 		host = 'e-hentai.org';
 	}
-	var url = 'http://' + host + '/home.php';
+	var url = 'https://' + host + '/home.php';
 
 	var preData = JSON.parse(localStorage.getItem('ehd-image-limits-' + host) || '{"timestamp":0}');
 	if (!forced && new Date() - preData.timestamp < 30000) {
@@ -2001,14 +1996,7 @@ function showImageLimits(){
 		return curData.cur + '/' + curData.total;
 	});
 
-	ehDownloadBox.getElementsByClassName('ehD-box-limit')[0].innerHTML = ' | <a href="http://e-hentai.org/home.php">Image Limits: ' + list.join('; ') + '</a>';
-}
-
-function checkImageLimits(forced){
-	getImageLimits(location.host, forced);
-	if (location.host === 'exhentai.org' && setting['image-limits-both']) {
-		getImageLimits('r.e-hentai.org', forced);
-	}
+	ehDownloadBox.getElementsByClassName('ehD-box-limit')[0].innerHTML = ' | <a href="https://e-hentai.org/home.php">Image Limits: ' + list.join('; ') + '</a>';
 }
 
 function getFileSizeAndLength() {
@@ -2231,8 +2219,8 @@ unsafeWindow.getzip = window.getzip = function(){
 };
 
 if (!setting['hide-image-limits']) {
-	checkImageLimits(true);
-	setInterval(checkImageLimits, 60000);
+	getImageLimits(true);
+	setInterval(getImageLimits, 60000);
 }
 
 if (!setting['hide-estimated-cost']) {
