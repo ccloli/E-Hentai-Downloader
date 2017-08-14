@@ -27,15 +27,6 @@ var fetchPagesXHR = new XMLHttpRequest();
 var emptyAudio;
 var emptyAudioFile = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU3LjcxLjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAEAAABVgANTU1NTU1Q0NDQ0NDUFBQUFBQXl5eXl5ea2tra2tra3l5eXl5eYaGhoaGhpSUlJSUlKGhoaGhoaGvr6+vr6+8vLy8vLzKysrKysrX19fX19fX5eXl5eXl8vLy8vLy////////AAAAAExhdmM1Ny44OQAAAAAAAAAAAAAAACQCgAAAAAAAAAVY82AhbwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/+MYxAALACwAAP/AADwQKVE9YWDGPkQWpT66yk4+zIiYPoTUaT3tnU487uNhOvEmQDaCm1Yz1c6DPjbs6zdZVBk0pdGpMzxF/+MYxA8L0DU0AP+0ANkwmYaAMkOKDDjmYoMtwNMyDxMzDHE/MEsLow9AtDnBlQgDhTx+Eye0GgMHoCyDC8gUswJcMVMABBGj/+MYxBoK4DVpQP8iAtVmDk7LPgi8wvDzI4/MWAwK1T7rxOQwtsItMMQBazAowc4wZMC5MF4AeQAGDpruNuMEzyfjLBJhACU+/+MYxCkJ4DVcAP8MAO9J9THVg6oxRMGNMIqCCTAEwzwwBkINOPAs/iwjgBnMepYyId0PhWo+80PXMVsBFzD/AiwwfcKGMEJB/+MYxDwKKDVkAP8eAF8wMwIxMlpU/OaDPLpNKkEw4dRoBh6qP2FC8jCJQFcweQIPMHOBtTBoAVcwOoCNMYDI0u0Dd8ANTIsy/+MYxE4KUDVsAP8eAFBVpgVVPjdGeTEWQr0wdcDtMCeBgDBkgRgwFYB7Pv/zqx0yQQMCCgKNgonHKj6RRVkxM0GwML0AhDAN/+MYxF8KCDVwAP8MAIHZMDDA3DArAQo3K+TF5WOBDQw0lgcKQUJxhT5sxRcwQQI+EIPWMA7AVBoTABgTgzfBN+ajn3c0lZMe/+MYxHEJyDV0AP7MAA4eEwsqP/PDmzC/gNcwXUGaMBVBIwMEsmB6gaxhVuGkpoqMZMQjooTBwM0+S8FTMC0BcjBTgPwwOQDm/+MYxIQKKDV4AP8WADAzAKQwI4CGPhWOEwCFAiBAYQnQMT+uwXUeGzjBWQVkwTcENMBzA2zAGgFEJfSPkPSZzPXgqFy2h0xB/+MYxJYJCDV8AP7WAE0+7kK7MQrATDAvQRIwOADKMBuA9TAYQNM3AiOSPjGxowgHMKFGcBNMQU1FMy45OS41VVU/31eYM4sK/+MYxKwJaDV8AP7SAI4y1Yq0MmOIADGwBZwwlgIJMztCM0qU5TQPG/MSkn8yEROzCdAxECVMQU1FMy45OS41VTe7Ohk+Pqcx/+MYxMEJMDWAAP6MADVLDFUx+4J6Mq7NsjN2zXo8V5fjVJCXNOhwM0vTCDAxFpMYYQU+RlVMQU1FMy45OS41VVVVVVVVVVVV/+MYxNcJADWAAP7EAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+MYxOsJwDWEAP7SAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+MYxPMLoDV8AP+eAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+MYxPQL0DVcAP+0AFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV';
 
-// remove config of get image limits from r.e-hentai.org
-if (setting['image-limits-both']) {
-	delete setting['image-limits-both'];
-	GM_setValue('ehD-setting', JSON.stringify(setting));
-}
-if (localStorage.getItem('ehd-image-limits-r.e-hentai.org')) {
-	localStorage.removeItem('ehd-image-limits-r.e-hentai.org');
-}
-
 var ehDownloadRegex = {
 	imageURL: [
 		/<a href="(\S+?\/fullimg\.php\?\S+?)"/,
@@ -89,7 +80,7 @@ var ehDownloadFS = {
 				if (emptyAudio) {
 					emptyAudio.pause();
 				}
-			};
+			}
 		});
 	},
 	removeFile: function(fileName, fs, isEntry){
@@ -120,7 +111,7 @@ var ehDownloadFS = {
 	initCheckerHandler: function(fs) {
 		//ehDownloadFS.fs = fs;
 		console.log('[EHD] File System is opened! Name >', fs.name);
-		ehDownloadFS.removeFile(unsafeWindow.gid + '.zip');
+		ehDownloadFS.removeFile(unsafeWindow.gid + '.zip', fs);
 		fs.root.getFile('config.txt', {create: false}, function(fileEntry){
 			fileEntry.file(function(file){
 				var fileReader = new FileReader();
@@ -219,12 +210,13 @@ var ehDownloadStyle = '\
 	.ehD-setting-footer { text-align: center; margin-top: 5px; border-top: 1px solid #cccccc; padding-top: 5px; }\
 	.ehD-setting sup { vertical-align: top; }\
 	.ehD-box input[type="number"] { height: 17px; }\
-	.ehD-dialog progress { height: 12px; -webkit-appearance: none; border: 1px solid #4f535b; background: #34353b; position: relative; } \
+	.ehD-dialog progress { height: 12px; -webkit-appearance: none; border: 1px solid #4f535b; color: #4f535b; background: #34353b; position: relative; } \
 	.ehD-dialog progress::-webkit-progress-bar { background: #34353b; } \
 	.ehD-dialog progress::-webkit-progress-value { background: #4f535b; -webkit-transition: all 0.2s ease; transition: all 0.2s ease; } \
 	.ehD-dialog progress::-moz-progress-bar { background: #4f535b; -moz-transition: all 0.2s ease; transition: all 0.2s ease; } \
 	.ehD-dialog progress::-ms-fill { background: #4f535b; -ms-transition: all 0.2s ease; transition: all 0.2s ease; } \
 	.ehD-dialog progress:not([value])::after { content: ""; will-change: transform; width: 100%; height: 100%; left: 0; top: 0; display: block; background: #4f535b; position: absolute; -webkit-animation: progress 1s ease-in-out alternate infinite; -moz-animation: progress 1s ease-in-out alternate infinite; -ms-animation: progress 1s ease-in-out alternate infinite; animation: progress 1s ease-in-out alternate infinite; } \
+	.ehD-dialog progress:not([value])::-moz-progress-bar { width: 0px !important; } \
 	.ehD-pt { table-layout: fixed; width: 100%; }\
 	.ehD-pt-name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }\
 	.ehD-pt-progress-outer { width: 160px; position: relative; }\
@@ -243,11 +235,11 @@ var ehDownloadStyle = '\
 	.ehD-status { position: fixed; right: 0; bottom: 311px; width: 550px; padding: 5px; border: 1px solid #000000; background: #34353b; color: #dddddd; cursor: pointer; -webkit-user-select: none; -moz-user-select: none; -o-user-select: none; -ms-user-select: none; user-select: none; }\
 	.ehD-dialog, .ehD-status { -webkit-transition: margin 0.5s ease; -moz-transition: margin 0.5s ease; -o-transition: margin 0.5s ease; -ms-transition: margin 0.5s ease; transition: margin 0.5s ease; }\
 	.ehD-dialog.hidden, .ehD-dialog.hidden .ehD-status { margin-bottom: -311px; }\
-	.ehD-dialog .ehD-force-download-tips { position: fixed; right: 0; bottom: 288px; border: 1px solid #000000; width: 550px; padding: 5px; background: rgba(0, 0, 0, 0.75); color: #ffffff; cursor: pointer; opacity: 0; pointer-events: none; }\
+	.ehD-dialog .ehD-force-download-tips { position: fixed; right: 0; bottom: 288px; border: 1px solid #000000; width: 550px; padding: 5px; background: rgba(0, 0, 0, 0.75); color: #ffffff; cursor: pointer; opacity: 0; pointer-events: none; -webkit-transition: opacity 0.5s ease, bottom 0.5s ease; -moz-transition: opacity 0.5s ease, bottom 0.5s ease; -o-transition: opacity 0.5s ease, bottom 0.5s ease; -ms-transition: opacity 0.5s ease, bottom 0.5s ease; transition: opacity 0.5s ease, bottom 0.5s ease; }\
 	.ehD-dialog:hover .ehD-force-download-tips { opacity: 1; }\
-	.ehD-dialog.hidden .ehD-force-download-tips { display: none; }\
+	.ehD-dialog.hidden .ehD-force-download-tips { bottom: -24px; }\
 	.ehD-close-tips { position: fixed; left: 0; right: 0; bottom: 0; padding: 10px; border: 1px solid #000000; background: #34353b; color: #dddddd; width: 732px; max-width: 100%; max-height: 100%; overflow-x: hidden; overflow-y: auto; box-sizing: border-box; margin: auto; z-index: 1000; text-align: left; font-size: 14px; outline: 5px rgba(0, 0, 0, 0.25) solid; }\
-	';
+';
 
 // overwrite settings or set default settings
 if (setting['status-in-title'] === true) setting['status-in-title'] = 'blur';
@@ -256,6 +248,14 @@ if (!setting['save-info-list']) {
 }
 if (localStorage.getItem('ehd-image-limits-g.e-hentai.org')) {
 	localStorage.removeItem('ehd-image-limits-g.e-hentai.org');
+}
+// remove config of get image limits from r.e-hentai.org
+if (setting['image-limits-both']) {
+	delete setting['image-limits-both'];
+	GM_setValue('ehD-setting', JSON.stringify(setting));
+}
+if (localStorage.getItem('ehd-image-limits-r.e-hentai.org')) {
+	localStorage.removeItem('ehd-image-limits-r.e-hentai.org');
 }
 
 // log information
@@ -282,8 +282,8 @@ String.prototype.replaceHTMLEntites = function() {
 			var charCode = entity.match(/#(\d+)/)[1] - 0;
 			return String.fromCharCode(charCode);
 		}
-		else if (/#x\d+/.test(entity)) {
-			var charCode = parseInt(entity.match(/#x(\d+)/)[1] - 0, 16);
+		else if (/#[xX][0-9a-f]+/.test(entity)) {
+			var charCode = parseInt(entity.match(/#[xX]([0-9a-f]+)/)[1] - 0, 16);
 			return String.fromCharCode(charCode);
 		}
 		else return '&' + entity + ';';
@@ -536,7 +536,7 @@ function generateZip(isFromFS, fs, isRetry, forced){
 			if ('close' in blob) blob.close();
 			blob = null;
 		}, 10e3); // 10s to fixed Chrome delay downloads
-	}
+	};
 
 	try {
 		var lastMetaTime = 0;
@@ -1437,7 +1437,7 @@ function initEHDownload() {
 			'Error Name: ' + (e.name || 'Unknown Error') + '\n' +
 			'Error Message: ' + e.message + '\n\n' +
 			'Roll back and use Blob to handle file.');
-	}
+	};
 
 	if ((!setting['store-in-fs'] && requiredMBs >= 300) && !confirm('This archive is too large (original size), please consider downloading this archive in other way.\n\nMaximum allowed file size: Chrome / Opera 15+ 500MB | IE 10+ 600 MB | Firefox 20+ 800 MB\n(From FileSaver.js introduction)\n\nPlease also consider your operating system\'s free memory (RAM), it may takes about DOUBLE size of archive file size when generating ZIP file.\n\n* If continues, you would probably get an error likes "Failed - No File" or "Out Of Memory" if you don\'t have enough RAM and can\'t save file successfully.\n\n* If you are using Chrome, you can try enabling "Request File System to handle large Zip file" on settings page.\n\n* You can set Pages Range to download this archive into some parts. If you have already enabled it, please ignore this message.\n\nAre you sure to continue downloading?')) return;
 	else if (setting['store-in-fs'] && requestFileSystem && requiredMBs >= (setting['fs-size'] !== undefined ? setting['fs-size'] : 200)) {
@@ -1477,14 +1477,14 @@ function initEHDownload() {
 	// Array.prototype.some() is a bit ugly, so we use toString().indexOf() lol
 	var infoNeeds = setting['save-info-list'].toString();
 	if (infoNeeds.indexOf('title') >= 0) {
-		infoStr += document.getElementById('gn').textContent.replaceHTMLEntites() + '\n' 
-		        + document.getElementById('gj').textContent.replaceHTMLEntites() + '\n' 
-		        + window.location.href.replaceHTMLEntites() + '\n\n';
+		infoStr += document.getElementById('gn').textContent.replaceHTMLEntites() + '\n' +
+		           document.getElementById('gj').textContent.replaceHTMLEntites() + '\n' +
+		           window.location.href.replaceHTMLEntites() + '\n\n';
 	}
 
 	if (infoNeeds.indexOf('metas') >= 0) {
-		infoStr += 'Category: ' + document.getElementsByClassName('ic')[0].getAttribute('alt').toUpperCase() + '\n' 
-		        + 'Uploader: ' + document.querySelector('#gdn a').textContent.replaceHTMLEntites() + '\n';
+		infoStr += 'Category: ' + document.getElementsByClassName('ic')[0].getAttribute('alt').toUpperCase() + '\n' +
+		           'Uploader: ' + document.querySelector('#gdn a').textContent.replaceHTMLEntites() + '\n';
 	}
 	var metaNodes = document.querySelectorAll('#gdd tr');
 	for (var i = 0; i < metaNodes.length; i++) {
@@ -1673,6 +1673,8 @@ function getPageData(index) {
 
 				checkFailed();
 			}
+
+			return;
 		}
 
 		try {
@@ -1733,15 +1735,22 @@ function getPageData(index) {
 		//imageList.push(new PageData(fetchURL, imageURL, fileName, nextNL, realIndex));
 		imageList[index] = new PageData(fetchURL, imageURL, fileName, nextNL, realIndex, imageNumber);
 
-		updateProgress(nodeList, {
-			name: '#' + realIndex + ': ' + fileName,
-			status: 'Pending...',
-			progress: '',
-			progressText: '', 
-			class: ''
-		});
-
-		fetchOriginalImage(index, nodeList);
+		if (isPausing) {
+			updateProgress(nodeList, {
+				name: '#' + realIndex + ': ' + fileName,
+				status: 'Force Paused',
+				progress: '',
+				progressText: '', 
+				class: ''
+			});
+			fetchCount--;
+			imageData[index] = null;
+			
+			updateTotalStatus();
+		}
+		else {
+			fetchOriginalImage(index, nodeList);
+		}
 
 	};
 	xhr.onerror = xhr.ontimeout = function() {
@@ -1832,7 +1841,6 @@ function showSettings() {
 					<div class="g2">...which includes <label><input type="checkbox" data-ehd-setting="save-info-list[]" value="title">Title & Gallery Link</label> <label><input type="checkbox" data-ehd-setting="save-info-list[]" value="metas">Metadatas</label> <label><input type="checkbox" data-ehd-setting="save-info-list[]" value="tags">Tags</label> <label><input type="checkbox" data-ehd-setting="save-info-list[]" value="uploader-comment">Uploader Comment</label> <label><input type="checkbox" data-ehd-setting="save-info-list[]" value="page-links">Page Links</label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="replace-with-full-width"> Replace forbidden characters with full-width characters instead of dash (-)</label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="force-pause"> Force drop downloaded images data when pausing download</label></div>\
-					<!--<div class="g2"><label><input type="checkbox" data-ehd-setting="auto-scale"> Auto scale Zip file at <input type="text" min="10" placeholder="250" style="width: 46px;" data-ehd-setting="scale-size"> MB if file is larger than <input type="text" min="10" placeholder="400" style="width: 46px;" data-ehd-setting="scale-reach"> MB (experiment) </label><sup>(5)</sup></div>-->\
 					<div class="ehD-setting-note">\
 						<div class="g2">\
 							(1) This may reduce memory usage but some decompress softwares may not support the Zip file. See <a href="https://stuk.github.io/jszip/documentation/api_jszip/generate_async.html" target="_blank" style="color: #ffffff;">JSZip Docs</a> for more info.\
@@ -1846,9 +1854,6 @@ function showSettings() {
 						<div class="g2">\
 							(4) If enabled will play slient music to avoid downloading freeze when page is in background <a href="https://github.com/ccloli/E-Hentai-Downloader/issues/65" target="_blank">(See issue)</a>. Only needed if you have the problem, because the audio-playing icon maybe annoying.\
 						</div>\
-						<!--<div class="g2">\
-							(5) <strong>This function is an experimental feature and may cause bug. </strong>Different browsers have different limit, See wiki for details.\
-						</div>-->\
 					</div>\
 				</div>\
 			</div>\
@@ -1999,7 +2004,7 @@ function showImageLimits(){
 	ehDownloadBox.getElementsByClassName('ehD-box-limit')[0].innerHTML = ' | <a href="https://e-hentai.org/home.php">Image Limits: ' + list.join('; ') + '</a>';
 }
 
-function getFileSizeAndLength() {
+var getFileSizeAndLength = function() {
 	var context = document.getElementById('gdd').textContent;
 	var sizeText = context.split('File Size:')[1].split('Length:')[0].trim();
 	var pageText = context.split('Length:')[1].split('page')[0].trim();
@@ -2032,7 +2037,7 @@ function getFileSizeAndLength() {
 	};
 
 	return result;
-}
+};
 
 function toggleFilenameConfirmInput(hide){
 	var extendNodes = document.querySelector('.ehD-box-extend');
@@ -2051,8 +2056,8 @@ function toggleFilenameConfirmInput(hide){
 	else if (!hide) {
 		extendNodes = document.createElement('div');
 		extendNodes.className = 'ehD-box-extend';
-		extendNodes.innerHTML = '<div class="g2">' + ehDownloadArrow + ' <a>File Name <input type="text" class="ehD-box-extend-filename"></a></div>'
-		                      + '<div class="g2">' + ehDownloadArrow + ' <a>Path Name <input type="text" class="ehD-box-extend-dirname"></a></div>';
+		extendNodes.innerHTML = '<div class="g2">' + ehDownloadArrow + ' <a>File Name <input type="text" class="ehD-box-extend-filename"></a></div>' +
+		                        '<div class="g2">' + ehDownloadArrow + ' <a>Path Name <input type="text" class="ehD-box-extend-dirname"></a></div>';
 		ehDownloadBox.appendChild(extendNodes);
 
 		dirName = getReplacedName(!setting['dir-name'] ? '{gid}_{token}' : setting['dir-name']);
@@ -2203,7 +2208,7 @@ window.addEventListener('blur', function(){
 
 var forceDownloadTips = document.createElement('div');
 forceDownloadTips.className = 'ehD-force-download-tips';
-forceDownloadTips.innerHTML = 'If an error occur and script can\'t work, click <a href="javascript: getzip();" style="font-weight: bold; pointer-events: auto;" title="Force download won\'t stop current downloading task.">here</a> to force get your downloaded images.';
+forceDownloadTips.innerHTML = 'If an error occured and script doesn\'t work, click <a href="javascript: getzip();" style="font-weight: bold; pointer-events: auto;" title="Force download won\'t stop current downloading task.">here</a> to force get your downloaded images.';
 forceDownloadTips.getElementsByTagName('a')[0].addEventListener('click', function(event){
 	// fixed permission denied on GreaseMonkey
 	event.preventDefault();
@@ -2212,7 +2217,7 @@ forceDownloadTips.getElementsByTagName('a')[0].addEventListener('click', functio
 
 var closeTips = document.createElement('div');
 closeTips.className = 'ehD-close-tips';
-closeTips.innerHTML = 'E-Hentai Downloader is still running, please don\'t close this tab before it finished downloading.<br><br>If any bug occured and the script can\'t work correctly, you can move your mouse pointer onto the progress box, and force to save downloaded images before you leave.';
+closeTips.innerHTML = 'E-Hentai Downloader is still running, please don\'t close this tab until it finished downloading.<br><br>If any bug occured and the script doesn\'t work correctly, you can move your mouse pointer onto the progress box, and force to save downloaded images before you leave.';
 
 unsafeWindow.getzip = window.getzip = function(){
 	saveDownloaded(true);
@@ -2246,7 +2251,7 @@ window.onbeforeunload = unsafeWindow.onbeforeunload = function(){
 			document.body.removeChild(closeTips);
 		}, 100);
 
-		return 'E-Hentai Downloader is still running, please don\'t close this tab before it finished downloading.';
+		return 'E-Hentai Downloader is still running, please don\'t close this tab until it finished downloading.';
 	}
 	clearRubbish();
 };
