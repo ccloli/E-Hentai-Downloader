@@ -4,7 +4,7 @@ var imageList = [];
 var imageData = [];
 var infoStr;
 var origin = window.location.origin;
-var setting = GM_getValue('ehD-setting') ? JSON.parse(GM_getValue('ehD-setting')) : {};
+var setting = null;
 var fetchCount = 0;
 var downloadedCount = 0;
 var totalCount = 0;
@@ -14,7 +14,7 @@ var fetchThread = [];
 var dirName;
 var fileName;
 var progressTable = null;
-var needNumberImages = setting['number-images'];
+var needNumberImages = false;
 var pagesRange = [];
 var isDownloading = false;
 var isPausing = false;
@@ -22,10 +22,11 @@ var isSaving = false;
 var pageURLsList = [];
 var getAllPagesURLFin = false;
 var pretitle = document.title;
-var needTitleStatus = setting['status-in-title'] === 'always' ? true : false;
+var needTitleStatus = false;
 var fetchPagesXHR = new XMLHttpRequest();
 var emptyAudio;
 var emptyAudioFile = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU3LjcxLjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAEAAABVgANTU1NTU1Q0NDQ0NDUFBQUFBQXl5eXl5ea2tra2tra3l5eXl5eYaGhoaGhpSUlJSUlKGhoaGhoaGvr6+vr6+8vLy8vLzKysrKysrX19fX19fX5eXl5eXl8vLy8vLy////////AAAAAExhdmM1Ny44OQAAAAAAAAAAAAAAACQCgAAAAAAAAAVY82AhbwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/+MYxAALACwAAP/AADwQKVE9YWDGPkQWpT66yk4+zIiYPoTUaT3tnU487uNhOvEmQDaCm1Yz1c6DPjbs6zdZVBk0pdGpMzxF/+MYxA8L0DU0AP+0ANkwmYaAMkOKDDjmYoMtwNMyDxMzDHE/MEsLow9AtDnBlQgDhTx+Eye0GgMHoCyDC8gUswJcMVMABBGj/+MYxBoK4DVpQP8iAtVmDk7LPgi8wvDzI4/MWAwK1T7rxOQwtsItMMQBazAowc4wZMC5MF4AeQAGDpruNuMEzyfjLBJhACU+/+MYxCkJ4DVcAP8MAO9J9THVg6oxRMGNMIqCCTAEwzwwBkINOPAs/iwjgBnMepYyId0PhWo+80PXMVsBFzD/AiwwfcKGMEJB/+MYxDwKKDVkAP8eAF8wMwIxMlpU/OaDPLpNKkEw4dRoBh6qP2FC8jCJQFcweQIPMHOBtTBoAVcwOoCNMYDI0u0Dd8ANTIsy/+MYxE4KUDVsAP8eAFBVpgVVPjdGeTEWQr0wdcDtMCeBgDBkgRgwFYB7Pv/zqx0yQQMCCgKNgonHKj6RRVkxM0GwML0AhDAN/+MYxF8KCDVwAP8MAIHZMDDA3DArAQo3K+TF5WOBDQw0lgcKQUJxhT5sxRcwQQI+EIPWMA7AVBoTABgTgzfBN+ajn3c0lZMe/+MYxHEJyDV0AP7MAA4eEwsqP/PDmzC/gNcwXUGaMBVBIwMEsmB6gaxhVuGkpoqMZMQjooTBwM0+S8FTMC0BcjBTgPwwOQDm/+MYxIQKKDV4AP8WADAzAKQwI4CGPhWOEwCFAiBAYQnQMT+uwXUeGzjBWQVkwTcENMBzA2zAGgFEJfSPkPSZzPXgqFy2h0xB/+MYxJYJCDV8AP7WAE0+7kK7MQrATDAvQRIwOADKMBuA9TAYQNM3AiOSPjGxowgHMKFGcBNMQU1FMy45OS41VVU/31eYM4sK/+MYxKwJaDV8AP7SAI4y1Yq0MmOIADGwBZwwlgIJMztCM0qU5TQPG/MSkn8yEROzCdAxECVMQU1FMy45OS41VTe7Ohk+Pqcx/+MYxMEJMDWAAP6MADVLDFUx+4J6Mq7NsjN2zXo8V5fjVJCXNOhwM0vTCDAxFpMYYQU+RlVMQU1FMy45OS41VVVVVVVVVVVV/+MYxNcJADWAAP7EAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+MYxOsJwDWEAP7SAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+MYxPMLoDV8AP+eAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+MYxPQL0DVcAP+0AFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV';
+
 
 var ehDownloadRegex = {
 	imageURL: [
@@ -241,21 +242,59 @@ var ehDownloadStyle = '\
 	.ehD-close-tips { position: fixed; left: 0; right: 0; bottom: 0; padding: 10px; border: 1px solid #000000; background: #34353b; color: #dddddd; width: 732px; max-width: 100%; max-height: 100%; overflow-x: hidden; overflow-y: auto; box-sizing: border-box; margin: auto; z-index: 1000; text-align: left; font-size: 14px; outline: 5px rgba(0, 0, 0, 0.25) solid; }\
 ';
 
-// overwrite settings or set default settings
-if (setting['status-in-title'] === true) setting['status-in-title'] = 'blur';
-if (!setting['save-info-list']) {
-	setting['save-info-list'] = ['title', 'metas', 'uploader-comment', 'page-links'];
-}
-if (localStorage.getItem('ehd-image-limits-g.e-hentai.org')) {
-	localStorage.removeItem('ehd-image-limits-g.e-hentai.org');
-}
-// remove config of get image limits from r.e-hentai.org
-if (setting['image-limits-both']) {
-	delete setting['image-limits-both'];
-	GM_setValue('ehD-setting', JSON.stringify(setting));
-}
-if (localStorage.getItem('ehd-image-limits-r.e-hentai.org')) {
-	localStorage.removeItem('ehd-image-limits-r.e-hentai.org');
+function initSetting() {
+	loadSetting().then(function (res) {
+		setting = res ? JSON.parse(res) : {};
+		needNumberImages = setting['number-images'];
+		needTitleStatus = setting['status-in-title'] === 'always' ? true : false;
+
+		// overwrite settings or set default settings
+		if (setting['status-in-title'] === true) setting['status-in-title'] = 'blur';
+		if (!setting['save-info-list']) {
+			setting['save-info-list'] = ['title', 'metas', 'uploader-comment', 'page-links'];
+		}
+		if (localStorage.getItem('ehd-image-limits-g.e-hentai.org')) {
+			localStorage.removeItem('ehd-image-limits-g.e-hentai.org');
+		}
+		// remove config of get image limits from r.e-hentai.org
+		if (setting['image-limits-both']) {
+			delete setting['image-limits-both'];
+			GM_setValue('ehD-setting', JSON.stringify(setting));
+		}
+		if (localStorage.getItem('ehd-image-limits-r.e-hentai.org')) {
+			localStorage.removeItem('ehd-image-limits-r.e-hentai.org');
+		}
+
+		console.log('[EHD] E-Hentai Downloader Setting >', JSON.stringify(setting));
+
+		// disable single-thread download
+		if (setting['enable-multi-threading'] === false) {
+			delete setting['enable-multi-threading'];
+			alert('Single-thread download is unavailable now, because its code is too old and it\'s hard to add new features on it.\n\nIf you still need it, please roll back to the last-supported version (1.17.4).\n\nYou can get it at:\n- GitHub: https://github.com/ccloli/E-Hentai-Downloader/releases\n- GreasyFork: https://greasyfork.org/scripts/10379-e-hentai-downloader/versions (requires log in and enable Adult content)\n- SleazyFork: https://sleazyfork.org/scripts/10379-e-hentai-downloader/versions');
+			GM_setValue('ehD-setting', JSON.stringify(setting));
+		}
+
+		if (setting['recheck-file-name']) toggleFilenameConfirmInput();
+		ehDownloadNumberInput.querySelector('input').checked = needNumberImages;
+		ehDownloadPauseBtn.textContent = setting['force-pause'] ? 'Pause (Downloading images will be aborted)' : 'Pause (Downloading images will keep downloading)';
+
+		if (!setting['hide-image-limits']) {
+			getImageLimits(true);
+			setInterval(getImageLimits, 60000);
+		}
+
+		if (!setting['hide-estimated-cost']) {
+			try {
+				showPreCalcCost();
+			}
+			catch (e) { }
+		}
+
+		// Forced request File System to check if have temp archive
+		if (setting['store-in-fs'] && requestFileSystem) {
+			requestFileSystem(window.TEMPORARY, 1024 * 1024 * 1024, ehDownloadFS.initCheckerHandler, ehDownloadFS.errorHandler);
+		}
+	});
 }
 
 // log information
@@ -263,16 +302,9 @@ console.log('[EHD] UserAgent >', navigator.userAgent);
 console.log('[EHD] Script Handler >', GM_info.scriptHandler || (navigator.userAgent.indexOf('Firefox') >= 0 ? 'GreaseMonkey' : (navigator.userAgent.indexOf('Opera') >= 0 || navigator.userAgent.indexOf('Maxthon') >= 0) ? 'Violentmonkey' : undefined)); // (Only Tampermonkey supports GM_info.scriptHandler)
 console.log('[EHD] Script Handler Version >', GM_info.version);
 console.log('[EHD] E-Hentai Downloader Version >', GM_info.script.version);
-console.log('[EHD] E-Hentai Downloader Setting >', JSON.stringify(setting));
 console.log('[EHD] Current URL >', window.location.href);
 console.log('[EHD] Is Logged In >', unsafeWindow.apiuid !== -1);
 
-// disable single-thread download
-if (setting['enable-multi-threading'] === false) {
-	delete setting['enable-multi-threading'];
-	alert('Single-thread download is unavailable now, because its code is too old and it\'s hard to add new features on it.\n\nIf you still need it, please roll back to the last-supported version (1.17.4).\n\nYou can get it at:\n- GitHub: https://github.com/ccloli/E-Hentai-Downloader/releases\n- GreasyFork: https://greasyfork.org/scripts/10379-e-hentai-downloader/versions (requires log in and enable Adult content)\n- SleazyFork: https://sleazyfork.org/scripts/10379-e-hentai-downloader/versions');
-	GM_setValue('ehD-setting', JSON.stringify(setting));
-}
 
 String.prototype.replaceHTMLEntites = function() {
 	var matchEntity = function(entity) {
@@ -2112,7 +2144,7 @@ ehDownloadBox.appendChild(ehDownloadAction);
 
 var ehDownloadNumberInput = document.createElement('div');
 ehDownloadNumberInput.className = 'g2';
-ehDownloadNumberInput.innerHTML = ehDownloadArrow + ' <a><label><input type="checkbox" style="vertical-align: middle; margin: 0;"' + (needNumberImages ? ' checked="checked' : '') + '"> Number Images<label></a>';
+ehDownloadNumberInput.innerHTML = ehDownloadArrow + ' <a><label><input type="checkbox" style="vertical-align: middle; margin: 0;"> Number Images<label></a>';
 ehDownloadBox.appendChild(ehDownloadNumberInput);
 
 var ehDownloadRange = document.createElement('div');
@@ -2134,7 +2166,6 @@ ehDownloadFeedback.className = 'g2';
 ehDownloadFeedback.innerHTML = ehDownloadArrow + ' <a href="https://github.com/ccloli/E-Hentai-Downloader/issues" target="_blank">Feedback</a>';
 ehDownloadBox.appendChild(ehDownloadFeedback);
 
-if (setting['recheck-file-name']) toggleFilenameConfirmInput();
 document.body.insertBefore(ehDownloadBox, document.getElementById('asm') || document.querySelector('.gm').nextElementSibling);
 
 var ehDownloadDialog = document.createElement('div');
@@ -2150,7 +2181,7 @@ ehDownloadStatus.addEventListener('click', function(event){
 
 var ehDownloadPauseBtn = document.createElement('button');
 ehDownloadPauseBtn.className = 'ehD-pause';
-ehDownloadPauseBtn.textContent = setting['force-pause'] ? 'Pause (Downloading images will be aborted)' : 'Pause (Downloading images will keep downloading)';
+ehDownloadPauseBtn.textContent ='Pause';
 ehDownloadPauseBtn.addEventListener('click', function(event){
 	if (!isPausing) {
 		isPausing = true;
@@ -2223,17 +2254,7 @@ unsafeWindow.getzip = window.getzip = function(){
 	saveDownloaded(true);
 };
 
-if (!setting['hide-image-limits']) {
-	getImageLimits(true);
-	setInterval(getImageLimits, 60000);
-}
-
-if (!setting['hide-estimated-cost']) {
-	try {
-		showPreCalcCost();
-	}
-	catch (e) {}
-}
+initSetting();
 
 window.addEventListener('storage', showImageLimits);
 
@@ -2255,8 +2276,3 @@ window.onbeforeunload = unsafeWindow.onbeforeunload = function(){
 	}
 	clearRubbish();
 };
-
-// Forced request File System to check if have temp archive
-if (setting['store-in-fs'] && requestFileSystem) {
-	requestFileSystem(window.TEMPORARY, 1024 * 1024 * 1024, ehDownloadFS.initCheckerHandler, ehDownloadFS.errorHandler);
-}
