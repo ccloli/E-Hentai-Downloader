@@ -1314,7 +1314,7 @@ function getAllPagesURL() {
 				if (retryCount < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
 					pushDialog('Failed! Retrying... ');
 					retryCount++;
-					xhr.open('GET', location.pathname + '?p=' + curPage);
+					xhr.open('GET', location.origin + location.pathname + '?p=' + curPage);
 					xhr.timeout = 30000;
 					xhr.send();
 				}
@@ -1332,14 +1332,14 @@ function getAllPagesURL() {
 				if (retryCount < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
 					pushDialog('Failed! Retrying... ');
 					retryCount++;
-					xhr.open('GET', location.pathname + '?p=' + curPage);
+					xhr.open('GET', location.origin + location.pathname + '?p=' + curPage);
 					xhr.timeout = 30000;
 					xhr.send();
 				}
 				else {
 					pushDialog('Failed!\nCan\'t get pages URL from response content.');
 					isDownloading = false;
-					//alert('We can\'t get request content from response content. It\'s possible that E-Hentai changes source code format so that we can\'t find them, or your ISP modifies (or say hijacks) the page content. If it\'s sure that you can access to any pages of E-Hentai, including current page: ' + location.pathname + '?p=' + curPage + ' , please report a bug.');
+					//alert('We can\'t get request content from response content. It\'s possible that E-Hentai changes source code format so that we can\'t find them, or your ISP modifies (or say hijacks) the page content. If it\'s sure that you can access to any pages of E-Hentai, including current page: ' + location.origin + location.pathname + '?p=' + curPage + ' , please report a bug.');
 				}
 				return;
 			}
@@ -1373,7 +1373,7 @@ function getAllPagesURL() {
 				requestDownload();
 			}
 			else {
-				xhr.open('GET', location.pathname + '?p=' + curPage);
+				xhr.open('GET', location.origin + location.pathname + '?p=' + curPage);
 				xhr.send();
 				pushDialog('\nFetching Gallery Pages URL (' + (curPage + 1) + '/' + pagesLength + ') ... ');
 			}
@@ -1382,7 +1382,7 @@ function getAllPagesURL() {
 			if (retryCount < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
 				pushDialog('Failed! Retrying... ');
 				retryCount++;
-				xhr.open('GET', location.pathname + '?p=' + curPage);
+				xhr.open('GET', location.origin + location.pathname + '?p=' + curPage);
 				xhr.timeout = 30000;
 				xhr.send();
 			}
@@ -1392,7 +1392,7 @@ function getAllPagesURL() {
 				alert('Fetch Pages\' URL failed, Please try again later.');
 			}
 		};
-		xhr.open('GET', location.pathname + '?p=' + curPage);
+		xhr.open('GET', location.origin + location.pathname + '?p=' + curPage);
 		xhr.timeout = 30000;
 		xhr.send();
 		pushDialog('\nFetching Gallery Pages URL (' + (curPage + 1) + '/' + (pagesLength || '?') + ') ... ');
@@ -1670,7 +1670,7 @@ function getPageData(index) {
 	};
 
 	retryCount[index] = 0;
-	var fetchURL = (imageList[index] ? (imageList[index]['pageURL'] + ((!setting['never-send-nl'] && imageList[index]['nextNL']) ? (imageList[index]['pageURL'].indexOf('?') >= 0 ? '&' : '?') + 'nl=' + imageList[index]['nextNL'] : '')).replaceHTMLEntites() : pageURLsList[realIndex - 1]).replace(/^https?:/, '');
+	var fetchURL = (imageList[index] ? (imageList[index]['pageURL'] + ((!setting['never-send-nl'] && imageList[index]['nextNL']) ? (imageList[index]['pageURL'].indexOf('?') >= 0 ? '&' : '?') + 'nl=' + imageList[index]['nextNL'] : '')).replaceHTMLEntites() : pageURLsList[realIndex - 1])/*.replace(/^https?:/, '')*/;
 
 	// assign to fetchThread, so that we can abort them and all GM_xhr by one command fetchThread[i].abort()
 	var xhr = fetchThread[index] = new XMLHttpRequest();
