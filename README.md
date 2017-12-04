@@ -5,7 +5,7 @@ Download E-Hentai archive as zip file :package:
 
 ## Required Environment
 
-- Firefox > [GreaseMonkey](https://addons.mozilla.org/en-US/firefox/addon/greasemonkey/) 3.2 beta2+ (<4.0) | [Tampermonkey](https://addons.mozilla.org/en-US/firefox/addon/tampermonkey/) 4.0.5054+ | [Violentmonkey](https://addons.mozilla.org/firefox/addon/violentmonkey/) 2.8.18+
+- Firefox > [GreaseMonkey](https://addons.mozilla.org/en-US/firefox/addon/greasemonkey/) 3.2 beta2+ | [Tampermonkey](https://addons.mozilla.org/en-US/firefox/addon/tampermonkey/) 4.0.5054+ | [Violentmonkey](https://addons.mozilla.org/firefox/addon/violentmonkey/) 2.8.18+
 - Chrome > [Tampermonkey](http://tampermonkey.net/) 3.5.3630+ | [Violentmonkey](https://chrome.google.com/webstore/detail/jinjaccalgkegednnccohejagnlnfdag)
 - Opera 15+ > [Tampermonkey](https://addons.opera.com/extensions/details/tampermonkey-beta/) 3.5.3630+ | [Violentmonkey](https://addons.opera.com/extensions/details/violent-monkey/)
 - Maxthon > [Violentmonkey](http://extension.maxthon.cn/detail/index.php?view_id=1680)
