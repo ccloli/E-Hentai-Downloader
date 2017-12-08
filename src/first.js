@@ -10,9 +10,9 @@ console.log('[EHD] To report a bug, it\'s recommended to provide the logs starte
 // GreaseMonkey 4.x compatible
 if (typeof GM_getValue === 'undefined' && typeof GM !== 'undefined') {
 	var loadSetting = GM.getValue.bind(this, 'ehD-setting');
-	var GM_setValue = GM.setValue;
-	var GM_xmlhttpRequest = GM.xmlHttpRequest;
-	var GM_info = GM.info;
+	self.GM_setValue = GM.setValue;
+	self.GM_xmlhttpRequest = GM.xmlHttpRequest;
+	self.GM_info = GM.info;
 }
 else {
 	var loadSetting = function(key, init) {
