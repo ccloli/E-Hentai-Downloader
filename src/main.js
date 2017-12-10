@@ -2193,7 +2193,7 @@ ehDownloadPauseBtn.addEventListener('click', function(event){
 				for (var i = 0; i < fetchThread.length; i++) {
 					if (typeof fetchThread[i] !== 'undefined' && 'abort' in fetchThread[i]) fetchThread[i].abort();
 
-					if (imageData[i] === 'Fetching') {
+					if (imageData[i] === 'Fetching' && retryCount[i] < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
 						var elem = progressTable.querySelector('tr[data-index="' + i + '"] .ehD-pt-status-text');
 						if (elem) elem.textContent = 'Force Paused';
 
