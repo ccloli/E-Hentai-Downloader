@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.27.1
+// @version      1.27.2
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -38,9 +38,9 @@ console.log('[EHD] To report a bug, it\'s recommended to provide the logs starte
 // GreaseMonkey 4.x compatible
 if (typeof GM_getValue === 'undefined' && typeof GM !== 'undefined') {
 	var loadSetting = GM.getValue.bind(this, 'ehD-setting');
-	var GM_setValue = GM.setValue;
-	var GM_xmlhttpRequest = GM.xmlHttpRequest;
-	var GM_info = GM.info;
+	self.GM_setValue = GM.setValue;
+	self.GM_xmlhttpRequest = GM.xmlHttpRequest;
+	self.GM_info = GM.info;
 }
 else {
 	var loadSetting = function(key, init) {
@@ -13949,7 +13949,7 @@ ehDownloadPauseBtn.addEventListener('click', function(event){
 				for (var i = 0; i < fetchThread.length; i++) {
 					if (typeof fetchThread[i] !== 'undefined' && 'abort' in fetchThread[i]) fetchThread[i].abort();
 
-					if (imageData[i] === 'Fetching') {
+					if (imageData[i] === 'Fetching' && retryCount[i] < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
 						var elem = progressTable.querySelector('tr[data-index="' + i + '"] .ehD-pt-status-text');
 						if (elem) elem.textContent = 'Force Paused';
 
