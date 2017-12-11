@@ -73,9 +73,9 @@ var ehDownloadFS = {
 			console.log('[EHD] File URL >', url);
 			var a = document.createElement('a');
 			a.setAttribute('href', url);
-			a.setAttribute('download', fileName + '.zip');
+			a.setAttribute('download', fileName + (setting['save-as-cbz'] ? '.cbz' : '.zip'));
 			a.click();
-			pushDialog('\n\nNot download or file is broken? <a href="' + url + '" download="' + fileName + '.zip" style="color: #ffffff; font-weight: bold;">Click here to download</a>\n\n');
+			pushDialog('\n\nNot download or file is broken? <a href="' + url + '" download="' + fileName + (setting['save-as-cbz'] ? '.cbz' : '.zip') + '" style="color: #ffffff; font-weight: bold;">Click here to download</a>\n\n');
 			if (!forced) {
 				insertCloseButton();
 				if (emptyAudio) {
@@ -544,15 +544,15 @@ function generateZip(isFromFS, fs, isRetry, forced){
 
 	var saveToBlob = function(abData){
 		curFile.textContent = 'Generating Blob object...';
-		var blob = createBlob([abData], {type: 'application/zip'});
-		saveAs(blob, fileName + '.zip');
+		var blob = createBlob([abData], {type: setting['save-as-cbz'] ? 'application/vnd.comicbook+zip' : 'application/zip'});
+		saveAs(blob, fileName + (setting['save-as-cbz'] ? '.cbz' : '.zip'));
 
 		var redownloadBtn = document.createElement('button');
 		redownloadBtn.textContent = 'Not download? Click here to download';
 		redownloadBtn.addEventListener('click', function(){
 			// rebuild blob object if "File is not exist" occured
-			blob = createBlob([abData], {type: 'application/zip'});
-			saveAs(blob, fileName + '.zip');
+			blob = createBlob([abData], {type: setting['save-as-cbz'] ? 'application/vnd.comicbook+zip' : 'application/zip'});
+			saveAs(blob, fileName + (setting['save-as-cbz'] ? '.cbz' : '.zip'));
 
 			setTimeout(function(){
 				if ('close' in blob) blob.close();
@@ -1873,6 +1873,7 @@ function showSettings() {
 					<div class="g2">...which includes <label><input type="checkbox" data-ehd-setting="save-info-list[]" value="title">Title & Gallery Link</label> <label><input type="checkbox" data-ehd-setting="save-info-list[]" value="metas">Metadatas</label> <label><input type="checkbox" data-ehd-setting="save-info-list[]" value="tags">Tags</label> <label><input type="checkbox" data-ehd-setting="save-info-list[]" value="uploader-comment">Uploader Comment</label> <label><input type="checkbox" data-ehd-setting="save-info-list[]" value="page-links">Page Links</label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="replace-with-full-width"> Replace forbidden characters with full-width characters instead of dash (-)</label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="force-pause"> Force drop downloaded images data when pausing download</label></div>\
+					<div class="g2"><label><input type="checkbox" data-ehd-setting="save-as-cbz"> Save as CBZ (Comic book archive) file<sup>(5)</sup></label></div>\
 					<div class="ehD-setting-note">\
 						<div class="g2">\
 							(1) This may reduce memory usage but some decompress softwares may not support the Zip file. See <a href="https://stuk.github.io/jszip/documentation/api_jszip/generate_async.html" target="_blank" style="color: #ffffff;">JSZip Docs</a> for more info.\
@@ -1885,6 +1886,9 @@ function showSettings() {
 						</div>\
 						<div class="g2">\
 							(4) If enabled will play slient music to avoid downloading freeze when page is in background <a href="https://github.com/ccloli/E-Hentai-Downloader/issues/65" target="_blank">(See issue)</a>. Only needed if you have the problem, because the audio-playing icon maybe annoying.\
+						</div>\
+						<div class="g2">\
+							(5) <a href="https://en.wikipedia.org/wiki/Comic_book_archive">Comic book archive</a> is a file type to archive comic images, you can open it with some comic viewer like CDisplay/CDisplayEX, or just extract it as a Zip file. To keep the order of images, you can also enable numbering images.\
 						</div>\
 					</div>\
 				</div>\
