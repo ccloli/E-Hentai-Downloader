@@ -45,6 +45,7 @@ var ehDownloadRegex = {
 	dangerChars: /[:"*?|<>\/\\\n]/g,
 	pagesRange: /^(\d*(-\d*)?\s*?,\s*?)*\d*(-\d*)?$/,
 	pagesURL: /(?:<a href=").+?(?=")/gi,
+	mpvKey: /var imagelist\s*=\s*(\[.+?\]);/,
 	imageLimits: /You are currently at <strong>(\d+)<\/strong> towards a limit of <strong>(\d+)<\/strong>/,
 	pagesLength: /<table class="ptt".+>(\d+)<\/a>.+?<\/table>/
 };
@@ -1267,6 +1268,78 @@ function insertCloseButton() {
 	if (ehDownloadDialog.contains(forceDownloadTips)) ehDownloadDialog.removeChild(forceDownloadTips);
 }
 
+function getPagesURLFromMPV() {
+	var mpvURL = location.origin + '/mpv/' + unsafeWindow.gid + '/' + 
+	unsafeWindow.token + '/';
+
+	var xhr = new XMLHttpRequest();
+	xhr.open('GET', mpvURL);
+	xhr.onload = function () {
+		if (xhr.status !== 200 || !xhr.responseText) {
+			if (retryCount < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
+				pushDialog('Failed! Retrying... ');
+				retryCount++;
+				xhr.open('GET', mpvURL);
+				xhr.timeout = 30000;
+				xhr.send();
+			}
+			else {
+				pushDialog('Failed!\nFetch Pages\' URL failed, Please try again later.');
+				isDownloading = false;
+				alert('Fetch Pages\' URL failed, Please try again later.');
+			}
+			return;
+		}
+
+		var listMatch = xhr.responseText.match(ehDownloadRegex.mpvKey);
+		if (!listMatch) {
+			console.error('[EHD] Response content is incorrect!');
+			if (retryCount < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
+				pushDialog('Failed! Retrying... ');
+				retryCount++;
+				xhr.open('GET', location.origin + location.pathname + '?p=' + curPage);
+				xhr.timeout = 30000;
+				xhr.send();
+			}
+			else {
+				pushDialog('Failed!\nCan\'t get pages URL from response content.');
+				isDownloading = false;
+			}
+			return;
+		}
+
+		var list = new Function('return ' + listMatch[1])();
+
+		list.forEach(function (elem, index) {
+			var curURL = location.origin + '/s/' + elem.k + '/' + unsafeWindow.gid + '-' + (index + 1);
+			pageURLsList.push(curURL);
+		});
+		pushDialog('Succeed!');
+
+
+		// copied from getAllPagesURL(), THAT's UGLY!!!
+		// so when will 2.0 comes out /_\
+		getAllPagesURLFin = true;
+		var wrongPages = pagesRange.filter(function (elem) { return elem > pageURLsList.length; });
+		if (wrongPages.length !== 0) {
+			pagesRange = pagesRange.filter(function (elem) { return elem <= pageURLsList.length; });
+			pushDialog('\nPage ' + wrongPages.join(', ') + (wrongPages.length > 1 ? ' are' : ' is') + ' not exist, and will be ignored.\n');
+			if (pagesRange.length === 0) {
+				pushDialog('Nothing matches provided pages range, stop downloading.');
+				alert('Nothing matches provided pages range, stop downloading.');
+				insertCloseButton();
+				return;
+			}
+		}
+		totalCount = pagesRange.length || pageURLsList.length;
+		pushDialog('\n\n');
+		initProgressTable();
+		requestDownload();
+	}
+	xhr.send();
+	pushDialog('Fetching Gallery Pages URL From MPV...');
+}
+
 // /*if pages range is set, then*/ get all pages URL to select needed pages
 function getAllPagesURL() {
 	pagesRange = [];
@@ -1343,6 +1416,15 @@ function getAllPagesURL() {
 				}
 				return;
 			}
+
+			if (pagesURL[0].indexOf('/mpv/') >= 0) {
+				console.log('[EHD] Page 1 URL > ' + pagesURL[0] + ' , use MPV fetch');
+				pushDialog('Pages URL is MPV link');
+
+				getPagesURLFromMPV();
+				return;
+			}
+
 			for (var i = 0; i < pagesURL.length; i++) {
 				pageURLsList.push(pagesURL[i].split('"')[1].replaceHTMLEntites());
 			}
