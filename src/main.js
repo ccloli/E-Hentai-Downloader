@@ -665,7 +665,7 @@ function generateZip(isFromFS, fs, isRetry, forced){
 									fileWriter.write(blob);
 									if ('close' in blob) blob.close(); // File Blob.close() API, not supported by all the browser now
 									blob = null;
-									pushDialog('Succeed!\nPlease close this tab and open a new tab to download.\nIf you still can\'t download it, try using <a href="https://chrome.google.com/webstore/detail/nhnjmpbdkieehidddbaeajffijockaea" target="_blank">HTML5 FileSystem Explorer</a> to save them.');
+									pushDialog('Success!\nPlease close this tab and open a new tab to download.\nIf you still can\'t download it, try using <a href="https://chrome.google.com/webstore/detail/nhnjmpbdkieehidddbaeajffijockaea" target="_blank">HTML5 FileSystem Explorer</a> to save them.');
 
 									files.forEach(function(elem){
 										zip.remove(elem);
@@ -750,7 +750,7 @@ function checkFailed() {
 			for (var i = 0; i < fetchThread.length; i++) {
 				if (typeof fetchThread[i] !== 'undefined' && 'abort' in fetchThread[i]) fetchThread[i].abort();
 			}
-			if (setting['number-auto-retry'] || confirm('Some images were failed to download. Would you like to try them again?')) {
+			if (setting['number-auto-retry'] || confirm('Some images failed to download. Would you like to try them again?')) {
 				retryAllFailed();
 			}
 			else {
@@ -1061,11 +1061,11 @@ function fetchOriginalImage(index, nodeList) {
 				}
 
 				if (confirm('You have temporarily reached the limit for how many images you can browse.\n\n\
-					- If you are not sign in, sign up/in E-Hentai account at E-Hentai Forums to get double daily quota.\n\
-					- You can run the Hentai@Home to support E-Hentai and get some points which you can pay to increase your limit.\n\
-					- Check back in a few hours, and you will be able to download more (reduce 3 points per minute by default).\n\
+					- If you are not signed in, sign up/in with an E-Hentai account at E-Hentai Forums to get double daily quota.\n\
+					- You can run Hentai@Home to support E-Hentai and get some points which you can pay to increase your limit.\n\
+					- Check back in a few hours, and you will be able to download more (3 points are reduced per minute by default).\n\
 					- You can reset your image viewing limits to continue by paying your GPs or credits.\n\n\
-					If you want to reset your limits by paying your GPs or credits right now, choose YES, and you can reset it in opened window. Or if you want to wait a few minutes until you have enough free limits, then continue, choose NO.')) {
+					If you want to reset your limits by paying your GPs or credits right now, choose YES, and you can reset it in the opened window. Or if you want to wait a few minutes until you have enough free limit, then continue, choose NO.')) {
 					window.open('https://e-hentai.org/home.php');
 				}
 
@@ -1148,8 +1148,8 @@ function fetchOriginalImage(index, nodeList) {
 				var expiredTime = (res.responseText || new TextDecoder().decode(new DataView(response))).match(ehDownloadRegex.IPBanExpires);
 
 				alert('Your IP address has been temporarily banned. \n\n\
-					Make sure your download settings is not too fast. If you are using a canservative rules, check if you are using some malware, or if you are using a shared IP with others.\n\
-					If you can change your IP (like using proxy) or wait until unblocked, you can then continue your download; or cancel your download and get downloaded images.\n\n' + 
+					Make sure your download settings are not configured to download too fast. If you are using conservative rules, check if your computer is infected with malware, or if you are using a shared IP with others.\n\
+					If you can change your IP (like using a proxy) or wait until you\'re unblocked, you can then continue your download; or cancel your download and get downloaded images.\n\n' + 
 					(expiredTime ? '\n' + expiredTime[0] : '')
 				);
 
@@ -1391,7 +1391,7 @@ function getPagesURLFromMPV() {
 			var curURL = location.origin + '/s/' + elem.k + '/' + unsafeWindow.gid + '-' + (index + 1);
 			pageURLsList.push(curURL);
 		});
-		pushDialog('Succeed!');
+		pushDialog('Success!');
 
 
 		// copied from getAllPagesURL(), THAT's UGLY!!!
@@ -1630,7 +1630,7 @@ function initEHDownload() {
 			'Roll back and use Blob to handle file.');
 	};
 
-	if ((!setting['store-in-fs'] && requiredMBs >= 300) && !confirm('This archive is too large (original size), please consider downloading this archive in other way.\n\nMaximum allowed file size: Chrome / Opera 15+ 500MB | IE 10+ 600 MB | Firefox 20+ 800 MB\n(From FileSaver.js introduction)\n\nPlease also consider your operating system\'s free memory (RAM), it may takes about DOUBLE size of archive file size when generating ZIP file.\n\n* If continues, you would probably get an error likes "Failed - No File" or "Out Of Memory" if you don\'t have enough RAM and can\'t save file successfully.\n\n* If you are using Chrome, you can try enabling "Request File System to handle large Zip file" on settings page.\n\n* You can set Pages Range to download this archive into some parts. If you have already enabled it, please ignore this message.\n\nAre you sure to continue downloading?')) return;
+	if ((!setting['store-in-fs'] && requiredMBs >= 300) && !confirm('This archive is too large (original size), please consider downloading this archive in a different way.\n\nMaximum allowed file size: Chrome / Opera 15+ 500MB | IE 10+ 600 MB | Firefox 20+ 800 MB\n(From FileSaver.js introduction)\n\nPlease also consider your operating system\'s free memory (RAM), it may take about DOUBLE the size of archive file size when generating ZIP file.\n\n* If you continue, you would probably get an error like "Failed - No File" or "Out Of Memory" if you don\'t have enough RAM and can\'t save the file successfully.\n\n* If you are using Chrome, you can try enabling "Request File System to handle large Zip file" on the settings page.\n\n* You can set Pages Range to download this archive in parts. If you have already enabled it, please ignore this message.\n\nAre you sure to continue downloading?')) return;
 	else if (setting['store-in-fs'] && requestFileSystem && requiredMBs >= (setting['fs-size'] !== undefined ? setting['fs-size'] : 200)) {
 		ehDownloadFS.needFileSystem = true;
 		console.log('[EHD] Required File System Space >', requiredBytes);
@@ -1651,10 +1651,10 @@ function initEHDownload() {
 						if (quota - usage < requiredBytes) {
 							// roll back and use Blob to handle file
 							ehDownloadFS.needFileSystem = false;
-							alert('You don\'t have enough free space on the drive where Chrome stores user data (Default is system drive, normally it\'s C: ), please delete some file.\n\nNeeds more than ' + (requiredBytes - (quota - usage)) + ' Bytes.\n\nRoll back and use Blob to handle file.');
+							alert('You don\'t have enough free space on the drive where Chrome stores user data (Default is system drive, normally it\'s C: ), please delete some files.\n\nNeeds more than ' + (requiredBytes - (quota - usage)) + ' Bytes.\n\nRoll back and use Blob to handle file.');
 						}
 						else {
-							pushDialog('\n<strong>Please allow storing large content if browser asked the request.</strong>\n');
+							pushDialog('\n<strong>Please allow storing large content if the browser asked for it.</strong>\n');
 							requestFileSystem(window.PERSISTENT, requiredBytes, ehDownloadFS.initHandler, fsErrorHandler);
 						}
 					}, fsErrorHandler);
@@ -2295,10 +2295,10 @@ ehDownloadAction.addEventListener('click', function(event){
 	var torrentsNode = document.querySelector('#gd5 a[onclick*="gallerytorrents.php"]');
 	var torrentsCount = torrentsNode ? torrentsNode.textContent.match(/\d+/)[0] - 0 : 0;
 	if (isDownloading && !confirm('E-Hentai Downloader is working now, are you sure to stop downloading and start a new download?')) return;
-	else if (!setting['ignore-torrent'] && torrentsCount > 0 && !confirm('There are ' + torrentsCount + ' torrent(s) available for this gallery. You can download torrent to get stable and controlable download experience without spending your image limits, or even get bonus content.\n\nContinue downloading with E-Hentai Downloader (Yes) or use torrent directly (No)?\n(You can disable this notification on Settings)')) {
+	else if (!setting['ignore-torrent'] && torrentsCount > 0 && !confirm('There are ' + torrentsCount + ' torrent(s) available for this gallery. You can download the torrent(s) to get a stable and controllable download experience without spending your image limits, or even get bonus content.\n\nContinue downloading with E-Hentai Downloader (Yes) or use torrent(s) directly (No)?\n(You can disable this notification in the Settings)')) {
 		return torrentsNode.dispatchEvent(new MouseEvent('click'));
 	}
-	if (unsafeWindow.apiuid === -1 && !confirm('You are not log in to E-Hentai Forums, so you can\'t download original image. Continue?')) return;
+	if (unsafeWindow.apiuid === -1 && !confirm('You are not logged in to E-Hentai Forums, so you can\'t download original image. Continue?')) return;
 	ehDownloadDialog.innerHTML = '';
 
 	initEHDownload();
