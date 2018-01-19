@@ -47,7 +47,8 @@ var ehDownloadRegex = {
 	pagesURL: /(?:<a href=").+?(?=")/gi,
 	mpvKey: /var imagelist\s*=\s*(\[.+?\]);/,
 	imageLimits: /You are currently at <strong>(\d+)<\/strong> towards a limit of <strong>(\d+)<\/strong>/,
-	pagesLength: /<table class="ptt".+>(\d+)<\/a>.+?<\/table>/
+	pagesLength: /<table class="ptt".+>(\d+)<\/a>.+?<\/table>/,
+	IPBanExpires: /The ban expires in \d+ hours?( and \d+ minutes?)?/
 };
 
 var requestFileSystem = window.requestFileSystem || window.webkitRequestFileSystem;
@@ -1108,6 +1109,82 @@ function fetchOriginalImage(index, nodeList) {
 				});
 				ehDownloadDialog.appendChild(cancelButton);
 			}
+			// ip banned
+			else if (
+				(mime[0] === 'text' && (res.responseText || new TextDecoder().decode(new DataView(response))).indexOf('Your IP address has been temporarily banned') >= 0)
+			) {
+				console.log('[EHD] #' + (index + 1) + ': IP address banned');
+				console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL + '\nResposeHeaders >' + res.responseHeaders);
+
+				updateProgress(nodeList, {
+					status: 'Failed! (IP banned)',
+					progress: '0',
+					progressText: '',
+					class: 'ehD-pt-failed'
+				});
+				updateTotalStatus();
+
+				for (var i in res) {
+					delete res[i];
+				}
+
+				failedCount++;
+				fetchCount--;
+				updateTotalStatus();
+
+				if (isPausing) return;
+
+				pushDialog('Your IP address has been temporarily banned.\n');
+				isPausing = true;
+				updateTotalStatus();
+				if (emptyAudio) {
+					emptyAudio.pause();
+				}
+
+				if (ehDownloadDialog.contains(ehDownloadPauseBtn)) {
+					ehDownloadDialog.removeChild(ehDownloadPauseBtn);
+				}
+
+				var expiredTime = (res.responseText || new TextDecoder().decode(new DataView(response))).match(ehDownloadRegex.IPBanExpires);
+
+				alert('Your IP address has been temporarily banned. \n\n\
+					Make sure your download settings is not too fast. If you are using a canservative rules, check if you are using some malware, or if you are using a shared IP with others.\n\
+					If you can change your IP (like using proxy) or wait until unblocked, you can then continue your download; or cancel your download and get downloaded images.\n\n' + 
+					(expiredTime ? '\n' + expiredTime[0] : '')
+				);
+
+				var continueButton = document.createElement('button');
+				continueButton.innerHTML = 'Continue Download';
+				continueButton.addEventListener('click', function () {
+					//fetchCount = 0;
+					ehDownloadDialog.removeChild(continueButton);
+					ehDownloadDialog.removeChild(cancelButton);
+					ehDownloadDialog.appendChild(ehDownloadPauseBtn);
+
+					isPausing = false;
+					initProgressTable();
+					requestDownload();
+				});
+				ehDownloadDialog.appendChild(continueButton);
+
+				var cancelButton = document.createElement('button');
+				cancelButton.innerHTML = 'Cancel Download';
+				cancelButton.addEventListener('click', function () {
+					ehDownloadDialog.removeChild(continueButton);
+					ehDownloadDialog.removeChild(cancelButton);
+
+					if (confirm('Would you like to save downloaded images?')) {
+						saveDownloaded();
+					}
+					else {
+						insertCloseButton();
+					}
+					isPausing = false;
+					isDownloading = false;
+					zip.remove(dirName);
+				});
+				ehDownloadDialog.appendChild(cancelButton);
+			}
 			// res.status should be detected at here, because we should know are we reached image limits at first
 			else if (res.status !== 200) {
 				console.log('[EHD] #' + (index + 1) + ': Wrong Response Status');
@@ -1419,7 +1496,7 @@ function getAllPagesURL() {
 
 			if (pagesURL[0].indexOf('/mpv/') >= 0) {
 				console.log('[EHD] Page 1 URL > ' + pagesURL[0] + ' , use MPV fetch');
-				pushDialog('Pages URL is MPV link');
+				pushDialog('Pages URL is MPV link\n');
 
 				getPagesURLFromMPV();
 				return;
