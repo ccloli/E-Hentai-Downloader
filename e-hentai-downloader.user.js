@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.28
+// @version      1.29
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -11801,8 +11801,10 @@ var ehDownloadRegex = {
 	dangerChars: /[:"*?|<>\/\\\n]/g,
 	pagesRange: /^(\d*(-\d*)?\s*?,\s*?)*\d*(-\d*)?$/,
 	pagesURL: /(?:<a href=").+?(?=")/gi,
+	mpvKey: /var imagelist\s*=\s*(\[.+?\]);/,
 	imageLimits: /You are currently at <strong>(\d+)<\/strong> towards a limit of <strong>(\d+)<\/strong>/,
-	pagesLength: /<table class="ptt".+>(\d+)<\/a>.+?<\/table>/
+	pagesLength: /<table class="ptt".+>(\d+)<\/a>.+?<\/table>/,
+	IPBanExpires: /The ban expires in \d+ hours?( and \d+ minutes?)?/
 };
 
 var requestFileSystem = window.requestFileSystem || window.webkitRequestFileSystem;
@@ -12863,6 +12865,82 @@ function fetchOriginalImage(index, nodeList) {
 				});
 				ehDownloadDialog.appendChild(cancelButton);
 			}
+			// ip banned
+			else if (
+				(mime[0] === 'text' && (res.responseText || new TextDecoder().decode(new DataView(response))).indexOf('Your IP address has been temporarily banned') >= 0)
+			) {
+				console.log('[EHD] #' + (index + 1) + ': IP address banned');
+				console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL + '\nResposeHeaders >' + res.responseHeaders);
+
+				updateProgress(nodeList, {
+					status: 'Failed! (IP banned)',
+					progress: '0',
+					progressText: '',
+					class: 'ehD-pt-failed'
+				});
+				updateTotalStatus();
+
+				for (var i in res) {
+					delete res[i];
+				}
+
+				failedCount++;
+				fetchCount--;
+				updateTotalStatus();
+
+				if (isPausing) return;
+
+				pushDialog('Your IP address has been temporarily banned.\n');
+				isPausing = true;
+				updateTotalStatus();
+				if (emptyAudio) {
+					emptyAudio.pause();
+				}
+
+				if (ehDownloadDialog.contains(ehDownloadPauseBtn)) {
+					ehDownloadDialog.removeChild(ehDownloadPauseBtn);
+				}
+
+				var expiredTime = (res.responseText || new TextDecoder().decode(new DataView(response))).match(ehDownloadRegex.IPBanExpires);
+
+				alert('Your IP address has been temporarily banned. \n\n\
+					Make sure your download settings is not too fast. If you are using a canservative rules, check if you are using some malware, or if you are using a shared IP with others.\n\
+					If you can change your IP (like using proxy) or wait until unblocked, you can then continue your download; or cancel your download and get downloaded images.\n\n' + 
+					(expiredTime ? '\n' + expiredTime[0] : '')
+				);
+
+				var continueButton = document.createElement('button');
+				continueButton.innerHTML = 'Continue Download';
+				continueButton.addEventListener('click', function () {
+					//fetchCount = 0;
+					ehDownloadDialog.removeChild(continueButton);
+					ehDownloadDialog.removeChild(cancelButton);
+					ehDownloadDialog.appendChild(ehDownloadPauseBtn);
+
+					isPausing = false;
+					initProgressTable();
+					requestDownload();
+				});
+				ehDownloadDialog.appendChild(continueButton);
+
+				var cancelButton = document.createElement('button');
+				cancelButton.innerHTML = 'Cancel Download';
+				cancelButton.addEventListener('click', function () {
+					ehDownloadDialog.removeChild(continueButton);
+					ehDownloadDialog.removeChild(cancelButton);
+
+					if (confirm('Would you like to save downloaded images?')) {
+						saveDownloaded();
+					}
+					else {
+						insertCloseButton();
+					}
+					isPausing = false;
+					isDownloading = false;
+					zip.remove(dirName);
+				});
+				ehDownloadDialog.appendChild(cancelButton);
+			}
 			// res.status should be detected at here, because we should know are we reached image limits at first
 			else if (res.status !== 200) {
 				console.log('[EHD] #' + (index + 1) + ': Wrong Response Status');
@@ -13023,6 +13101,78 @@ function insertCloseButton() {
 	if (ehDownloadDialog.contains(forceDownloadTips)) ehDownloadDialog.removeChild(forceDownloadTips);
 }
 
+function getPagesURLFromMPV() {
+	var mpvURL = location.origin + '/mpv/' + unsafeWindow.gid + '/' + 
+	unsafeWindow.token + '/';
+
+	var xhr = new XMLHttpRequest();
+	xhr.open('GET', mpvURL);
+	xhr.onload = function () {
+		if (xhr.status !== 200 || !xhr.responseText) {
+			if (retryCount < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
+				pushDialog('Failed! Retrying... ');
+				retryCount++;
+				xhr.open('GET', mpvURL);
+				xhr.timeout = 30000;
+				xhr.send();
+			}
+			else {
+				pushDialog('Failed!\nFetch Pages\' URL failed, Please try again later.');
+				isDownloading = false;
+				alert('Fetch Pages\' URL failed, Please try again later.');
+			}
+			return;
+		}
+
+		var listMatch = xhr.responseText.match(ehDownloadRegex.mpvKey);
+		if (!listMatch) {
+			console.error('[EHD] Response content is incorrect!');
+			if (retryCount < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
+				pushDialog('Failed! Retrying... ');
+				retryCount++;
+				xhr.open('GET', location.origin + location.pathname + '?p=' + curPage);
+				xhr.timeout = 30000;
+				xhr.send();
+			}
+			else {
+				pushDialog('Failed!\nCan\'t get pages URL from response content.');
+				isDownloading = false;
+			}
+			return;
+		}
+
+		var list = new Function('return ' + listMatch[1])();
+
+		list.forEach(function (elem, index) {
+			var curURL = location.origin + '/s/' + elem.k + '/' + unsafeWindow.gid + '-' + (index + 1);
+			pageURLsList.push(curURL);
+		});
+		pushDialog('Succeed!');
+
+
+		// copied from getAllPagesURL(), THAT's UGLY!!!
+		// so when will 2.0 comes out /_\
+		getAllPagesURLFin = true;
+		var wrongPages = pagesRange.filter(function (elem) { return elem > pageURLsList.length; });
+		if (wrongPages.length !== 0) {
+			pagesRange = pagesRange.filter(function (elem) { return elem <= pageURLsList.length; });
+			pushDialog('\nPage ' + wrongPages.join(', ') + (wrongPages.length > 1 ? ' are' : ' is') + ' not exist, and will be ignored.\n');
+			if (pagesRange.length === 0) {
+				pushDialog('Nothing matches provided pages range, stop downloading.');
+				alert('Nothing matches provided pages range, stop downloading.');
+				insertCloseButton();
+				return;
+			}
+		}
+		totalCount = pagesRange.length || pageURLsList.length;
+		pushDialog('\n\n');
+		initProgressTable();
+		requestDownload();
+	}
+	xhr.send();
+	pushDialog('Fetching Gallery Pages URL From MPV...');
+}
+
 // /*if pages range is set, then*/ get all pages URL to select needed pages
 function getAllPagesURL() {
 	pagesRange = [];
@@ -13099,6 +13249,15 @@ function getAllPagesURL() {
 				}
 				return;
 			}
+
+			if (pagesURL[0].indexOf('/mpv/') >= 0) {
+				console.log('[EHD] Page 1 URL > ' + pagesURL[0] + ' , use MPV fetch');
+				pushDialog('Pages URL is MPV link\n');
+
+				getPagesURLFromMPV();
+				return;
+			}
+
 			for (var i = 0; i < pagesURL.length; i++) {
 				pageURLsList.push(pagesURL[i].split('"')[1].replaceHTMLEntites());
 			}
