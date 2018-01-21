@@ -437,7 +437,6 @@ function storeRes(res, index) {
 	downloadedCount++;
 	console.log('[EHD] Index >', index + 1, ' | RealIndex >', imageList[index]['realIndex'], ' | Name >', imageList[index]['imageName'], ' | RetryCount >', retryCount[index], ' | DownloadedCount >', downloadedCount, ' | FetchCount >', fetchCount, ' | FailedCount >', failedCount);
 	fetchCount--;
-	//console.log('[EHD-Debug]', index, 'Res data was stored in imageData!', new Date().getTime());
 
 	updateTotalStatus();
 	if (!isPausing) checkFailed();
@@ -958,7 +957,6 @@ function fetchOriginalImage(index, nodeList) {
 			}
 		},
 		onload: function(res) {
-			//console.log('[EHD-Debug]', index, 'Load Finished!', new Date().getTime());
 			
 			removeTimerHandler();
 			if (!isDownloading || imageData[index] instanceof ArrayBuffer) return; // Temporarily fixes #31
@@ -1231,9 +1229,16 @@ function fetchOriginalImage(index, nodeList) {
 				return failedFetching(index, nodeList);
 			}
 
-			//console.log('[EHD-Debug]', index, 'Available Testing Finished!', new Date().getTime());
-			imageList[index]['_imageName'] = imageList[index]['imageName'] = res.responseHeaders.match(ehDownloadRegex.resFileName) ? getSafeName(res.responseHeaders.match(ehDownloadRegex.resFileName)[1].trim()) : imageList[index]['imageName'];
-			//console.log('[EHD-Debug]', index, 'File name was modified!', new Date().getTime());
+			// logs in #80 shows sometimes it didn't match the regex, but cannot reproduce right now
+			try {
+				imageList[index]['_imageName'] = imageList[index]['imageName'] = res.responseHeaders.match(ehDownloadRegex.resFileName) ? getSafeName(res.responseHeaders.match(ehDownloadRegex.resFileName)[1].trim()) : imageList[index]['imageName'];
+			}
+			catch (error) {
+				console.log('[EHD] #' + (index + 1) + ': Parse file name failed');
+				console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL + '\nResposeHeaders >' + res.responseHeaders);
+
+				imageList[index]['_imageName'] = imageList[index]['imageName'];
+			}
 
 			updateProgress(nodeList, {
 				name: '#' + imageList[index]['realIndex'] + ': ' + imageList[index]['imageName'],
@@ -1242,16 +1247,13 @@ function fetchOriginalImage(index, nodeList) {
 				progressText: '100%',
 				class: 'ehD-pt-succeed'
 			});
-			//console.log('[EHD-Debug]', index, 'Progress was updated!', new Date().getTime());
 
 			storeRes(response, index);
-			//console.log('[EHD-Debug]', index, 'Data was saved!', new Date().getTime());
 
 			for (var i in res) {
 				delete res[i];
 			}
 			response = null;
-			//console.log('[EHD-Debug]', index, 'Res was deleted!', new Date().getTime());
 		},
 		onerror: function(res){
 			removeTimerHandler();
@@ -1422,7 +1424,7 @@ function getPagesURLFromMPV() {
 		pushDialog('\n\n');
 		initProgressTable();
 		requestDownload();
-	}
+	};
 	xhr.send();
 	pushDialog('Fetching Gallery Pages URL From MPV...');
 }
@@ -1882,7 +1884,6 @@ function getPageData(index) {
 			var imageURL = (unsafeWindow.apiuid !== -1 && xhr.responseText.indexOf('fullimg.php') >= 0 && !setting['force-resized']) ? xhr.responseText.match(ehDownloadRegex.imageURL[0])[1].replaceHTMLEntites() : xhr.responseText.indexOf('id="img"') > -1 ? xhr.responseText.match(ehDownloadRegex.imageURL[1])[1].replaceHTMLEntites() : xhr.responseText.match(ehDownloadRegex.imageURL[2])[1].replaceHTMLEntites();
 			var fileName = xhr.responseText.match(ehDownloadRegex.fileName)[1].replaceHTMLEntites();
 			var nextNL = ehDownloadRegex.nl.test(xhr.responseText) ? xhr.responseText.match(ehDownloadRegex.nl)[1] : null;
-			var imageNumber = '';
 		}
 		catch (error) {
 			console.error('[EHD] Response content is not correct!', error);
@@ -1919,6 +1920,7 @@ function getPageData(index) {
 			return;
 		}
 
+		var imageNumber = '';
 		if (needNumberImages) {
 			// Number images, thanks to JingJang@GitHub, source: https://github.com/JingJang/E-Hentai-Downloader
 			if (!setting['number-real-index'] && pagesRange.length) { // if pages range was set and number original index is not required
