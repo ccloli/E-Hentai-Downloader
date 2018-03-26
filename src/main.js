@@ -174,27 +174,28 @@ var ehDownloadFS = {
 var ehDownloadStyle = '\
 	@-webkit-keyframes progress { \
 		from { -webkit-transform: translateX(-50%) scaleX(0); transform: translateX(-50%) scaleX(0); } \
-		50% { -webkit-transform: translateX(0%) scaleX(1); transform: translateX(0%) scaleX(1); } \
+		50% { -webkit-transform: translateX(0%) scaleX(0.7); transform: translateX(0%) scaleX(0.7); } \
 		to { -webkit-transform: translateX(50%) scaleX(0); transform: translateX(50%) scaleX(0); } \
 	} \
 	@-moz-keyframes progress { \
 		from { -moz-transform: translateX(-50%) scaleX(0); transform: translateX(-50%) scaleX(0); } \
-		50% { -moz-transform: translateX(0%) scaleX(1); transform: translateX(0%) scaleX(1); } \
+		50% { -moz-transform: translateX(0%) scaleX(0.7); transform: translateX(0%) scaleX(0.7); } \
 		to { -moz-transform: translateX(50%) scaleX(0); transform: translateX(50%) scaleX(0); } \
 	} \
 	@-ms-keyframes progress { \
 		from { -ms-transform: translateX(-50%) scaleX(0); transform: translateX(-50%) scaleX(0); } \
-		50% { -ms-transform: translateX(0%) scaleX(1); transform: translateX(0%) scaleX(1); } \
+		50% { -ms-transform: translateX(0%) scaleX(0.7); transform: translateX(0%) scaleX(0.7); } \
 		to { -ms-transform: translateX(50%) scaleX(0); transform: translateX(50%) scaleX(0); } \
 	} \
 	@keyframes progress { \
 		from { -webkit-transform: translateX(-50%) scaleX(0); transform: translateX(-50%) scaleX(0); } \
-		50% { -webkit-transform: translateX(0%) scaleX(1); transform: translateX(0%) scaleX(1); } \
+		50% { -webkit-transform: translateX(0%) scaleX(0.7); transform: translateX(0%) scaleX(0.7); } \
 		to { -webkit-transform: translateX(50%) scaleX(0); transform: translateX(50%) scaleX(0); } \
 	} \
 	.ehD-box { margin: 20px auto; width: 732px; box-sizing: border-box; font-size: 12px; border: 1px groove #000000; }\
 	.ehD-box a { cursor: pointer; }\
 	.ehD-box .g2 { display: inline-block; margin: 10px; padding: 0; line-height: 14px; }\
+	.ehD-box legend { font-weight: 700; padding: 0 10px; } \
 	.ehD-box legend a { color: inherit; text-decoration: none; }\
 	.ehD-box-extend input { width: 255px; }\
 	.ehD-setting { position: fixed; left: 0; right: 0; top: 0; bottom: 0; padding: 5px; border: 1px solid #000000; background: #34353b; color: #dddddd; width: 600px; height: 380px; max-width: 100%; max-height: 100%; overflow-x: hidden; overflow-y: auto; box-sizing: border-box; margin: auto; z-index: 999; text-align: left; font-size: 12px; outline: 5px rgba(0, 0, 0, 0.25) solid; }\
@@ -206,9 +207,11 @@ var ehDownloadStyle = '\
 	.ehD-setting[data-active-setting="advanced"] .ehD-setting-wrapper { -webkit-transform: translateX(-50%); -moz-transform: translateX(-50%); -o-transform: translateX(-50%); -ms-transform: translateX(-50%); transform: translateX(-50%); }\
 	.ehD-setting-content { width: 50%; float: left; box-sizing: border-box; padding: 5px 10px; height: 295px; max-height: calc(100vh - 85px); overflow: auto; }\
 	.ehD-setting .g2 { padding-bottom: 10px; }\
-	.ehD-setting input, .ehD-box input { vertical-align: middle; }\
-	.ehD-setting input[type="text"], .ehD-box input[type="text"], .ehD-setting input[type="number"] { height: 13px; }\
-	.ehD-setting input[type="checkbox"] { margin: 3px 3px 3px 0 } \
+	.ehD-setting input, .ehD-box input, .ehD-setting select, .ehD-box select { vertical-align: middle; top: 0; margin: 0; }\
+	.ehD-setting input[type="text"], .ehD-box input[type="text"], .ehD-setting input[type="number"] { height: 18px; padding: 0 0 0 3px; line-height: 18px; border-radius: 3px; }\
+	.ehD-setting input[type="text"], .ehD-setting input[type="number"] { border: 1px solid #8d8d8d; } \
+	.ehD-setting input[type="checkbox"] { margin: 3px 3px 4px 0 } \
+	.ehD-setting select { padding: 0 3px 1px; } \
 	.ehD-setting-note { border: 1px dashed #999999; padding: 10px 10px 0 10px; }\
 	.ehD-setting-footer { text-align: center; margin-top: 5px; border-top: 1px solid #cccccc; padding-top: 5px; }\
 	.ehD-setting sup { vertical-align: top; }\
@@ -218,7 +221,7 @@ var ehDownloadStyle = '\
 	.ehD-dialog progress::-webkit-progress-value { background: #4f535b; -webkit-transition: all 0.2s ease; transition: all 0.2s ease; } \
 	.ehD-dialog progress::-moz-progress-bar { background: #4f535b; -moz-transition: all 0.2s ease; transition: all 0.2s ease; } \
 	.ehD-dialog progress::-ms-fill { background: #4f535b; -ms-transition: all 0.2s ease; transition: all 0.2s ease; } \
-	.ehD-dialog progress:not([value])::after { content: ""; will-change: transform; width: 100%; height: 100%; left: 0; top: 0; display: block; background: #4f535b; position: absolute; -webkit-animation: progress 1s ease-in-out alternate infinite; -moz-animation: progress 1s ease-in-out alternate infinite; -ms-animation: progress 1s ease-in-out alternate infinite; animation: progress 1s ease-in-out alternate infinite; } \
+	.ehD-dialog progress:not([value])::after { content: ""; will-change: transform; width: 100%; height: 100%; left: 0; top: 0; display: block; background: #4f535b; position: absolute; -webkit-animation: progress 1s cubic-bezier(0.9, 0.4, 0.1, 0.6) alternate infinite; -moz-animation: progress 1s cubic-bezier(0.9, 0.4, 0.1, 0.6) alternate infinite; -ms-animation: progress 1s cubic-bezier(0.9, 0.4, 0.1, 0.6) alternate infinite; animation: progress 1s cubic-bezier(0.9, 0.4, 0.1, 0.6) alternate infinite; } \
 	.ehD-dialog progress:not([value])::-moz-progress-bar { width: 0px !important; } \
 	.ehD-pt { table-layout: fixed; width: 100%; }\
 	.ehD-pt-name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }\
@@ -2005,7 +2008,7 @@ function showSettings() {
 		<div class="ehD-setting-main">\
 			<div class="ehD-setting-wrapper">\
 				<div data-setting-page="basic" class="ehD-setting-content">\
-					<div class="g2"><label>Download <input type="number" data-ehd-setting="thread-count" min="1" placeholder="5" style="width: 46px;"> images at the same time (<=5 is advised)</label></div>\
+					<div class="g2"><label>Download <input type="number" data-ehd-setting="thread-count" min="1" placeholder="5" style="width: 46px;"> images at the same time (≤ 5 is recommended)</label></div>\
 					<div class="g2"' + ((GM_info.scriptHandler && GM_info.scriptHandler === 'Violentmonkey') ? ' style="opacity: 0.5;" title="Violentmonkey may not support this feature"' : '') + '><label>Abort downloading current image after <input type="number" data-ehd-setting="timeout" min="0" placeholder="300" style="width: 46px;"> second(s) (0 is never abort)</label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="speed-detect"> Abort downloading current image if speed is less than <input type="number" data-ehd-setting="speed-min" min="0" placeholder="5" style="width: 46px;"> KB/s in <input type="number" data-ehd-setting="speed-expired" min="1" placeholder="30" style="width: 46px;"> second(s)</label></div>\
 					<div class="g2"><label>Skip current image after retried <input type="number" data-ehd-setting="retry-count" min="1" placeholder="3" style="width: 46px;"> time(s)</label></div>\
@@ -2290,7 +2293,7 @@ var ehDownloadBox = document.createElement('fieldset');
 ehDownloadBox.className = 'ehD-box';
 var ehDownloadBoxTitle = document.createElement('legend');
 ehDownloadBoxTitle.innerHTML = 'E-Hentai Downloader <span class="ehD-box-limit"></span> <span class="ehD-box-cost"></span>';
-ehDownloadBoxTitle.style.cssText = (origin.indexOf('exhentai.org') >= 0 ? 'color: #ffff66; ' : '') + 'font-weight: 700;';
+if (origin.indexOf('exhentai.org') >= 0) ehDownloadBoxTitle.style.color = '#ffff66';
 ehDownloadBox.appendChild(ehDownloadBoxTitle);
 var ehDownloadStylesheet = document.createElement('style');
 ehDownloadStylesheet.textContent = ehDownloadStyle;
