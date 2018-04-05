@@ -1305,25 +1305,14 @@ function fetchOriginalImage(index, nodeList) {
 		}
 	});
 
-	if (!nodeList.status.dataset.initedAbort) {
+	if (!nodeList.status.dataset.initedAbort !== '2') {
 		nodeList.abort.addEventListener('click', function(){
 			if (!isDownloading || imageData[index] instanceof ArrayBuffer) return; // Temporarily fixes #31
 
-			if (typeof fetchThread[index] !== 'undefined' && 'abort' in fetchThread[index]) fetchThread[index].abort();
 			removeTimerHandler();
-			
-			console.log('[EHD] #' + (index + 1) + ': Force Aborted By User');
-			updateProgress(nodeList, {
-				status: 'Failed! (User Aborted)',
-				progress: '0',
-				progressText: '',
-				class: 'ehD-pt-warning'
-			});
-
-			failedFetching(index, nodeList);
 		});
 
-		nodeList.status.setAttribute('data-inited-abort', '1');
+		nodeList.status.setAttribute('data-inited-abort', '2');
 	}
 
 	updateTotalStatus();
@@ -2015,6 +2004,24 @@ function getPageData(index) {
 	xhr.open('GET', fetchURL);
 	xhr.timeout = 30000;
 	xhr.send();
+
+	nodeList.abort.addEventListener('click', function () {
+		if (!isDownloading || imageData[index] instanceof ArrayBuffer) return; // Temporarily fixes #31
+
+		if (typeof fetchThread[index] !== 'undefined' && 'abort' in fetchThread[index]) fetchThread[index].abort();
+
+		console.log('[EHD] #' + (index + 1) + ': Force Aborted By User');
+		updateProgress(nodeList, {
+			status: 'Failed! (User Aborted)',
+			progress: '0',
+			progressText: '',
+			class: 'ehD-pt-warning'
+		});
+
+		failedFetching(index, nodeList);
+	});
+
+	nodeList.status.setAttribute('data-inited-abort', '1');
 }
 
 function showSettings() {
