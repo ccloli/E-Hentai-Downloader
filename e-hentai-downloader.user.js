@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.30
+// @version      1.30.1
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -13061,25 +13061,14 @@ function fetchOriginalImage(index, nodeList) {
 		}
 	});
 
-	if (!nodeList.status.dataset.initedAbort) {
+	if (!nodeList.status.dataset.initedAbort !== '2') {
 		nodeList.abort.addEventListener('click', function(){
 			if (!isDownloading || imageData[index] instanceof ArrayBuffer) return; // Temporarily fixes #31
 
-			if (typeof fetchThread[index] !== 'undefined' && 'abort' in fetchThread[index]) fetchThread[index].abort();
 			removeTimerHandler();
-			
-			console.log('[EHD] #' + (index + 1) + ': Force Aborted By User');
-			updateProgress(nodeList, {
-				status: 'Failed! (User Aborted)',
-				progress: '0',
-				progressText: '',
-				class: 'ehD-pt-warning'
-			});
-
-			failedFetching(index, nodeList);
 		});
 
-		nodeList.status.setAttribute('data-inited-abort', '1');
+		nodeList.status.setAttribute('data-inited-abort', '2');
 	}
 
 	updateTotalStatus();
@@ -13561,7 +13550,7 @@ function requestDownload(ignoreFailed){
 				if (imageList[j] && setting['never-new-url']) fetchOriginalImage(j);
 				else if (setting['delay-request']) {
 					setTimeout(function(j) {
-						if (isPausing) {
+						if (isPausing || fetchCount >= (setting['thread-count'] !== undefined ? setting['thread-count'] : 5)) {
 							imageData[j] = null;
 							return;
 						}
@@ -13771,6 +13760,24 @@ function getPageData(index) {
 	xhr.open('GET', fetchURL);
 	xhr.timeout = 30000;
 	xhr.send();
+
+	nodeList.abort.addEventListener('click', function () {
+		if (!isDownloading || imageData[index] instanceof ArrayBuffer) return; // Temporarily fixes #31
+
+		if (typeof fetchThread[index] !== 'undefined' && 'abort' in fetchThread[index]) fetchThread[index].abort();
+
+		console.log('[EHD] #' + (index + 1) + ': Force Aborted By User');
+		updateProgress(nodeList, {
+			status: 'Failed! (User Aborted)',
+			progress: '0',
+			progressText: '',
+			class: 'ehD-pt-warning'
+		});
+
+		failedFetching(index, nodeList);
+	});
+
+	nodeList.status.setAttribute('data-inited-abort', '1');
 }
 
 function showSettings() {
