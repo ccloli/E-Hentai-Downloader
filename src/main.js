@@ -1794,7 +1794,7 @@ function requestDownload(ignoreFailed){
 				if (imageList[j] && setting['never-new-url']) fetchOriginalImage(j);
 				else if (setting['delay-request']) {
 					setTimeout(function(j) {
-						if (isPausing) {
+						if (isPausing || fetchCount >= (setting['thread-count'] !== undefined ? setting['thread-count'] : 5)) {
 							imageData[j] = null;
 							return;
 						}
