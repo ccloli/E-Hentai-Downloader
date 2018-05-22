@@ -440,7 +440,10 @@ function storeRes(res, index) {
 	imageData[index] = res;
 	downloadedCount++;
 	console.log('[EHD] Index >', index + 1, ' | RealIndex >', imageList[index]['realIndex'], ' | Name >', imageList[index]['imageName'], ' | RetryCount >', retryCount[index], ' | DownloadedCount >', downloadedCount, ' | FetchCount >', fetchCount, ' | FailedCount >', failedCount);
-	fetchCount--;
+	if (fetchThread[index]) {
+		fetchThread[index] = undefined;
+		fetchCount--;
+	}
 
 	updateTotalStatus();
 	if (!isPausing) checkFailed();
@@ -720,7 +723,12 @@ function failedFetching(index, nodeList, forced){
 
 		imageList[index]['imageFinalURL'] = null;
 		failedCount++;
-		if (!isPausing || !setting['force-pause']) fetchCount--;
+		if (!isPausing || !setting['force-pause']) {
+			if (fetchThread[index]) {
+				fetchThread[index] = undefined;
+				fetchCount--;
+			}
+		}
 
 		updateTotalStatus();
 		checkFailed();
@@ -1051,7 +1059,10 @@ function fetchOriginalImage(index, nodeList) {
 					}
 
 					failedCount++;
-					fetchCount--;
+					if (fetchThread[index]) {
+						fetchThread[index] = undefined;
+						fetchCount--;
+					}
 					updateTotalStatus();
 
 					if (isPausing) return;
@@ -1137,7 +1148,10 @@ function fetchOriginalImage(index, nodeList) {
 					}
 
 					failedCount++;
-					fetchCount--;
+					if (fetchThread[index]) {
+						fetchThread[index] = undefined;
+						fetchCount--;
+					}
 					updateTotalStatus();
 
 					if (isPausing) return;
@@ -1343,10 +1357,14 @@ function retryAllFailed(){
 			imageData[index] = null;
 			retryCount[index] = 0;
 		}
+		if (fetchThread[index]) {
+			fetchThread[index] = undefined;
+			fetchCount--;
+		}
 	}
 
 	failedCount = 0;
-	fetchCount = 0;
+	// fetchCount = 0;
 	requestDownload();
 }
 
@@ -1892,7 +1910,10 @@ function getPageData(index) {
 			}
 			else {
 				failedCount++;
-				fetchCount--;
+				if (fetchThread[index]) {
+					fetchThread[index] = undefined;
+					fetchCount--;
+				}
 
 				console.error('[EHD] #' + realIndex + ': Failed getting image URL');
 				updateProgress(nodeList, {
@@ -1932,7 +1953,10 @@ function getPageData(index) {
 			}
 			else {
 				failedCount++;
-				fetchCount--;
+				if (fetchThread[index]) {
+					fetchThread[index] = undefined;
+					fetchCount--;
+				}
 
 				console.error('[EHD] #' + realIndex + ': Can\'t get request content from response content');
 				updateProgress(nodeList, {
@@ -1975,7 +1999,10 @@ function getPageData(index) {
 				progressText: '', 
 				class: ''
 			});
-			fetchCount--;
+			if (fetchThread[index]) {
+				fetchThread[index] = undefined;
+				fetchCount--;
+			}
 			imageData[index] = null;
 			
 			updateTotalStatus();
@@ -2002,7 +2029,10 @@ function getPageData(index) {
 		}
 		else {
 			failedCount++;
-			fetchCount--;
+			if (fetchThread[index]) {
+				fetchThread[index] = undefined;
+				fetchCount--;
+			}
 
 			console.error('[EHD] #' + realIndex + ': Failed getting image URL');
 			updateProgress(nodeList, {
@@ -2425,7 +2455,10 @@ ehDownloadPauseBtn.addEventListener('click', function(event){
 
 						imageData[i] = null;
 						//fetchCount = 0; // fixed for async
-						fetchCount--;
+						if (fetchThread[i]) {
+							fetchThread[i] = undefined;
+							fetchCount--;
+						}
 
 						updateTotalStatus();
 					}
