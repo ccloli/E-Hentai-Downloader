@@ -234,8 +234,8 @@ var ehDownloadStyle = '\
 	.ehD-pt-warning .ehD-pt-status { color: #ffff00; }\
 	.ehD-pt-failed .ehD-pt-status { color: #ff0000; }\
 	.ehD-pt-abort { color: #ffff00; display: none; cursor: pointer; }\
-	.ehD-pt-status[data-inited-abort="1"]:hover .ehD-pt-abort, .ehD-pt-failed .ehD-pt-status[data-inited-abort="1"]:hover .ehD-pt-status-text, .ehD-pt-succeed .ehD-pt-status[data-inited-abort="1"]:hover .ehD-pt-status-text { display: inline; }\
-	.ehD-pt-status[data-inited-abort="1"]:hover .ehD-pt-status-text, .ehD-pt-failed .ehD-pt-status[data-inited-abort="1"]:hover .ehD-pt-abort, .ehD-pt-succeed .ehD-pt-status[data-inited-abort="1"]:hover .ehD-pt-abort { display: none; }\
+	.ehD-pt-status[data-inited-abort]:hover .ehD-pt-abort, .ehD-pt-failed .ehD-pt-status[data-inited-abort]:hover .ehD-pt-status-text, .ehD-pt-succeed .ehD-pt-status[data-inited-abort]:hover .ehD-pt-status-text { display: inline; }\
+	.ehD-pt-status[data-inited-abort]:hover .ehD-pt-status-text, .ehD-pt-failed .ehD-pt-status[data-inited-abort]:hover .ehD-pt-abort, .ehD-pt-succeed .ehD-pt-status[data-inited-abort]:hover .ehD-pt-abort { display: none; }\
 	.ehD-pt-gen-progress { width: 50%; }\
 	.ehD-pt-gen-filename { margin-bottom: 1em; }\
 	.ehD-dialog { position: fixed; right: 0; bottom: 0; display: none; padding: 5px; border: 1px solid #000000; background: #34353b; color: #dddddd; width: 550px; height: 300px; overflow: auto; z-index: 999; word-break: break-all; }\
@@ -1335,7 +1335,7 @@ function fetchOriginalImage(index, nodeList) {
 		}
 	});
 
-	if (!nodeList.status.dataset.initedAbort !== '2') {
+	if (nodeList.status.dataset.initedAbort !== '2') {
 		nodeList.abort.addEventListener('click', function(){
 			if (!isDownloading || imageData[index] instanceof ArrayBuffer) return; // Temporarily fixes #31
 
