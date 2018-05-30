@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.30.1
+// @version      1.30.2
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -11990,8 +11990,8 @@ var ehDownloadStyle = '\
 	.ehD-pt-warning .ehD-pt-status { color: #ffff00; }\
 	.ehD-pt-failed .ehD-pt-status { color: #ff0000; }\
 	.ehD-pt-abort { color: #ffff00; display: none; cursor: pointer; }\
-	.ehD-pt-status[data-inited-abort="1"]:hover .ehD-pt-abort, .ehD-pt-failed .ehD-pt-status[data-inited-abort="1"]:hover .ehD-pt-status-text, .ehD-pt-succeed .ehD-pt-status[data-inited-abort="1"]:hover .ehD-pt-status-text { display: inline; }\
-	.ehD-pt-status[data-inited-abort="1"]:hover .ehD-pt-status-text, .ehD-pt-failed .ehD-pt-status[data-inited-abort="1"]:hover .ehD-pt-abort, .ehD-pt-succeed .ehD-pt-status[data-inited-abort="1"]:hover .ehD-pt-abort { display: none; }\
+	.ehD-pt-status[data-inited-abort]:hover .ehD-pt-abort, .ehD-pt-failed .ehD-pt-status[data-inited-abort]:hover .ehD-pt-status-text, .ehD-pt-succeed .ehD-pt-status[data-inited-abort]:hover .ehD-pt-status-text { display: inline; }\
+	.ehD-pt-status[data-inited-abort]:hover .ehD-pt-status-text, .ehD-pt-failed .ehD-pt-status[data-inited-abort]:hover .ehD-pt-abort, .ehD-pt-succeed .ehD-pt-status[data-inited-abort]:hover .ehD-pt-abort { display: none; }\
 	.ehD-pt-gen-progress { width: 50%; }\
 	.ehD-pt-gen-filename { margin-bottom: 1em; }\
 	.ehD-dialog { position: fixed; right: 0; bottom: 0; display: none; padding: 5px; border: 1px solid #000000; background: #34353b; color: #dddddd; width: 550px; height: 300px; overflow: auto; z-index: 999; word-break: break-all; }\
@@ -12196,7 +12196,10 @@ function storeRes(res, index) {
 	imageData[index] = res;
 	downloadedCount++;
 	console.log('[EHD] Index >', index + 1, ' | RealIndex >', imageList[index]['realIndex'], ' | Name >', imageList[index]['imageName'], ' | RetryCount >', retryCount[index], ' | DownloadedCount >', downloadedCount, ' | FetchCount >', fetchCount, ' | FailedCount >', failedCount);
-	fetchCount--;
+	if (fetchThread[index]) {
+		fetchThread[index] = undefined;
+		fetchCount--;
+	}
 
 	updateTotalStatus();
 	if (!isPausing) checkFailed();
@@ -12476,7 +12479,12 @@ function failedFetching(index, nodeList, forced){
 
 		imageList[index]['imageFinalURL'] = null;
 		failedCount++;
-		if (!isPausing || !setting['force-pause']) fetchCount--;
+		if (!isPausing || !setting['force-pause']) {
+			if (fetchThread[index]) {
+				fetchThread[index] = undefined;
+				fetchCount--;
+			}
+		}
 
 		updateTotalStatus();
 		checkFailed();
@@ -12634,7 +12642,7 @@ function fetchOriginalImage(index, nodeList) {
 		if (typeof fetchThread[index] !== 'undefined' && 'abort' in fetchThread[index]) fetchThread[index].abort();
 
 		console.log('[EHD] #' + (index + 1) + ': Speed Too Low');
-		console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL, '\nResposeHeaders >' + res.responseHeaders);
+		console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL, '\nFinal URL >', res.finalUrl, '\nResposeHeaders >' + res.responseHeaders);
 
 		updateProgress(nodeList, {
 			status: 'Failed! (Low Speed)',
@@ -12717,310 +12725,332 @@ function fetchOriginalImage(index, nodeList) {
 			}
 		},
 		onload: function(res) {
-			
-			removeTimerHandler();
-			if (!isDownloading || imageData[index] instanceof ArrayBuffer) return; // Temporarily fixes #31
-
-			// cache them to reduce waiting time and CPU usage on Chrome with Tampermonkey
-			// (Tampermonkey uses a dirty way to give res.response, transfer string to arraybuffer every time)
-			// now store progress just spent ~1s instead of ~8s
-			var response = res.response;
-			var byteLength = response.byteLength;
-			var responseHeaders = res.responseHeaders;
-			
-			// use regex to fixed compatibility with http/2, as its headers are lower case (at least fixed with Yandex Turbo)
-			var mime = responseHeaders.match(/Content-Type:/i) ? responseHeaders.split(/Content-Type:/i)[1].split('\n')[0].trim().split('/') : ['', ''];
-
-			if (!response) {
-				console.log('[EHD] #' + (index + 1) + ': Empty Response (See: https://github.com/ccloli/E-Hentai-Downloader/issues/16 )');
-				console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL, '\nResposeHeaders >' + res.responseHeaders);
-
-				updateProgress(nodeList, {
-					status: 'Failed! (Empty Response)',
-					progress: '0',
-					progressText: '',
-					class: 'ehD-pt-warning'
-				});
-
-				for (var i in res) {
-					delete res[i];
-				}
-				return failedFetching(index, nodeList);
-
-				// res.response polyfill is useless, so it has been removed
-			}
-			else if (byteLength === 925) { // '403 Access Denied' Image Byte Size
-				// GM_xhr only support abort()
-				console.log('[EHD] #' + (index + 1) + ': 403 Access Denied');
-				console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL + '\nResposeHeaders >' + res.responseHeaders);
-
-				updateProgress(nodeList, {
-					status: 'Failed! (Error 403)',
-					progress: '0',
-					progressText: '',
-					class: 'ehD-pt-warning'
-				});
-
-				for (var i in res) {
-					delete res[i];
-				}
-				return failedFetching(index, nodeList, true);
-			}
-			else if (byteLength === 28) { // 'An error has occurred. (403)' Length
-				console.log('[EHD] #' + (index + 1) + ': An error has occurred. (403)');
-				console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL + '\nResposeHeaders >' + res.responseHeaders);
-				
-				updateProgress(nodeList, {
-					status: 'Failed! (Error 403)',
-					progress: '0',
-					progressText: '',
-					class: 'ehD-pt-warning'
-				});
-
-				for (var i in res) {
-					delete res[i];
-				}
-				return failedFetching(index, nodeList, true);
-			}
-			else if (
-				byteLength === 142 ||   // Image Viewing Limits String Byte Size (exhentai)
-				byteLength === 144 ||   // Image Viewing Limits String Byte Size (g.e-hentai)
-				byteLength === 28658 || // '509 Bandwidth Exceeded' Image Byte Size
-				(mime[0] === 'text' && (res.responseText || new TextDecoder().decode(new DataView(response))).indexOf('You have exceeded your image viewing limits') >= 0) // directly detect response content in case byteLength will be modified
-			) {
-				// thought exceed the limits, downloading image is still accessable
-				/*for (var i = 0; i < fetchThread.length; i++) {
-					if (typeof fetchThread[i] !== 'undefined' && 'abort' in fetchThread[i]) fetchThread[i].abort();
-				}*/
-				console.log('[EHD] #' + (index + 1) + ': Exceed Image Viewing Limits / 509 Bandwidth Exceeded');
-				console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL + '\nResposeHeaders >' + res.responseHeaders);
-
-				updateProgress(nodeList, {
-					status: 'Failed! (Exceed Limits)',
-					progress: '0',
-					progressText: '',
-					class: 'ehD-pt-failed'
-				});
-				updateTotalStatus();
-
-				for (var i in res) {
-					delete res[i];
-				}
-
-				failedCount++;
-				fetchCount--;
-				updateTotalStatus();
-
-				if (isPausing) return;
-
-				pushDialog('You have exceeded your image viewing limits.\n');
-				isPausing = true;
-				updateTotalStatus();
-				if (emptyAudio) {
-					emptyAudio.pause();
-				}
-
-				if (ehDownloadDialog.contains(ehDownloadPauseBtn)) {
-					ehDownloadDialog.removeChild(ehDownloadPauseBtn);
-				}
-
-				if (confirm('You have temporarily reached the limit for how many images you can browse.\n\n\
-					- If you are not signed in, sign up/in with an E-Hentai account at E-Hentai Forums to get double daily quota.\n\
-					- You can run Hentai@Home to support E-Hentai and get some points which you can pay to increase your limit.\n\
-					- Check back in a few hours, and you will be able to download more (3 points are reduced per minute by default).\n\
-					- You can reset your image viewing limits to continue by paying your GPs or credits.\n\n\
-					If you want to reset your limits by paying your GPs or credits right now, choose YES, and you can reset it in the opened window. Or if you want to wait a few minutes until you have enough free limit, then continue, choose NO.')) {
-					window.open('https://e-hentai.org/home.php');
-				}
-
-				var resetButton = document.createElement('a');
-				resetButton.innerHTML = '<button>Reset Limits</button>';
-				resetButton.setAttribute('href', 'https://e-hentai.org/home.php');
-				resetButton.setAttribute('target', '_blank');
-				ehDownloadDialog.appendChild(resetButton);
-
-				var continueButton = document.createElement('button');
-				continueButton.innerHTML = 'Continue Download';
-				continueButton.addEventListener('click', function(){
-					//fetchCount = 0;
-					ehDownloadDialog.removeChild(resetButton);
-					ehDownloadDialog.removeChild(continueButton);
-					ehDownloadDialog.removeChild(cancelButton);
-					ehDownloadDialog.appendChild(ehDownloadPauseBtn);
-
-					isPausing = false;
-					initProgressTable();
-					requestDownload();
-				});
-				ehDownloadDialog.appendChild(continueButton);
-
-				var cancelButton = document.createElement('button');
-				cancelButton.innerHTML = 'Cancel Download';
-				cancelButton.addEventListener('click', function(){
-					ehDownloadDialog.removeChild(resetButton);
-					ehDownloadDialog.removeChild(continueButton);
-					ehDownloadDialog.removeChild(cancelButton);
-
-					if (confirm('You have exceeded your image viewing limits. Would you like to save downloaded images?')) {
-						saveDownloaded();
-					}
-					else {
-						insertCloseButton();
-					}
-					isPausing = false;
-					isDownloading = false;
-					zip.file(/.*/).forEach(function (elem) {
-						zip.remove(elem);
-					});
-				});
-				ehDownloadDialog.appendChild(cancelButton);
-			}
-			// ip banned
-			else if (
-				(mime[0] === 'text' && (res.responseText || new TextDecoder().decode(new DataView(response))).indexOf('Your IP address has been temporarily banned') >= 0)
-			) {
-				console.log('[EHD] #' + (index + 1) + ': IP address banned');
-				console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL + '\nResposeHeaders >' + res.responseHeaders);
-
-				updateProgress(nodeList, {
-					status: 'Failed! (IP banned)',
-					progress: '0',
-					progressText: '',
-					class: 'ehD-pt-failed'
-				});
-				updateTotalStatus();
-
-				for (var i in res) {
-					delete res[i];
-				}
-
-				failedCount++;
-				fetchCount--;
-				updateTotalStatus();
-
-				if (isPausing) return;
-
-				pushDialog('Your IP address has been temporarily banned.\n');
-				isPausing = true;
-				updateTotalStatus();
-				if (emptyAudio) {
-					emptyAudio.pause();
-				}
-
-				if (ehDownloadDialog.contains(ehDownloadPauseBtn)) {
-					ehDownloadDialog.removeChild(ehDownloadPauseBtn);
-				}
-
-				var expiredTime = (res.responseText || new TextDecoder().decode(new DataView(response))).match(ehDownloadRegex.IPBanExpires);
-
-				alert('Your IP address has been temporarily banned. \n\n\
-					Make sure your download settings are not configured to download too fast. If you are using conservative rules, check if your computer is infected with malware, or if you are using a shared IP with others.\n\
-					If you can change your IP (like using a proxy) or wait until you\'re unblocked, you can then continue your download; or cancel your download and get downloaded images.\n\n' + 
-					(expiredTime ? '\n' + expiredTime[0] : '')
-				);
-
-				var continueButton = document.createElement('button');
-				continueButton.innerHTML = 'Continue Download';
-				continueButton.addEventListener('click', function () {
-					//fetchCount = 0;
-					ehDownloadDialog.removeChild(continueButton);
-					ehDownloadDialog.removeChild(cancelButton);
-					ehDownloadDialog.appendChild(ehDownloadPauseBtn);
-
-					isPausing = false;
-					initProgressTable();
-					requestDownload();
-				});
-				ehDownloadDialog.appendChild(continueButton);
-
-				var cancelButton = document.createElement('button');
-				cancelButton.innerHTML = 'Cancel Download';
-				cancelButton.addEventListener('click', function () {
-					ehDownloadDialog.removeChild(continueButton);
-					ehDownloadDialog.removeChild(cancelButton);
-
-					if (confirm('Would you like to save downloaded images?')) {
-						saveDownloaded();
-					}
-					else {
-						insertCloseButton();
-					}
-					isPausing = false;
-					isDownloading = false;
-					zip.file(/.*/).forEach(function (elem) {
-						zip.remove(elem);
-					});
-				});
-				ehDownloadDialog.appendChild(cancelButton);
-			}
-			// res.status should be detected at here, because we should know are we reached image limits at first
-			else if (res.status !== 200) {
-				console.log('[EHD] #' + (index + 1) + ': Wrong Response Status');
-				console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL + '\nResposeHeaders >' + res.responseHeaders);
-
-				updateProgress(nodeList, {
-					status: 'Failed! (Wrong Status)',
-					progress: '0',
-					progressText: '',
-					class: 'ehD-pt-warning'
-				});
-
-				for (var i in res) {
-					delete res[i];
-				}
-				return failedFetching(index, nodeList);
-			}
-			// GM_xhr doesn't support xhr.getResponseHeader() function
-			//if (res.getResponseHeader('Content-Type').split('/')[0] != 'image') {
-			else if (mime[0] !== 'image') {
-				console.log('[EHD] #' + (index + 1) + ': Wrong Content-Type');
-				console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL + '\nResposeHeaders >' + res.responseHeaders);
-
-				updateProgress(nodeList, {
-					status: 'Failed! (Wrong MIME)',
-					progress: '0',
-					progressText: '',
-					class: 'ehD-pt-warning'
-				});
-
-				for (var i in res) {
-					delete res[i];
-				}
-				return failedFetching(index, nodeList);
-			}
-
-			// logs in #80 shows sometimes it didn't match the regex, but cannot reproduce right now
 			try {
-				imageList[index]['_imageName'] = imageList[index]['imageName'] = res.responseHeaders.match(ehDownloadRegex.resFileName) ? getSafeName(res.responseHeaders.match(ehDownloadRegex.resFileName)[1].trim()) : imageList[index]['imageName'];
+				removeTimerHandler();
+				if (!isDownloading || imageData[index] instanceof ArrayBuffer) return; // Temporarily fixes #31
+
+				// cache them to reduce waiting time and CPU usage on Chrome with Tampermonkey
+				// (Tampermonkey uses a dirty way to give res.response, transfer string to arraybuffer every time)
+				// now store progress just spent ~1s instead of ~8s
+				var response = res.response;
+				var byteLength = response.byteLength;
+				var responseHeaders = res.responseHeaders;
+				
+				// use regex to fixed compatibility with http/2, as its headers are lower case (at least fixed with Yandex Turbo)
+				var mime = responseHeaders.match(/Content-Type:/i) ? responseHeaders.split(/Content-Type:/i)[1].split('\n')[0].trim().split('/') : ['', ''];
+
+				if (!response) {
+					console.log('[EHD] #' + (index + 1) + ': Empty Response (See: https://github.com/ccloli/E-Hentai-Downloader/issues/16 )');
+					console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL, '\nFinal URL >', res.finalUrl, '\nResposeHeaders >' + res.responseHeaders);
+
+					updateProgress(nodeList, {
+						status: 'Failed! (Empty Response)',
+						progress: '0',
+						progressText: '',
+						class: 'ehD-pt-warning'
+					});
+
+					for (var i in res) {
+						delete res[i];
+					}
+					return failedFetching(index, nodeList);
+
+					// res.response polyfill is useless, so it has been removed
+				}
+				else if (byteLength === 925) { // '403 Access Denied' Image Byte Size
+					// GM_xhr only support abort()
+					console.log('[EHD] #' + (index + 1) + ': 403 Access Denied');
+					console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL, '\nFinal URL >', res.finalUrl, '\nResposeHeaders >' + res.responseHeaders);
+
+					updateProgress(nodeList, {
+						status: 'Failed! (Error 403)',
+						progress: '0',
+						progressText: '',
+						class: 'ehD-pt-warning'
+					});
+
+					for (var i in res) {
+						delete res[i];
+					}
+					return failedFetching(index, nodeList, true);
+				}
+				else if (byteLength === 28) { // 'An error has occurred. (403)' Length
+					console.log('[EHD] #' + (index + 1) + ': An error has occurred. (403)');
+					console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL, '\nFinal URL >', res.finalUrl, '\nResposeHeaders >' + res.responseHeaders);
+					
+					updateProgress(nodeList, {
+						status: 'Failed! (Error 403)',
+						progress: '0',
+						progressText: '',
+						class: 'ehD-pt-warning'
+					});
+
+					for (var i in res) {
+						delete res[i];
+					}
+					return failedFetching(index, nodeList, true);
+				}
+				else if (
+					byteLength === 142 ||   // Image Viewing Limits String Byte Size (exhentai)
+					byteLength === 144 ||   // Image Viewing Limits String Byte Size (g.e-hentai)
+					byteLength === 28658 || // '509 Bandwidth Exceeded' Image Byte Size
+					(mime[0] === 'text' && (res.responseText || new TextDecoder().decode(new DataView(response))).indexOf('You have exceeded your image viewing limits') >= 0) // directly detect response content in case byteLength will be modified
+				) {
+					// thought exceed the limits, downloading image is still accessable
+					/*for (var i = 0; i < fetchThread.length; i++) {
+						if (typeof fetchThread[i] !== 'undefined' && 'abort' in fetchThread[i]) fetchThread[i].abort();
+					}*/
+					console.log('[EHD] #' + (index + 1) + ': Exceed Image Viewing Limits / 509 Bandwidth Exceeded');
+					console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL, '\nFinal URL >', res.finalUrl, '\nResposeHeaders >' + res.responseHeaders);
+
+					updateProgress(nodeList, {
+						status: 'Failed! (Exceed Limits)',
+						progress: '0',
+						progressText: '',
+						class: 'ehD-pt-failed'
+					});
+
+					for (var i in res) {
+						delete res[i];
+					}
+
+					failedCount++;
+					if (fetchThread[index]) {
+						fetchThread[index] = undefined;
+						fetchCount--;
+					}
+					updateTotalStatus();
+
+					if (isPausing) return;
+
+					pushDialog('You have exceeded your image viewing limits.\n');
+					isPausing = true;
+					updateTotalStatus();
+					if (emptyAudio) {
+						emptyAudio.pause();
+					}
+
+					if (ehDownloadDialog.contains(ehDownloadPauseBtn)) {
+						ehDownloadDialog.removeChild(ehDownloadPauseBtn);
+					}
+
+					if (confirm('You have temporarily reached the limit for how many images you can browse.\n\n\
+						- If you are not signed in, sign up/in with an E-Hentai account at E-Hentai Forums to get double daily quota.\n\
+						- You can run Hentai@Home to support E-Hentai and get some points which you can pay to increase your limit.\n\
+						- Check back in a few hours, and you will be able to download more (3 points are reduced per minute by default).\n\
+						- You can reset your image viewing limits to continue by paying your GPs or credits.\n\n\
+						If you want to reset your limits by paying your GPs or credits right now, choose YES, and you can reset it in the opened window. Or if you want to wait a few minutes until you have enough free limit, then continue, choose NO.')) {
+						window.open('https://e-hentai.org/home.php');
+					}
+
+					var resetButton = document.createElement('a');
+					resetButton.innerHTML = '<button>Reset Limits</button>';
+					resetButton.setAttribute('href', 'https://e-hentai.org/home.php');
+					resetButton.setAttribute('target', '_blank');
+					ehDownloadDialog.appendChild(resetButton);
+
+					var continueButton = document.createElement('button');
+					continueButton.innerHTML = 'Continue Download';
+					continueButton.addEventListener('click', function(){
+						//fetchCount = 0;
+						ehDownloadDialog.removeChild(resetButton);
+						ehDownloadDialog.removeChild(continueButton);
+						ehDownloadDialog.removeChild(cancelButton);
+						ehDownloadDialog.appendChild(ehDownloadPauseBtn);
+
+						isPausing = false;
+						initProgressTable();
+						requestDownload();
+					});
+					ehDownloadDialog.appendChild(continueButton);
+
+					var cancelButton = document.createElement('button');
+					cancelButton.innerHTML = 'Cancel Download';
+					cancelButton.addEventListener('click', function(){
+						ehDownloadDialog.removeChild(resetButton);
+						ehDownloadDialog.removeChild(continueButton);
+						ehDownloadDialog.removeChild(cancelButton);
+
+						if (confirm('You have exceeded your image viewing limits. Would you like to save downloaded images?')) {
+							saveDownloaded();
+						}
+						else {
+							insertCloseButton();
+						}
+						isPausing = false;
+						isDownloading = false;
+						zip.file(/.*/).forEach(function (elem) {
+							zip.remove(elem);
+						});
+					});
+					ehDownloadDialog.appendChild(cancelButton);
+				}
+				// ip banned
+				else if (
+					(mime[0] === 'text' && (res.responseText || new TextDecoder().decode(new DataView(response))).indexOf('Your IP address has been temporarily banned') >= 0)
+				) {
+					console.log('[EHD] #' + (index + 1) + ': IP address banned');
+					console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL, '\nFinal URL >', res.finalUrl, '\nResposeHeaders >' + res.responseHeaders);
+
+					updateProgress(nodeList, {
+						status: 'Failed! (IP banned)',
+						progress: '0',
+						progressText: '',
+						class: 'ehD-pt-failed'
+					});
+
+					for (var i in res) {
+						delete res[i];
+					}
+
+					failedCount++;
+					if (fetchThread[index]) {
+						fetchThread[index] = undefined;
+						fetchCount--;
+					}
+					updateTotalStatus();
+
+					if (isPausing) return;
+
+					pushDialog('Your IP address has been temporarily banned.\n');
+					isPausing = true;
+					updateTotalStatus();
+					if (emptyAudio) {
+						emptyAudio.pause();
+					}
+
+					if (ehDownloadDialog.contains(ehDownloadPauseBtn)) {
+						ehDownloadDialog.removeChild(ehDownloadPauseBtn);
+					}
+
+					var expiredTime = (res.responseText || new TextDecoder().decode(new DataView(response))).match(ehDownloadRegex.IPBanExpires);
+
+					alert('Your IP address has been temporarily banned. \n\n\
+						Make sure your download settings are not configured to download too fast. If you are using conservative rules, check if your computer is infected with malware, or if you are using a shared IP with others.\n\
+						If you can change your IP (like using a proxy) or wait until you\'re unblocked, you can then continue your download; or cancel your download and get downloaded images.\n\n' + 
+						(expiredTime ? '\n' + expiredTime[0] : '')
+					);
+
+					var continueButton = document.createElement('button');
+					continueButton.innerHTML = 'Continue Download';
+					continueButton.addEventListener('click', function () {
+						//fetchCount = 0;
+						ehDownloadDialog.removeChild(continueButton);
+						ehDownloadDialog.removeChild(cancelButton);
+						ehDownloadDialog.appendChild(ehDownloadPauseBtn);
+
+						isPausing = false;
+						initProgressTable();
+						requestDownload();
+					});
+					ehDownloadDialog.appendChild(continueButton);
+
+					var cancelButton = document.createElement('button');
+					cancelButton.innerHTML = 'Cancel Download';
+					cancelButton.addEventListener('click', function () {
+						ehDownloadDialog.removeChild(continueButton);
+						ehDownloadDialog.removeChild(cancelButton);
+
+						if (confirm('Would you like to save downloaded images?')) {
+							saveDownloaded();
+						}
+						else {
+							insertCloseButton();
+						}
+						isPausing = false;
+						isDownloading = false;
+						zip.file(/.*/).forEach(function (elem) {
+							zip.remove(elem);
+						});
+					});
+					ehDownloadDialog.appendChild(cancelButton);
+				}
+				// res.status should be detected at here, because we should know are we reached image limits at first
+				else if (res.status !== 200) {
+					console.log('[EHD] #' + (index + 1) + ': Wrong Response Status');
+					console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL, '\nFinal URL >', res.finalUrl, '\nResposeHeaders >' + res.responseHeaders);
+
+					updateProgress(nodeList, {
+						status: 'Failed! (Wrong Status)',
+						progress: '0',
+						progressText: '',
+						class: 'ehD-pt-warning'
+					});
+
+					for (var i in res) {
+						delete res[i];
+					}
+					return failedFetching(index, nodeList);
+				}
+				// GM_xhr doesn't support xhr.getResponseHeader() function
+				//if (res.getResponseHeader('Content-Type').split('/')[0] != 'image') {
+				else if (mime[0] !== 'image') {
+					console.log('[EHD] #' + (index + 1) + ': Wrong Content-Type');
+					console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL, '\nFinal URL >', res.finalUrl, '\nResposeHeaders >' + res.responseHeaders);
+
+					updateProgress(nodeList, {
+						status: 'Failed! (Wrong MIME)',
+						progress: '0',
+						progressText: '',
+						class: 'ehD-pt-warning'
+					});
+
+					for (var i in res) {
+						delete res[i];
+					}
+					return failedFetching(index, nodeList);
+				}
+
+				// logs in #80 shows sometimes it didn't match the regex, but cannot reproduce right now
+				try {
+					imageList[index]['_imageName'] = imageList[index]['imageName'] = res.responseHeaders.match(ehDownloadRegex.resFileName) ? getSafeName(res.responseHeaders.match(ehDownloadRegex.resFileName)[1].trim()) : imageList[index]['imageName'];
+				}
+				catch (error) {
+					console.log('[EHD] #' + (index + 1) + ': Parse file name failed');
+					console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL, '\nFinal URL >', res.finalUrl, '\nResposeHeaders >' + res.responseHeaders);
+
+					imageList[index]['_imageName'] = imageList[index]['imageName'];
+				}
+
+				updateProgress(nodeList, {
+					name: '#' + imageList[index]['realIndex'] + ': ' + imageList[index]['imageName'],
+					status: 'Succeed!',
+					progress: '1',
+					progressText: '100%',
+					class: 'ehD-pt-succeed'
+				});
+
+				storeRes(response, index);
+
+				for (var i in res) {
+					delete res[i];
+				}
+				response = null;
 			}
 			catch (error) {
-				console.log('[EHD] #' + (index + 1) + ': Parse file name failed');
-				console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL + '\nResposeHeaders >' + res.responseHeaders);
+				console.log('[EHD] #' + (index + 1) + ': Unknown Error (Please send feedback)');
+				console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL, '\nFinal URL >', res.finalUrl, '\nResposeHeaders >' + res.responseHeaders);
+				console.log(error);
 
-				imageList[index]['_imageName'] = imageList[index]['imageName'];
+				updateProgress(nodeList, {
+					status: 'Failed! (Unknown)',
+					progress: '0',
+					progressText: '',
+					class: 'ehD-pt-failed'
+				});
+
+				for (var i in res) {
+					delete res[i];
+				}
+				return failedFetching(index, nodeList);
 			}
-
-			updateProgress(nodeList, {
-				name: '#' + imageList[index]['realIndex'] + ': ' + imageList[index]['imageName'],
-				status: 'Succeed!',
-				progress: '1',
-				progressText: '100%',
-				class: 'ehD-pt-succeed'
-			});
-
-			storeRes(response, index);
-
-			for (var i in res) {
-				delete res[i];
-			}
-			response = null;
 		},
 		onerror: function(res){
 			removeTimerHandler();
 			if (!isDownloading || imageData[index] instanceof ArrayBuffer) return; // Temporarily fixes #31
 
 			console.log('[EHD] #' + (index + 1) + ': Network Error');
-			console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL, '\nResposeHeaders >' + res.responseHeaders);
+			console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL, '\nFinal URL >', res.finalUrl, '\nResposeHeaders >' + res.responseHeaders);
 
 			updateProgress(nodeList, {
 				status: 'Failed! (Network Error)',
@@ -13042,7 +13072,7 @@ function fetchOriginalImage(index, nodeList) {
 			if (!isDownloading || imageData[index] instanceof ArrayBuffer) return; // Temporarily fixes #31
 
 			console.log('[EHD] #' + (index + 1) + ': Timed Out');
-			console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL, '\nResposeHeaders >' + res.responseHeaders);
+			console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL, '\nFinal URL >', res.finalUrl, '\nResposeHeaders >' + res.responseHeaders);
 
 			updateProgress(nodeList, {
 				status: 'Failed! (Timed Out)',
@@ -13061,7 +13091,7 @@ function fetchOriginalImage(index, nodeList) {
 		}
 	});
 
-	if (!nodeList.status.dataset.initedAbort !== '2') {
+	if (nodeList.status.dataset.initedAbort !== '2') {
 		nodeList.abort.addEventListener('click', function(){
 			if (!isDownloading || imageData[index] instanceof ArrayBuffer) return; // Temporarily fixes #31
 
@@ -13083,10 +13113,14 @@ function retryAllFailed(){
 			imageData[index] = null;
 			retryCount[index] = 0;
 		}
+		if (fetchThread[index]) {
+			fetchThread[index] = undefined;
+			fetchCount--;
+		}
 	}
 
 	failedCount = 0;
-	fetchCount = 0;
+	// fetchCount = 0;
 	requestDownload();
 }
 
@@ -13632,7 +13666,10 @@ function getPageData(index) {
 			}
 			else {
 				failedCount++;
-				fetchCount--;
+				if (fetchThread[index]) {
+					fetchThread[index] = undefined;
+					fetchCount--;
+				}
 
 				console.error('[EHD] #' + realIndex + ': Failed getting image URL');
 				updateProgress(nodeList, {
@@ -13672,7 +13709,10 @@ function getPageData(index) {
 			}
 			else {
 				failedCount++;
-				fetchCount--;
+				if (fetchThread[index]) {
+					fetchThread[index] = undefined;
+					fetchCount--;
+				}
 
 				console.error('[EHD] #' + realIndex + ': Can\'t get request content from response content');
 				updateProgress(nodeList, {
@@ -13715,7 +13755,10 @@ function getPageData(index) {
 				progressText: '', 
 				class: ''
 			});
-			fetchCount--;
+			if (fetchThread[index]) {
+				fetchThread[index] = undefined;
+				fetchCount--;
+			}
 			imageData[index] = null;
 			
 			updateTotalStatus();
@@ -13742,7 +13785,10 @@ function getPageData(index) {
 		}
 		else {
 			failedCount++;
-			fetchCount--;
+			if (fetchThread[index]) {
+				fetchThread[index] = undefined;
+				fetchCount--;
+			}
 
 			console.error('[EHD] #' + realIndex + ': Failed getting image URL');
 			updateProgress(nodeList, {
@@ -14165,7 +14211,10 @@ ehDownloadPauseBtn.addEventListener('click', function(event){
 
 						imageData[i] = null;
 						//fetchCount = 0; // fixed for async
-						fetchCount--;
+						if (fetchThread[i]) {
+							fetchThread[i] = undefined;
+							fetchCount--;
+						}
 
 						updateTotalStatus();
 					}
