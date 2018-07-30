@@ -44,7 +44,7 @@ var ehDownloadRegex = {
 	fileName: /g\/l.png"\s?\/><\/a><\/div><div>([\s\S]+?) :: /,
 	resFileName: /filename=['"]?([\s\S]+?)['"]?$/m,
 	dangerChars: /[:"*?|<>\/\\\n]/g,
-	pagesRange: /^(\d*(-\d*)?\s*?,\s*?)*\d*(-\d*)?$/,
+	pagesRange: /^(\d*(-\d*(\/\d+)?)?\s*,\s*)*\d*(-\d*(\/\d+)?)?$/,
 	pagesURL: /(?:<a href=").+?(?=")/gi,
 	mpvKey: /var imagelist\s*=\s*(\[.+?\]);/,
 	imageLimits: /You are currently at <strong>(\d+)<\/strong> towards a limit of <strong>(\d+)<\/strong>/,
@@ -1432,20 +1432,31 @@ function getAllPagesURL() {
 		console.log('[EHD] Pages Range >', pagesRangeText);
 		if (!ehDownloadRegex.pagesRange.test(pagesRangeText)) return alert('The format of Pages Range is incorrect.');
 
-		var pagesRangeScale = pagesRangeText.match(/\d*-\d*|\d+/g);
-		pagesRangeScale.forEach(function(elem){
-			if (elem.indexOf('-') < 0) {
-				var curElem = Number(elem);
-				if (!pagesRange.some(function(e){ return curElem === e; })) pagesRange.push(curElem);
+		var rangeRegex = /(?:(\d*)-(\d*))(?:\/(\d+))?|(\d+)/g;
+		var matches;
+		while (matches = rangeRegex.exec(pagesRangeText)) {
+			var single = Number(matches[4]);
+			if (!isNaN(single)) {
+				pagesRange.push(single);
+				continue;
 			}
-			else {
-				var curElem = [Number(elem.split('-')[0] || 1), Number(elem.split('-')[1] || getFileSizeAndLength().page)].sort(function(a, b){ return a - b; });
-				for (var i = curElem[0]; i <= curElem[1]; i++) {
-					if (!pagesRange.some(function(e){ return i === e; })) pagesRange.push(i);
-				}
+
+			var begin = Number(matches[1]) || 1;
+			var end = Number(matches[2]) || getFileSizeAndLength().page;
+			if (begin > end) {
+				var tmp = begin;
+				begin = end;
+				end = tmp;
 			}
-		});
+			var mod = Number(matches[3]) || 1;
+
+			for (var i = begin; i <= end; i += mod) {
+				pagesRange.push(i);
+			}
+		}
+
 		pagesRange.sort(function(a, b){ return a - b; });
+		pagesRange = pagesRange.filter(function(e, i, arr) { return i == 0 || e != arr[i - 1] });
 	}
 
 	ehDownloadDialog.style.display = 'block';
