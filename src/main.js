@@ -49,7 +49,8 @@ var ehDownloadRegex = {
 	mpvKey: /var imagelist\s*=\s*(\[.+?\]);/,
 	imageLimits: /You are currently at <strong>(\d+)<\/strong> towards a limit of <strong>(\d+)<\/strong>/,
 	pagesLength: /<table class="ptt".+>(\d+)<\/a>.+?<\/table>/,
-	IPBanExpires: /The ban expires in \d+ hours?( and \d+ minutes?)?/
+	IPBanExpires: /The ban expires in \d+ hours?( and \d+ minutes?)?/,
+	categoryTag: /g\/c\/(\w+)\./
 };
 
 var requestFileSystem = window.requestFileSystem || window.webkitRequestFileSystem;
@@ -400,7 +401,7 @@ function getReplacedName(str) {
 		.replace(/\{token\}/gi, unsafeWindow.token)
 		.replace(/\{title\}/gi, getSafeName(document.getElementById('gn').textContent))
 		.replace(/\{subtitle\}/gi, document.getElementById('gj').textContent ? getSafeName(document.getElementById('gj').textContent) : getSafeName(document.getElementById('gn').textContent))
-		.replace(/\{tag\}/gi, document.querySelector('.ic').getAttribute('alt').toUpperCase())
+		.replace(/\{tag\}/gi, ((document.querySelector('.ic').getAttribute('src').match(ehDownloadRegex.categoryTag) || [])[1] || document.querySelector('.ic').getAttribute('alt')).toUpperCase())
 		.replace(/\{uploader\}/gi, getSafeName(document.querySelector('#gdn a').textContent))
 		.replaceHTMLEntites();
 }
@@ -1690,7 +1691,10 @@ function initEHDownload() {
 	}
 
 	if (infoNeeds.indexOf('metas') >= 0) {
-		infoStr += 'Category: ' + document.getElementsByClassName('ic')[0].getAttribute('alt').toUpperCase() + '\n' +
+		infoStr += 'Category: ' + (
+		                (document.querySelector('.ic').getAttribute('src').match(ehDownloadRegex.categoryTag) || [])[1] ||
+		                document.querySelector('.ic').getAttribute('alt')
+		            ).toUpperCase() + '\n' +
 		           'Uploader: ' + document.querySelector('#gdn a').textContent.replaceHTMLEntites() + '\n';
 	}
 	var metaNodes = document.querySelectorAll('#gdd tr');
