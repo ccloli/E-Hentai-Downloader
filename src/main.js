@@ -199,7 +199,8 @@ var ehDownloadStyle = '\
 	.ehD-box .g2 { display: inline-block; margin: 10px; padding: 0; line-height: 14px; }\
 	.ehD-box legend { font-weight: 700; padding: 0 10px; } \
 	.ehD-box legend a { color: inherit; text-decoration: none; }\
-	.ehD-box-extend input { width: 255px; }\
+	.ehD-box input[type="text"] { width: 250px; }\
+	.ehD-box-extend input[type="text"] { width: 255px; }\
 	.ehD-setting { position: fixed; left: 0; right: 0; top: 0; bottom: 0; padding: 5px; border: 1px solid #000000; background: #34353b; color: #dddddd; width: 600px; height: 380px; max-width: 100%; max-height: 100%; overflow-x: hidden; overflow-y: auto; box-sizing: border-box; margin: auto; z-index: 999; text-align: left; font-size: 12px; outline: 5px rgba(0, 0, 0, 0.25) solid; }\
 	.ehD-setting-tab { list-style: none; margin: 5px 0; padding: 0 10px; border-bottom: 1px solid #cccccc; overflow: auto; }\
 	.ehD-setting-tab li { float: left; padding: 5px 10px; border-bottom: 0; cursor: pointer; }\
@@ -217,6 +218,7 @@ var ehDownloadStyle = '\
 	.ehD-setting-note { border: 1px dashed #999999; padding: 10px 10px 0 10px; }\
 	.ehD-setting-footer { text-align: center; margin-top: 5px; border-top: 1px solid #cccccc; padding-top: 5px; }\
 	.ehD-setting sup { vertical-align: top; }\
+	.ehD-setting a { color: #ffffff; }\
 	.ehD-box input[type="number"] { height: 17px; }\
 	.ehD-dialog progress { height: 12px; -webkit-appearance: none; border: 1px solid #4f535b; color: #4f535b; background: #34353b; position: relative; } \
 	.ehD-dialog progress::-webkit-progress-bar { background: #34353b; } \
@@ -247,6 +249,7 @@ var ehDownloadStyle = '\
 	.ehD-dialog:hover .ehD-force-download-tips { opacity: 1; }\
 	.ehD-dialog.hidden .ehD-force-download-tips { bottom: -24px; }\
 	.ehD-close-tips { position: fixed; left: 0; right: 0; bottom: 0; padding: 10px; border: 1px solid #000000; background: #34353b; color: #dddddd; width: 732px; max-width: 100%; max-height: 100%; overflow-x: hidden; overflow-y: auto; box-sizing: border-box; margin: auto; z-index: 1000; text-align: left; font-size: 14px; outline: 5px rgba(0, 0, 0, 0.25) solid; }\
+	.ehD-feedback { position: absolute; right: 5px; top: 14px; }\
 ';
 
 function initSetting() {
@@ -2048,6 +2051,11 @@ function showSettings() {
 			<li data-target-setting="basic">Basic</li>\
 			<li data-target-setting="advanced">Advanced</li>\
 		</ul>\
+		<div class="ehD-feedback">\
+			' + ehDownloadArrow + ' <strong>Feedback</strong>\
+			<a href="https://github.com/ccloli/E-Hentai-Downloader/issues" target="_blank">GitHub</a>\
+			<a href="https://sleazyfork.org/scripts/10379-e-hentai-downloader/feedback" target="_blank">GreasyFork</a>\
+		</div>\
 		<div class="ehD-setting-main">\
 			<div class="ehD-setting-wrapper">\
 				<div data-setting-page="basic" class="ehD-setting-content">\
@@ -2371,7 +2379,7 @@ ehDownloadBox.appendChild(ehDownloadNumberInput);
 
 var ehDownloadRange = document.createElement('div');
 ehDownloadRange.className = 'g2';
-ehDownloadRange.innerHTML = ehDownloadArrow + ' <a><label>Pages Range <input type="text" placeholder="eg. -10,12,14-20,27,30-"></label></a>';
+ehDownloadRange.innerHTML = ehDownloadArrow + ' <a><label>Pages Range <input type="text" placeholder="eg. -10,12,14-20,27,30-40/2,50-60/3,70-"></label></a>';
 ehDownloadBox.appendChild(ehDownloadRange);
 
 var ehDownloadSetting = document.createElement('div');
@@ -2382,11 +2390,6 @@ ehDownloadSetting.addEventListener('click', function(event){
 	showSettings();
 });
 ehDownloadBox.appendChild(ehDownloadSetting);
-
-var ehDownloadFeedback = document.createElement('div');
-ehDownloadFeedback.className = 'g2';
-ehDownloadFeedback.innerHTML = ehDownloadArrow + ' <a href="https://github.com/ccloli/E-Hentai-Downloader/issues" target="_blank">Feedback</a>';
-ehDownloadBox.appendChild(ehDownloadFeedback);
 
 document.body.insertBefore(ehDownloadBox, document.getElementById('asm') || document.querySelector('.gm').nextElementSibling);
 
