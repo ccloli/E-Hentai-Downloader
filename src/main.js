@@ -935,6 +935,7 @@ function fetchOriginalImage(index, nodeList) {
 			}
 
 			updateProgress(nodeList, {
+				name: '#' + imageList[index]['realIndex'] + ': ' + imageList[index]['imageName'],
 				progress: res.lengthComputable ? res.loaded / res.total : '',
 				progressText: speedText,
 				class: '',
