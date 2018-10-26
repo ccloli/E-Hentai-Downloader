@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "build": "./node_modules/.bin/uglifyjs --compress --mangle --output ./e-hentai-downloader.user.tmp.js -- ./src/first.js ./src/JSZip.js ./src/FileSaver.js ./src/main.js && cat ./e-hentai-downloader.meta.js>./e-hentai-downloader.user.js && cat ./e-hentai-downloader.user.tmp.js>>./e-hentai-downloader.user.js"
+  },
+  "dependencies": {
+    "uglify-js": "^3.4.9"
+  }
+}
