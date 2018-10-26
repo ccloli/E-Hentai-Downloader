@@ -1,4 +1,3 @@
-
 var zip;
 var imageList = [];
 var imageData = [];
@@ -56,19 +55,19 @@ var requestFileSystem = window.requestFileSystem || window.webkitRequestFileSyst
 var ehDownloadFS = {
 	fs: undefined,
 	needFileSystem: false,
-	initHandler: function(fs) {
+	initHandler: function (fs) {
 		ehDownloadFS.fs = fs;
 		console.log('[EHD] File System is opened! Name >', fs.name);
 		ehDownloadFS.removeAllFiles(fs); // It's sure that user have downloaded or ignored temp archive
 	},
-	errorHandler: function(e) {
+	errorHandler: function (e) {
 		var errorMsg = 'File System Request Error > ';
 		errorMsg += e.name || 'Unknown Error';
-		
+
 		console.error('[EHD] ' + errorMsg, e.message);
 		console.error(e);
 	},
-	saveAs: function(fs, forced){
+	saveAs: function (fs, forced) {
 		var fs = fs || ehDownloadFS.fs;
 		if (fs === undefined) return;
 		fs.root.getFile(unsafeWindow.gid + '.zip', {}, function (fileEntry) {
@@ -87,39 +86,43 @@ var ehDownloadFS = {
 			}
 		});
 	},
-	removeFile: function(fileName, fs, isEntry){
+	removeFile: function (fileName, fs, isEntry) {
 		var fs = fs || ehDownloadFS.fs;
 		if (fs === undefined) return;
-		var removeFunction = function(fileEntry){
-			if (fileEntry.isFile) fileEntry.remove(function(){
+		var removeFunction = function (fileEntry) {
+			if (fileEntry.isFile) fileEntry.remove(function () {
 				console.log('[EHD] File', fileName, 'is removed.');
 			});
-			else if (fileEntry.isDirectory) fileEntry.removeRecursively(function() {
+			else if (fileEntry.isDirectory) fileEntry.removeRecursively(function () {
 				console.log('[EHD] Directory', fileName, 'is removed.');
 			});
 		};
 		if (isEntry) removeFunction(fileName);
-		else fs.root.getFile(fileName, {create: false}, removeFunction);
+		else fs.root.getFile(fileName, {
+			create: false
+		}, removeFunction);
 	},
-	removeAllFiles: function(fs){
+	removeAllFiles: function (fs) {
 		var fs = fs || ehDownloadFS.fs;
 		if (fs === undefined) return;
 		console.log('[EHD] Request removing all files in File System.');
-		fs.root.createReader().readEntries(function(entries){
+		fs.root.createReader().readEntries(function (entries) {
 			if (entries.length === 0) return;
 			for (var i = 0; i < entries.length; i++) {
 				ehDownloadFS.removeFile(entries[i], fs, true);
 			}
-		}, ehDownloadFS.errorHandler); 
+		}, ehDownloadFS.errorHandler);
 	},
-	initCheckerHandler: function(fs) {
+	initCheckerHandler: function (fs) {
 		//ehDownloadFS.fs = fs;
 		console.log('[EHD] File System is opened! Name >', fs.name);
 		ehDownloadFS.removeFile(unsafeWindow.gid + '.zip', fs);
-		fs.root.getFile('config.txt', {create: false}, function(fileEntry){
-			fileEntry.file(function(file){
+		fs.root.getFile('config.txt', {
+			create: false
+		}, function (fileEntry) {
+			fileEntry.file(function (file) {
 				var fileReader = new FileReader();
-				fileReader.onloadend = function() {
+				fileReader.onloadend = function () {
 					var value = this.result;
 					if (value === '' || value == null) return;
 					var data = JSON.parse(value);
@@ -127,8 +130,7 @@ var ehDownloadFS = {
 						fileName = data.fileName;
 						dirName = data.dirName;
 						ehDownloadFS.storeTempArchive(data, fs);
-					}
-					else {
+					} else {
 						ehDownloadFS.removeAllFiles(fs);
 					}
 				};
@@ -136,11 +138,11 @@ var ehDownloadFS = {
 			});
 		});
 	},
-	storeTempArchive: function(data, fs){
+	storeTempArchive: function (data, fs) {
 		var fs = fs || ehDownloadFS.fs;
 		if (fs === undefined) return;
-		fs.root.getDirectory('raw', {}, function(fileEntry){
-			fileEntry.createReader().readEntries(function(entries){
+		fs.root.getDirectory('raw', {}, function (fileEntry) {
+			fileEntry.createReader().readEntries(function (entries) {
 				if (entries.length === 0) return;
 				var index = 0;
 				var fileReader = new FileReader();
@@ -148,7 +150,7 @@ var ehDownloadFS = {
 				ehDownloadDialog.style.display = 'block';
 				ehDownloadDialog.innerHTML = '';
 				pushDialog('Preparing......');
-				fileReader.onloadend = function() {
+				fileReader.onloadend = function () {
 					(data.dirName ? zip.folder(data.dirName) : zip).file(entries[index].name, this.result);
 					index++;
 					if (index < entries.length) addFile();
@@ -157,11 +159,13 @@ var ehDownloadFS = {
 						setTimeout(generateZip, 3000, true, fs); // wait for removing all files
 					}
 				};
-				var addFile = function(){
+				var addFile = function () {
 					console.log('[EHD] TempArchiveFileIndex >', index, '| TempArchiveFileName >', entries[index].name, '| TempArchiveFilePath >', entries[index].fullPath, '| TempArchiveFileLength >', entries.length);
 					pushDialog('\n' + (index + 1) + '/' + entries.length);
-					fs.root.getFile(entries[index].fullPath, {create: false}, function(fileEntry){
-						fileEntry.file(function(file){
+					fs.root.getFile(entries[index].fullPath, {
+						create: false
+					}, function (fileEntry) {
+						fileEntry.file(function (file) {
 							fileReader.readAsArrayBuffer(file);
 						});
 					});
@@ -298,8 +302,7 @@ function initSetting() {
 		if (!setting['hide-estimated-cost']) {
 			try {
 				showPreCalcCost();
-			}
-			catch (e) { }
+			} catch (e) {}
 		}
 
 		// Forced request File System to check if have temp archive
@@ -318,21 +321,89 @@ console.log('[EHD] Current URL >', window.location.href);
 console.log('[EHD] Is Logged In >', unsafeWindow.apiuid !== -1);
 
 
-String.prototype.replaceHTMLEntites = function() {
-	var matchEntity = function(entity) {
-		var entitesList = {"euro":"€","nbsp":" ","quot":"\"","amp":"&","lt":"<","gt":">","iexcl":"¡","cent":"¢","pound":"£","curren":"¤","yen":"¥","brvbar":"¦","sect":"§","uml":"¨","copy":"©","ordf":"ª","not":"¬","shy":"","reg":"®","macr":"¯","deg":"°","plusmn":"±","sup2":"²","sup3":"³","acute":"´","micro":"µ","para":"¶","middot":"·","cedil":"¸","sup1":"¹","ordm":"º","raquo":"»","frac14":"¼","frac12":"½","frac34":"¾","iquest":"¿","agrave":"à","aacute":"á","acirc":"â","atilde":"ã","auml":"ä","aring":"å","aelig":"æ","ccedil":"ç","egrave":"è","eacute":"é","ecirc":"ê","euml":"ë","igrave":"ì","iacute":"í","icirc":"î","iuml":"ï","eth":"ð","ntilde":"ñ","ograve":"ò","oacute":"ó","ocirc":"ô","otilde":"õ","ouml":"ö","times":"×","oslash":"ø","ugrave":"ù","uacute":"ú","ucirc":"û","uuml":"ü","yacute":"ý","thorn":"þ","szlig":"ß","divide":"÷"};
+String.prototype.replaceHTMLEntites = function () {
+	var matchEntity = function (entity) {
+		var entitesList = {
+			"euro": "€",
+			"nbsp": " ",
+			"quot": "\"",
+			"amp": "&",
+			"lt": "<",
+			"gt": ">",
+			"iexcl": "¡",
+			"cent": "¢",
+			"pound": "£",
+			"curren": "¤",
+			"yen": "¥",
+			"brvbar": "¦",
+			"sect": "§",
+			"uml": "¨",
+			"copy": "©",
+			"ordf": "ª",
+			"not": "¬",
+			"shy": "",
+			"reg": "®",
+			"macr": "¯",
+			"deg": "°",
+			"plusmn": "±",
+			"sup2": "²",
+			"sup3": "³",
+			"acute": "´",
+			"micro": "µ",
+			"para": "¶",
+			"middot": "·",
+			"cedil": "¸",
+			"sup1": "¹",
+			"ordm": "º",
+			"raquo": "»",
+			"frac14": "¼",
+			"frac12": "½",
+			"frac34": "¾",
+			"iquest": "¿",
+			"agrave": "à",
+			"aacute": "á",
+			"acirc": "â",
+			"atilde": "ã",
+			"auml": "ä",
+			"aring": "å",
+			"aelig": "æ",
+			"ccedil": "ç",
+			"egrave": "è",
+			"eacute": "é",
+			"ecirc": "ê",
+			"euml": "ë",
+			"igrave": "ì",
+			"iacute": "í",
+			"icirc": "î",
+			"iuml": "ï",
+			"eth": "ð",
+			"ntilde": "ñ",
+			"ograve": "ò",
+			"oacute": "ó",
+			"ocirc": "ô",
+			"otilde": "õ",
+			"ouml": "ö",
+			"times": "×",
+			"oslash": "ø",
+			"ugrave": "ù",
+			"uacute": "ú",
+			"ucirc": "û",
+			"uuml": "ü",
+			"yacute": "ý",
+			"thorn": "þ",
+			"szlig": "ß",
+			"divide": "÷"
+		};
 		if (entitesList[entity]) return entitesList[entity];
 		else if (/#\d+/.test(entity)) {
 			var charCode = entity.match(/#(\d+)/)[1] - 0;
 			return String.fromCharCode(charCode);
-		}
-		else if (/#[xX][0-9a-f]+/.test(entity)) {
+		} else if (/#[xX][0-9a-f]+/.test(entity)) {
 			var charCode = parseInt(entity.match(/#[xX]([0-9a-f]+)/)[1] - 0, 16);
 			return String.fromCharCode(charCode);
-		}
-		else return '&' + entity + ';';
+		} else return '&' + entity + ';';
 	};
-	var result = this.replace(/&(#[xX]?\d+|[a-zA-Z]+);/g, function(match, entity) {
+	var result = this.replace(/&(#[xX]?\d+|[a-zA-Z]+);/g, function (match, entity) {
 		return matchEntity(entity.toLowerCase());
 	});
 	return result;
@@ -341,8 +412,7 @@ String.prototype.replaceHTMLEntites = function() {
 function createBlob(abdata, config) {
 	try { // to detect if blob generates successfully
 		return new Blob(abdata, config);
-	}
-	catch (error) {
+	} catch (error) {
 		pushDialog('An error occurred when generating Blob object.');
 		console.error('[EHD] An error occurred when generating Blob object. Error Name >', error.name, '| Error Message >', error.message);
 		if (confirm('An error occurred when generating Blob object.\n\nError Name: ' + error.name + '\nError Message: ' + error.message + '\n\nTry again?')) return createBlob(abdata, config);
@@ -360,8 +430,7 @@ function pushDialog(str) {
 		var tn = document.createElement('span');
 		tn.innerHTML += str.replace(/\n/gi, '<br>');
 		ehDownloadDialog.appendChild(tn);
-	}
-	else ehDownloadDialog.appendChild(str);
+	} else ehDownloadDialog.appendChild(str);
 
 	if (getAllPagesURLFin && isDownloading && ehDownloadDialog.contains(ehDownloadPauseBtn)) {
 		ehDownloadDialog.appendChild(ehDownloadPauseBtn);
@@ -385,14 +454,12 @@ function getSafeName(str, ignoreSlash) {
 		'\\': '＼',
 		'\n': '-'
 	};
-	var replaceFn = function(match) {
+	var replaceFn = function (match) {
 		if (ignoreSlash && (match === '/' || match === '\\')) {
 			return match;
-		}
-		else if (setting['replace-with-full-width']) {
+		} else if (setting['replace-with-full-width']) {
 			return replaceList[match];
-		}
-		else {
+		} else {
 			return '-';
 		}
 	};
@@ -424,7 +491,7 @@ function PageData(pageURL, imageURL, imageName, nextNL, realIndex, imageNumber) 
 
 // rename images that have the same name
 function renameImages() {
-	imageList.forEach(function(elem, index) {
+	imageList.forEach(function (elem, index) {
 		// if Number Images are enabled, filename won't be changed, just numbering
 		if (!needNumberImages) {
 			for (var i = 0; i < index; i++) {
@@ -435,8 +502,7 @@ function renameImages() {
 					break;
 				}
 			}
-		}
-		else elem['imageName'] = elem['imageNumber'] + (setting['number-separator'] ? setting['number-separator'] : '：') + elem['imageName'];
+		} else elem['imageName'] = elem['imageNumber'] + (setting['number-separator'] ? setting['number-separator'] : '：') + elem['imageName'];
 	});
 }
 
@@ -450,13 +516,13 @@ function storeRes(res, index) {
 
 	updateTotalStatus();
 	if (!isPausing) checkFailed();
-	
+
 	for (var i in res) {
 		delete res[i];
 	}
 }
 
-function generateZip(isFromFS, fs, isRetry, forced){
+function generateZip(isFromFS, fs, isRetry, forced) {
 	isSaving = true;
 
 	// remove pause button
@@ -466,9 +532,9 @@ function generateZip(isFromFS, fs, isRetry, forced){
 
 	if (!isFromFS && !isRetry) {
 		if (setting['save-info-list'].toString().indexOf('page-links') >= 0) {
-			imageList.forEach(function(elem, index){
+			imageList.forEach(function (elem, index) {
 				// Image URL may useless, see https://github.com/ccloli/E-Hentai-Downloader/issues/6
-				infoStr += '\n\nPage ' + elem['realIndex'] + ': ' + elem['pageURL'] + '\nImage ' + elem['realIndex'] + ': ' + elem['imageName'] /*+ '\nImage URL: ' + elem['imageURL']*/;
+				infoStr += '\n\nPage ' + elem['realIndex'] + ': ' + elem['pageURL'] + '\nImage ' + elem['realIndex'] + ': ' + elem['imageName'] /*+ '\nImage URL: ' + elem['imageURL']*/ ;
 			});
 		}
 		pushDialog('\nFinish downloading at ' + new Date() + '\n');
@@ -492,21 +558,20 @@ function generateZip(isFromFS, fs, isRetry, forced){
 	ehDownloadDialog.appendChild(curFile);
 	ehDownloadDialog.scrollTop = ehDownloadDialog.scrollHeight;
 
-	var saveToFileSystem = function(abData) {
+	var saveToFileSystem = function (abData) {
 		curFile.textContent = ' ';
 
-		var fsErrorHandler = function(error) {
+		var fsErrorHandler = function (error) {
 			ehDownloadFS.errorHandler(error);
 			ehDownloadFS.removeAllFiles();
 
 			if (confirm('An error occured when storing files to FileSystem.\n' +
-						'Error Name: ' + (error.name || 'Unknown Error') + '\n' +
-						'Error Message: ' + error.message + '\n\n' +
-						'Should I try FileSystem again (Yes) or redirect to try using Blob (No)? \n' +
-						'* If the error message shows there\'s no more free disk space, try removing some files from the drive where Chrome installed (mostly C: on Windows)')) {
+					'Error Name: ' + (error.name || 'Unknown Error') + '\n' +
+					'Error Message: ' + error.message + '\n\n' +
+					'Should I try FileSystem again (Yes) or redirect to try using Blob (No)? \n' +
+					'* If the error message shows there\'s no more free disk space, try removing some files from the drive where Chrome installed (mostly C: on Windows)')) {
 				saveToFileSystem(abData);
-			}
-			else {
+			} else {
 				ehDownloadFS.needFileSystem = false;
 				saveToBlob(abData);
 			}
@@ -517,14 +582,14 @@ function generateZip(isFromFS, fs, isRetry, forced){
 		var data = abData;
 		var dataIndex = 0;
 		var dataLength = data.byteLength;
-		var loopWrite = function(fileEntry){
-			fileEntry.createWriter(function(fileWriter){
+		var loopWrite = function (fileEntry) {
+			fileEntry.createWriter(function (fileWriter) {
 				//fileWriter.seek(fileWriter.length);
 				dataIndex = fileWriter.length;
 				if (dataIndex >= dataLength) {
 					data = undefined;
 					abData = undefined;
-					return setTimeout(function(){
+					return setTimeout(function () {
 						ehDownloadFS.saveAs(isFromFS ? fs : undefined, forced);
 						isSaving = false;
 					}, 1500);
@@ -534,40 +599,50 @@ function generateZip(isFromFS, fs, isRetry, forced){
 				// I tried setting it as 100MB but some parts were still gone, so I have to make it smaller.
 				console.log('[EHD] DataIndex >', dataIndex, '| DataLastIndex >', dataLastIndex, '| FileWriterLength >', fileWriter.length, '| DataLength >', dataLength);
 				pushDialog('\n' + dataIndex + '-' + dataLastIndex + '/' + dataLength);
-				var blob = createBlob([data.slice(dataIndex, dataLastIndex)], {type: 'application/zip'});
+				var blob = createBlob([data.slice(dataIndex, dataLastIndex)], {
+					type: 'application/zip'
+				});
 				fileWriter.write(blob);
 				if ('close' in blob) blob.close(); // File Blob.close() API, not supported by all the browser now
 				blob = null;
 				setTimeout(loopWrite, 100, fileEntry);
 			}, fsErrorHandler);
 		};
-		
-		fs.root.getFile(unsafeWindow.gid + '.zip', {create: true}, function(fileEntry){
-			if (fileEntry.isFile) fileEntry.remove(function(){
+
+		fs.root.getFile(unsafeWindow.gid + '.zip', {
+			create: true
+		}, function (fileEntry) {
+			if (fileEntry.isFile) fileEntry.remove(function () {
 				console.log('[EHD] File', fileName, 'is removed.');
 			}, fsErrorHandler);
-			else if (fileEntry.isDirectory) fileEntry.removeRecursively(function() {
+			else if (fileEntry.isDirectory) fileEntry.removeRecursively(function () {
 				console.log('[EHD] Directory', fileName, 'is removed.');
 			}, fsErrorHandler);
-			
-			fs.root.getFile(unsafeWindow.gid + '.zip', {create: true}, loopWrite, fsErrorHandler);
+
+			fs.root.getFile(unsafeWindow.gid + '.zip', {
+				create: true
+			}, loopWrite, fsErrorHandler);
 		}, fsErrorHandler);
 		//fs.root.getFile(unsafeWindow.gid + '.zip', {create: true}, loopWrite, fsErrorHandler);
 	};
 
-	var saveToBlob = function(abData){
+	var saveToBlob = function (abData) {
 		curFile.textContent = 'Generating Blob object...';
-		var blob = createBlob([abData], {type: setting['save-as-cbz'] ? 'application/vnd.comicbook+zip' : 'application/zip'});
+		var blob = createBlob([abData], {
+			type: setting['save-as-cbz'] ? 'application/vnd.comicbook+zip' : 'application/zip'
+		});
 		saveAs(blob, fileName + (setting['save-as-cbz'] ? '.cbz' : '.zip'));
 
 		var redownloadBtn = document.createElement('button');
 		redownloadBtn.textContent = 'Not download? Click here to download';
-		redownloadBtn.addEventListener('click', function(){
+		redownloadBtn.addEventListener('click', function () {
 			// rebuild blob object if "File is not exist" occured
-			blob = createBlob([abData], {type: setting['save-as-cbz'] ? 'application/vnd.comicbook+zip' : 'application/zip'});
+			blob = createBlob([abData], {
+				type: setting['save-as-cbz'] ? 'application/vnd.comicbook+zip' : 'application/zip'
+			});
 			saveAs(blob, fileName + (setting['save-as-cbz'] ? '.cbz' : '.zip'));
 
-			setTimeout(function(){
+			setTimeout(function () {
 				if ('close' in blob) blob.close();
 				blob = null;
 			}, 10e3); // 10s to fixed Chrome delay downloads
@@ -577,7 +652,7 @@ function generateZip(isFromFS, fs, isRetry, forced){
 		if (!forced) insertCloseButton();
 		isSaving = false;
 
-		setTimeout(function(){
+		setTimeout(function () {
 			if ('close' in blob) blob.close();
 			blob = null;
 		}, 10e3); // 10s to fixed Chrome delay downloads
@@ -594,7 +669,7 @@ function generateZip(isFromFS, fs, isRetry, forced){
 			},
 			streamFiles: setting['file-descriptor'] ? true : false,
 			comment: setting['save-info'] === 'comment' ? infoStr.replace(/\n/gi, '\r\n') : undefined
-		}, function(meta){
+		}, function (meta) {
 			// meta update function will be called nearly every 1ms, for performance, update every 300ms
 			// anyway it's still too fast so that you may still cannot see the update
 			var thisMetaTime = Date.now();
@@ -604,7 +679,7 @@ function generateZip(isFromFS, fs, isRetry, forced){
 			lastMetaTime = thisMetaTime;
 			progress.value = meta.percent / 100;
 			curFile.textContent = meta.currentFile || 'Calculating extra data...';
-		}).then(function(abData){
+		}).then(function (abData) {
 			progress.value = 1;
 
 			if (!forced) {
@@ -615,19 +690,17 @@ function generateZip(isFromFS, fs, isRetry, forced){
 
 			if (isFromFS || ehDownloadFS.needFileSystem) { // using filesystem to save file is needed
 				saveToFileSystem(abData);
-			}
-			else { // or just using blob
+			} else { // or just using blob
 				saveToBlob(abData);
 			}
 
 			if (!forced) {
-				zip.file(/.*/).forEach(function(elem){
+				zip.file(/.*/).forEach(function (elem) {
 					zip.remove(elem);
 				});
 			}
 		});
-	}
-	catch (error) {
+	} catch (error) {
 		abData = undefined;
 
 		pushDialog('An error occurred when generating Zip file as ArrayBuffer.');
@@ -635,15 +708,15 @@ function generateZip(isFromFS, fs, isRetry, forced){
 		console.error(error);
 		if (confirm('An error occurred when generating Zip file as ArrayBuffer. Try again?')) return generateZip(isFromFS, fs, 1);
 
-		var fsErrorHandler = function(error) {
+		var fsErrorHandler = function (error) {
 			ehDownloadFS.errorHandler(error);
 			ehDownloadFS.removeAllFiles();
 
 			if (confirm('An error occured when storing files to FileSystem.\n' +
-						'Error Name: ' + (error.name || 'Unknown Error') + '\n' +
-						'Error Message: ' + error.message + '\n\n' +
-						'Should I try again (Yes) or stop it (No, and the downloaded file will be removed)? \n' +
-						'* If the error message shows there\'s no more free disk space, try removing some files from the drive where Chrome installed (mostly C: on Windows)')) {
+					'Error Name: ' + (error.name || 'Unknown Error') + '\n' +
+					'Error Message: ' + error.message + '\n\n' +
+					'Should I try again (Yes) or stop it (No, and the downloaded file will be removed)? \n' +
+					'* If the error message shows there\'s no more free disk space, try removing some files from the drive where Chrome installed (mostly C: on Windows)')) {
 				generateZip(isFromFS, fs, isRetry, forced);
 			}
 		};
@@ -654,31 +727,44 @@ function generateZip(isFromFS, fs, isRetry, forced){
 			var files = zip.file(/.*/);
 			var fileIndex = 0;
 			var filesLength = files.length;
-			var initFS = function(r){
+			var initFS = function (r) {
 				fs = r;
-				fs.root.getDirectory('raw', {create: true}, loopWrite, fsErrorHandler);
+				fs.root.getDirectory('raw', {
+					create: true
+				}, loopWrite, fsErrorHandler);
 			};
-			var loopWrite = function(){
-				fs.root.getFile('raw/' + files[fileIndex]['name'], {create: true}, function(fileEntry){
-					fileEntry.createWriter(function(fileWriter){
+			var loopWrite = function () {
+				fs.root.getFile('raw/' + files[fileIndex]['name'], {
+					create: true
+				}, function (fileEntry) {
+					fileEntry.createWriter(function (fileWriter) {
 						console.log('[EHD] FileIndex >', fileIndex, '| FilesLength >', filesLength);
-						var blob = createBlob([files[fileIndex].asArrayBuffer()], {type: 'application/octet-stream'});
+						var blob = createBlob([files[fileIndex].asArrayBuffer()], {
+							type: 'application/octet-stream'
+						});
 						fileWriter.write(blob);
 						if ('close' in blob) blob.close(); // File Blob.close() API, not supported by all the browser now
 						blob = null;
 						fileIndex++; // some files may still gone in this way, I have no good way to solve it
 						if (fileIndex < filesLength) setTimeout(loopWrite, 100);
 						else {
-							fs.root.getFile('config.txt', {create: true}, function(fileEntry){
-								fileEntry.createWriter(function(fileWriter){
-									var t = JSON.stringify({fileName: fileName, dirName: dirName});
-									var blob = createBlob([t], {type: 'text/plain'});
+							fs.root.getFile('config.txt', {
+								create: true
+							}, function (fileEntry) {
+								fileEntry.createWriter(function (fileWriter) {
+									var t = JSON.stringify({
+										fileName: fileName,
+										dirName: dirName
+									});
+									var blob = createBlob([t], {
+										type: 'text/plain'
+									});
 									fileWriter.write(blob);
 									if ('close' in blob) blob.close(); // File Blob.close() API, not supported by all the browser now
 									blob = null;
 									pushDialog('Success!\nPlease close this tab and open a new tab to download.\nIf you still can\'t download it, try using <a href="https://chrome.google.com/webstore/detail/nhnjmpbdkieehidddbaeajffijockaea" target="_blank">HTML5 FileSystem Explorer</a> to save them.');
 
-									files.forEach(function(elem){
+									files.forEach(function (elem) {
 										zip.remove(elem);
 									});
 									zip = undefined;
@@ -704,13 +790,13 @@ function updateProgress(nodeList, data) {
 }
 
 // update ehDownloadStatus
-function updateTotalStatus(){
+function updateTotalStatus() {
 	ehDownloadStatus.textContent = 'Total: ' + totalCount + ' | Downloading: ' + fetchCount + ' | Succeed: ' + downloadedCount + ' | Failed: ' + failedCount;
-	if (needTitleStatus) document.title = '[' + (isPausing ? '❙❙' : downloadedCount < totalCount ? '↓ ' + downloadedCount + '/' + totalCount : totalCount === 0 ? '↓' : '√' ) + '] ' + pretitle;
+	if (needTitleStatus) document.title = '[' + (isPausing ? '❙❙' : downloadedCount < totalCount ? '↓ ' + downloadedCount + '/' + totalCount : totalCount === 0 ? '↓' : '√') + '] ' + pretitle;
 }
 
 // Updated on 1.19: Now the index argument is the page's number - 1 (original is page's number)
-function failedFetching(index, nodeList, forced){
+function failedFetching(index, nodeList, forced) {
 	if (!isDownloading || imageData[index] instanceof ArrayBuffer) return; // Temporarily fixes #31	
 	if (typeof fetchThread[index] !== 'undefined' && 'abort' in fetchThread[index]) fetchThread[index].abort();
 	console.error('[EHD] Index >', index + 1, ' | RealIndex >', imageList[index]['realIndex'], ' | Name >', imageList[index]['imageName'], ' | RetryCount >', retryCount[index], ' | DownloadedCount >', downloadedCount, ' | FetchCount >', fetchCount, ' | FailedCount >', failedCount);
@@ -718,8 +804,7 @@ function failedFetching(index, nodeList, forced){
 	if (!forced && retryCount[index] < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
 		retryCount[index]++;
 		fetchOriginalImage(index, nodeList);
-	}
-	else {
+	} else {
 		updateProgress(nodeList, {
 			class: 'ehD-pt-failed'
 		});
@@ -733,7 +818,7 @@ function failedFetching(index, nodeList, forced){
 	}
 }
 
-function saveDownloaded(forced){
+function saveDownloaded(forced) {
 	renameImages();
 
 	for (var j = 0; j < imageData.length; j++) {
@@ -745,7 +830,7 @@ function saveDownloaded(forced){
 	generateZip(false, undefined, false, forced);
 	if (forced) {
 		// if force download zip file, image data should be recoverd to original content
-		imageList.forEach(function(elem, index) {
+		imageList.forEach(function (elem, index) {
 			elem.equalCount = 1;
 			elem.imageName = elem._imageName;
 		});
@@ -755,21 +840,18 @@ function saveDownloaded(forced){
 function checkFailed() {
 	if (downloadedCount + failedCount < totalCount) { // download not finished, some files are not being called to download
 		requestDownload();
-	}
-	else if (failedCount > 0) { // all files are called to download and some files can't be downloaded
+	} else if (failedCount > 0) { // all files are called to download and some files can't be downloaded
 		if (fetchCount === 0) { // all files are finished downloading
 			for (var i = 0; i < fetchThread.length; i++) {
 				if (typeof fetchThread[i] !== 'undefined' && 'abort' in fetchThread[i]) fetchThread[i].abort();
 			}
 			if (setting['number-auto-retry'] || confirm('Some images failed to download. Would you like to try them again?')) {
 				retryAllFailed();
-			}
-			else {
+			} else {
 				pushDialog('\nFetch images failed.');
 				if (setting['auto-download-cancel'] || confirm('Fetch images failed, Please try again later.\n\nWould you like to download downloaded images?')) {
 					saveDownloaded();
-				}
-				else {
+				} else {
 					insertCloseButton();
 				}
 				zip.file(/.*/).forEach(function (elem) {
@@ -778,8 +860,7 @@ function checkFailed() {
 				isDownloading = false;
 			}
 		}
-	}
-	else { // all files are downloaded successfully
+	} else { // all files are downloaded successfully
 		renameImages();
 		for (var j = 0; j < totalCount; j++) {
 			(dirName ? zip.folder(dirName) : zip).file(imageList[j]['imageName'], imageData.shift());
@@ -844,7 +925,7 @@ function fetchOriginalImage(index, nodeList) {
 		ehDownloadDialog.scrollTop = ehDownloadDialog.scrollHeight;
 	}
 
-	var zeroSpeedHandler = function(res){
+	var zeroSpeedHandler = function (res) {
 		if (imageData[index] instanceof ArrayBuffer) { // Has already downloaded
 			updateProgress(nodeList, {
 				name: '#' + imageList[index]['realIndex'] + ': ' + imageList[index]['imageName'],
@@ -859,14 +940,16 @@ function fetchOriginalImage(index, nodeList) {
 		if (!isDownloading) return; // Temporarily fixes #31
 		if (isPausing && setting['force-pause']) return;
 
-		updateProgress(nodeList, { progressText: '0 KB/s' });
+		updateProgress(nodeList, {
+			progressText: '0 KB/s'
+		});
 
 		if (setting['speed-detect'] && speedInfo.expiredDetect === null) {
 			speedInfo.expiredDetect = setTimeout(expiredSpeedHandler, (setting['speed-expired'] ? setting['speed-expired'] : 30) * 1000, res);
 		}
 	};
 
-	var expiredSpeedHandler = function(res){
+	var expiredSpeedHandler = function (res) {
 		if (imageData[index] instanceof ArrayBuffer) { // Has already downloaded
 			updateProgress(nodeList, {
 				name: '#' + imageList[index]['realIndex'] + ': ' + imageList[index]['imageName'],
@@ -902,7 +985,7 @@ function fetchOriginalImage(index, nodeList) {
 		failedFetching(index, nodeList);
 	};
 
-	var removeTimerHandler = function(){
+	var removeTimerHandler = function () {
 		if (speedInfo.expiredDetect !== null) {
 			clearTimeout(speedInfo.expiredDetect);
 			speedInfo.expiredDetect = null;
@@ -923,7 +1006,7 @@ function fetchOriginalImage(index, nodeList) {
 			'Referer': imageList[index]['pageURL'],
 			'X-Alt-Referer': imageList[index]['pageURL']
 		},
-		onprogress: function(res) {
+		onprogress: function (res) {
 			var t = new Date().getTime();
 			var speedText;
 			var speedKBs = res.lengthComputable ? Number((res.loaded - speedInfo.lastProgress) / (t - speedInfo.lastTimestamp) / 1.024) : -1;
@@ -960,14 +1043,13 @@ function fetchOriginalImage(index, nodeList) {
 					for (var i in res) {
 						delete res[i];
 					}
-				}
-				else if (speedInfo.expiredDetect === null) {
+				} else if (speedInfo.expiredDetect === null) {
 					speedInfo.expiredDetect = setTimeout(expiredSpeedHandler, (setting['speed-expired'] ? setting['speed-expired'] : 30) * 1000, res);
 					console.log('[EHD] Speed detect handler is inited for', index + 1, '!');
 				}
 			}
 		},
-		onload: function(res) {
+		onload: function (res) {
 			try {
 				removeTimerHandler();
 				if (!isDownloading || imageData[index] instanceof ArrayBuffer) return; // Temporarily fixes #31
@@ -978,7 +1060,7 @@ function fetchOriginalImage(index, nodeList) {
 				var response = res.response;
 				var byteLength = response.byteLength;
 				var responseHeaders = res.responseHeaders;
-				
+
 				// use regex to fixed compatibility with http/2, as its headers are lower case (at least fixed with Yandex Turbo)
 				var mime = responseHeaders.match(/Content-Type:/i) ? responseHeaders.split(/Content-Type:/i)[1].split('\n')[0].trim().split('/') : ['', ''];
 
@@ -999,8 +1081,7 @@ function fetchOriginalImage(index, nodeList) {
 					return failedFetching(index, nodeList);
 
 					// res.response polyfill is useless, so it has been removed
-				}
-				else if (byteLength === 925) { // '403 Access Denied' Image Byte Size
+				} else if (byteLength === 925) { // '403 Access Denied' Image Byte Size
 					// GM_xhr only support abort()
 					console.log('[EHD] #' + (index + 1) + ': 403 Access Denied');
 					console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL, '\nFinal URL >', res.finalUrl, '\nResposeHeaders >' + res.responseHeaders);
@@ -1016,11 +1097,10 @@ function fetchOriginalImage(index, nodeList) {
 						delete res[i];
 					}
 					return failedFetching(index, nodeList, true);
-				}
-				else if (byteLength === 28) { // 'An error has occurred. (403)' Length
+				} else if (byteLength === 28) { // 'An error has occurred. (403)' Length
 					console.log('[EHD] #' + (index + 1) + ': An error has occurred. (403)');
 					console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL, '\nFinal URL >', res.finalUrl, '\nResposeHeaders >' + res.responseHeaders);
-					
+
 					updateProgress(nodeList, {
 						status: 'Failed! (Error 403)',
 						progress: '0',
@@ -1032,10 +1112,9 @@ function fetchOriginalImage(index, nodeList) {
 						delete res[i];
 					}
 					return failedFetching(index, nodeList, true);
-				}
-				else if (
-					byteLength === 142 ||   // Image Viewing Limits String Byte Size (exhentai)
-					byteLength === 144 ||   // Image Viewing Limits String Byte Size (g.e-hentai)
+				} else if (
+					byteLength === 142 || // Image Viewing Limits String Byte Size (exhentai)
+					byteLength === 144 || // Image Viewing Limits String Byte Size (g.e-hentai)
 					byteLength === 28658 || // '509 Bandwidth Exceeded' Image Byte Size
 					(mime[0] === 'text' && (res.responseText || new TextDecoder().decode(new DataView(response))).indexOf('You have exceeded your image viewing limits') >= 0) // directly detect response content in case byteLength will be modified
 				) {
@@ -1091,7 +1170,7 @@ function fetchOriginalImage(index, nodeList) {
 
 					var continueButton = document.createElement('button');
 					continueButton.innerHTML = 'Continue Download';
-					continueButton.addEventListener('click', function(){
+					continueButton.addEventListener('click', function () {
 						//fetchCount = 0;
 						ehDownloadDialog.removeChild(resetButton);
 						ehDownloadDialog.removeChild(continueButton);
@@ -1106,15 +1185,14 @@ function fetchOriginalImage(index, nodeList) {
 
 					var cancelButton = document.createElement('button');
 					cancelButton.innerHTML = 'Cancel Download';
-					cancelButton.addEventListener('click', function(){
+					cancelButton.addEventListener('click', function () {
 						ehDownloadDialog.removeChild(resetButton);
 						ehDownloadDialog.removeChild(continueButton);
 						ehDownloadDialog.removeChild(cancelButton);
 
 						if (setting['auto-download-cancel'] || confirm('You have exceeded your image viewing limits. Would you like to save downloaded images?')) {
 							saveDownloaded();
-						}
-						else {
+						} else {
 							insertCloseButton();
 						}
 						isPausing = false;
@@ -1164,7 +1242,7 @@ function fetchOriginalImage(index, nodeList) {
 
 					alert('Your IP address has been temporarily banned. \n\n\
 						Make sure your download settings are not configured to download too fast. If you are using conservative rules, check if your computer is infected with malware, or if you are using a shared IP with others.\n\
-						If you can change your IP (like using a proxy) or wait until you\'re unblocked, you can then continue your download; or cancel your download and get downloaded images.\n\n' + 
+						If you can change your IP (like using a proxy) or wait until you\'re unblocked, you can then continue your download; or cancel your download and get downloaded images.\n\n' +
 						(expiredTime ? '\n' + expiredTime[0] : '')
 					);
 
@@ -1190,8 +1268,7 @@ function fetchOriginalImage(index, nodeList) {
 
 						if (setting['auto-download-cancel'] || confirm('Would you like to save downloaded images?')) {
 							saveDownloaded();
-						}
-						else {
+						} else {
 							insertCloseButton();
 						}
 						isPausing = false;
@@ -1241,8 +1318,7 @@ function fetchOriginalImage(index, nodeList) {
 				// logs in #80 shows sometimes it didn't match the regex, but cannot reproduce right now
 				try {
 					imageList[index]['_imageName'] = imageList[index]['imageName'] = res.responseHeaders.match(ehDownloadRegex.resFileName) ? getSafeName(res.responseHeaders.match(ehDownloadRegex.resFileName)[1].trim()) : imageList[index]['imageName'];
-				}
-				catch (error) {
+				} catch (error) {
 					console.log('[EHD] #' + (index + 1) + ': Parse file name failed');
 					console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL, '\nFinal URL >', res.finalUrl, '\nResposeHeaders >' + res.responseHeaders);
 
@@ -1263,8 +1339,7 @@ function fetchOriginalImage(index, nodeList) {
 					delete res[i];
 				}
 				response = null;
-			}
-			catch (error) {
+			} catch (error) {
 				console.log('[EHD] #' + (index + 1) + ': Unknown Error (Please send feedback)');
 				console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL, '\nFinal URL >', res.finalUrl, '\nResposeHeaders >' + res.responseHeaders);
 				console.log(error);
@@ -1282,7 +1357,7 @@ function fetchOriginalImage(index, nodeList) {
 				return failedFetching(index, nodeList);
 			}
 		},
-		onerror: function(res){
+		onerror: function (res) {
 			removeTimerHandler();
 			if (!isDownloading || imageData[index] instanceof ArrayBuffer) return; // Temporarily fixes #31
 
@@ -1304,7 +1379,7 @@ function fetchOriginalImage(index, nodeList) {
 
 			failedFetching(index, nodeList);
 		},
-		ontimeout: function(res){
+		ontimeout: function (res) {
 			removeTimerHandler();
 			if (!isDownloading || imageData[index] instanceof ArrayBuffer) return; // Temporarily fixes #31
 
@@ -1329,7 +1404,7 @@ function fetchOriginalImage(index, nodeList) {
 	});
 
 	if (nodeList.status.dataset.initedAbort !== '2') {
-		nodeList.abort.addEventListener('click', function(){
+		nodeList.abort.addEventListener('click', function () {
 			if (!isDownloading || imageData[index] instanceof ArrayBuffer) return; // Temporarily fixes #31
 
 			removeTimerHandler();
@@ -1341,7 +1416,7 @@ function fetchOriginalImage(index, nodeList) {
 	updateTotalStatus();
 }
 
-function retryAllFailed(){
+function retryAllFailed() {
 	var index, refetch = 0;
 	initProgressTable();
 
@@ -1362,7 +1437,7 @@ function insertCloseButton() {
 	exitButton.style.display = 'block';
 	exitButton.style.margin = '0 auto';
 	exitButton.textContent = 'Close';
-	exitButton.onclick = function(){
+	exitButton.onclick = function () {
 		ehDownloadDialog.removeChild(exitButton);
 		ehDownloadDialog.style.display = 'none';
 		if (ehDownloadFS.needFileSystem) ehDownloadFS.removeFile(unsafeWindow.gid + '.zip');
@@ -1374,8 +1449,8 @@ function insertCloseButton() {
 }
 
 function getPagesURLFromMPV() {
-	var mpvURL = location.origin + '/mpv/' + unsafeWindow.gid + '/' + 
-	unsafeWindow.token + '/';
+	var mpvURL = location.origin + '/mpv/' + unsafeWindow.gid + '/' +
+		unsafeWindow.token + '/';
 
 	var xhr = new XMLHttpRequest();
 	xhr.open('GET', mpvURL);
@@ -1387,8 +1462,7 @@ function getPagesURLFromMPV() {
 				xhr.open('GET', mpvURL);
 				xhr.timeout = 30000;
 				xhr.send();
-			}
-			else {
+			} else {
 				pushDialog('Failed!\nFetch Pages\' URL failed, Please try again later.');
 				isDownloading = false;
 				alert('Fetch Pages\' URL failed, Please try again later.');
@@ -1405,8 +1479,7 @@ function getPagesURLFromMPV() {
 				xhr.open('GET', location.origin + location.pathname + '?p=' + curPage);
 				xhr.timeout = 30000;
 				xhr.send();
-			}
-			else {
+			} else {
 				pushDialog('Failed!\nCan\'t get pages URL from response content.');
 				isDownloading = false;
 			}
@@ -1425,9 +1498,13 @@ function getPagesURLFromMPV() {
 		// copied from getAllPagesURL(), THAT's UGLY!!!
 		// so when will 2.0 comes out /_\
 		getAllPagesURLFin = true;
-		var wrongPages = pagesRange.filter(function (elem) { return elem > pageURLsList.length; });
+		var wrongPages = pagesRange.filter(function (elem) {
+			return elem > pageURLsList.length;
+		});
 		if (wrongPages.length !== 0) {
-			pagesRange = pagesRange.filter(function (elem) { return elem <= pageURLsList.length; });
+			pagesRange = pagesRange.filter(function (elem) {
+				return elem <= pageURLsList.length;
+			});
 			pushDialog('\nPage ' + wrongPages.join(', ') + (wrongPages.length > 1 ? ' are' : ' is') + ' not exist, and will be ignored.\n');
 			if (pagesRange.length === 0) {
 				pushDialog('Nothing matches provided pages range, stop downloading.');
@@ -1478,8 +1555,12 @@ function getAllPagesURL() {
 			}
 		}
 
-		pagesRange.sort(function(a, b){ return a - b; });
-		pagesRange = pagesRange.filter(function(e, i, arr) { return i == 0 || e != arr[i - 1] });
+		pagesRange.sort(function (a, b) {
+			return a - b;
+		});
+		pagesRange = pagesRange.filter(function (e, i, arr) {
+			return i == 0 || e != arr[i - 1]
+		});
 	}
 
 	ehDownloadDialog.style.display = 'block';
@@ -1487,18 +1568,17 @@ function getAllPagesURL() {
 		pageURLsList = [];
 		var pagesLength;
 		try { // in case pages has been modified like #56
-			pagesLength = [].reduce.call(document.querySelectorAll('.ptt td'), function(x, y){
+			pagesLength = [].reduce.call(document.querySelectorAll('.ptt td'), function (x, y) {
 				var i = Number(y.textContent);
 				if (!isNaN(i)) return x > i ? x : i;
 				else return x;
 			});
-		}
-		catch (error) {}
+		} catch (error) {}
 		var curPage = 0;
 		retryCount = 0;
 
 		var xhr = fetchPagesXHR;
-		xhr.onload = function(){
+		xhr.onload = function () {
 			if (xhr.status !== 200 || !xhr.responseText) {
 				if (retryCount < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
 					pushDialog('Failed! Retrying... ');
@@ -1506,8 +1586,7 @@ function getAllPagesURL() {
 					xhr.open('GET', location.origin + location.pathname + '?p=' + curPage);
 					xhr.timeout = 30000;
 					xhr.send();
-				}
-				else {
+				} else {
 					pushDialog('Failed!\nFetch Pages\' URL failed, Please try again later.');
 					isDownloading = false;
 					alert('Fetch Pages\' URL failed, Please try again later.');
@@ -1524,8 +1603,7 @@ function getAllPagesURL() {
 					xhr.open('GET', location.origin + location.pathname + '?p=' + curPage);
 					xhr.timeout = 30000;
 					xhr.send();
-				}
-				else {
+				} else {
 					pushDialog('Failed!\nCan\'t get pages URL from response content.');
 					isDownloading = false;
 					//alert('We can\'t get request content from response content. It\'s possible that E-Hentai changes source code format so that we can\'t find them, or your ISP modifies (or say hijacks) the page content. If it\'s sure that you can access to any pages of E-Hentai, including current page: ' + location.origin + location.pathname + '?p=' + curPage + ' , please report a bug.');
@@ -1547,16 +1625,20 @@ function getAllPagesURL() {
 			pushDialog('Succeed!');
 
 			curPage++;
-			
+
 			if (!pagesLength) { // can't get pagesLength correctly before
 				pagesLength = xhr.responseText.match(ehDownloadRegex.pagesLength)[1] - 0;
 			}
-		
+
 			if (curPage === pagesLength) {
 				getAllPagesURLFin = true;
-				var wrongPages = pagesRange.filter(function(elem){ return elem > pageURLsList.length; });
+				var wrongPages = pagesRange.filter(function (elem) {
+					return elem > pageURLsList.length;
+				});
 				if (wrongPages.length !== 0) {
-					pagesRange = pagesRange.filter(function(elem){ return elem <= pageURLsList.length; });
+					pagesRange = pagesRange.filter(function (elem) {
+						return elem <= pageURLsList.length;
+					});
 					pushDialog('\nPage ' + wrongPages.join(', ') + (wrongPages.length > 1 ? ' are' : ' is') + ' not exist, and will be ignored.\n');
 					if (pagesRange.length === 0) {
 						pushDialog('Nothing matches provided pages range, stop downloading.');
@@ -1569,22 +1651,20 @@ function getAllPagesURL() {
 				pushDialog('\n\n');
 				initProgressTable();
 				requestDownload();
-			}
-			else {
+			} else {
 				xhr.open('GET', location.origin + location.pathname + '?p=' + curPage);
 				xhr.send();
 				pushDialog('\nFetching Gallery Pages URL (' + (curPage + 1) + '/' + pagesLength + ') ... ');
 			}
 		};
-		xhr.ontimeout = xhr.onerror = function(){
+		xhr.ontimeout = xhr.onerror = function () {
 			if (retryCount < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
 				pushDialog('Failed! Retrying... ');
 				retryCount++;
 				xhr.open('GET', location.origin + location.pathname + '?p=' + curPage);
 				xhr.timeout = 30000;
 				xhr.send();
-			}
-			else {
+			} else {
 				pushDialog('Failed!\nFetch Pages\' URL failed, Please try again later.');
 				isDownloading = false;
 				alert('Fetch Pages\' URL failed, Please try again later.');
@@ -1594,11 +1674,14 @@ function getAllPagesURL() {
 		xhr.timeout = 30000;
 		xhr.send();
 		pushDialog('\nFetching Gallery Pages URL (' + (curPage + 1) + '/' + (pagesLength || '?') + ') ... ');
-	}
-	else {
-		var wrongPages = pagesRange.filter(function(elem){ return elem > pageURLsList.length; });
+	} else {
+		var wrongPages = pagesRange.filter(function (elem) {
+			return elem > pageURLsList.length;
+		});
 		if (wrongPages.length !== 0) {
-			pagesRange = pagesRange.filter(function(elem){ return elem <= pageURLsList.length; });
+			pagesRange = pagesRange.filter(function (elem) {
+				return elem <= pageURLsList.length;
+			});
 			pushDialog('\nPage ' + wrongPages.join(', ') + (wrongPages.length > 1 ? ' are' : ' is') + ' not exist, and will be ignored.\n');
 			if (pagesRange.length === 0) {
 				pushDialog('Nothing matches provided pages range, stop downloading.');
@@ -1635,19 +1718,16 @@ function initEHDownload() {
 
 		if (dirNameNode && dirNameNode.value) {
 			dirName = getSafeName(dirNameNode.value, true);
-		}
-		else {
+		} else {
 			dirName = getReplacedName(!setting['dir-name'] ? '{gid}_{token}' : setting['dir-name']);
 		}
 
 		if (fileNameNode && fileNameNode.value) {
 			fileName = getSafeName(fileNameNode.value);
-		}
-		else {
+		} else {
 			fileName = getReplacedName(!setting['file-name'] ? '{title}' : setting['file-name']);
 		}
-	}
-	else {
+	} else {
 		dirName = getReplacedName(!setting['dir-name'] ? '{gid}_{token}' : setting['dir-name']);
 		fileName = getReplacedName(!setting['file-name'] ? '{title}' : setting['file-name']);
 	}
@@ -1691,33 +1771,30 @@ function initEHDownload() {
 							// roll back and use Blob to handle file
 							ehDownloadFS.needFileSystem = false;
 							alert('You don\'t have enough free space on the drive where Chrome stores user data (Default is system drive, normally it\'s C: ), please delete some files.\n\nNeeds more than ' + (requiredBytes - (quota - usage)) + ' Bytes.\n\nRoll back and use Blob to handle file.');
-						}
-						else {
+						} else {
 							pushDialog('\n<strong>Please allow storing large content if the browser asked for it.</strong>\n');
 							requestFileSystem(window.PERSISTENT, requiredBytes, ehDownloadFS.initHandler, fsErrorHandler);
 						}
 					}, fsErrorHandler);
-				}
-				else requestFileSystem(window.TEMPORARY, requiredBytes, ehDownloadFS.initHandler, fsErrorHandler);
+				} else requestFileSystem(window.TEMPORARY, requiredBytes, ehDownloadFS.initHandler, fsErrorHandler);
 			}, fsErrorHandler);
-		}
-		else requestFileSystem(window.TEMPORARY, requiredBytes, ehDownloadFS.initHandler, fsErrorHandler);
+		} else requestFileSystem(window.TEMPORARY, requiredBytes, ehDownloadFS.initHandler, fsErrorHandler);
 	}
 
 	// Array.prototype.some() is a bit ugly, so we use toString().indexOf() lol
 	var infoNeeds = setting['save-info-list'].toString();
 	if (infoNeeds.indexOf('title') >= 0) {
 		infoStr += document.getElementById('gn').textContent.replaceHTMLEntites() + '\n' +
-		           document.getElementById('gj').textContent.replaceHTMLEntites() + '\n' +
-		           window.location.href.replaceHTMLEntites() + '\n\n';
+			document.getElementById('gj').textContent.replaceHTMLEntites() + '\n' +
+			window.location.href.replaceHTMLEntites() + '\n\n';
 	}
 
 	if (infoNeeds.indexOf('metas') >= 0) {
 		infoStr += 'Category: ' + (
-		                (document.querySelector('.ic').getAttribute('src').match(ehDownloadRegex.categoryTag) || [])[1] ||
-		                document.querySelector('.ic').getAttribute('alt')
-		            ).toUpperCase() + '\n' +
-		           'Uploader: ' + document.querySelector('#gdn a').textContent.replaceHTMLEntites() + '\n';
+				(document.querySelector('.ic').getAttribute('src').match(ehDownloadRegex.categoryTag) || [])[1] ||
+				document.querySelector('.ic').getAttribute('alt')
+			).toUpperCase() + '\n' +
+			'Uploader: ' + document.querySelector('#gdn a').textContent.replaceHTMLEntites() + '\n';
 	}
 	var metaNodes = document.querySelectorAll('#gdd tr');
 	for (var i = 0; i < metaNodes.length; i++) {
@@ -1731,12 +1808,12 @@ function initEHDownload() {
 		infoStr += 'Tags:\n';
 
 		var tagsList = document.querySelectorAll('#taglist tr');
-		Array.prototype.forEach.call(tagsList, function(elem){
+		Array.prototype.forEach.call(tagsList, function (elem) {
 			var tds = elem.getElementsByTagName('td');
 			infoStr += '> ' + tds[0].textContent + ' ';
 
 			var tags = tds[1].querySelectorAll('a');
-			infoStr += Array.prototype.map.call(tags, function(e){
+			infoStr += Array.prototype.map.call(tags, function (e) {
 				return e.textContent;
 			}).join(', ') + '\n';
 		});
@@ -1765,36 +1842,32 @@ function initEHDownload() {
 		if (typeof document.hidden !== 'undefined') { // Opera 12.10 and Firefox 18 and later support 
 			hidden = 'hidden';
 			visibilityChange = 'visibilitychange';
-		}
-		else if (typeof document.mozHidden !== 'undefined') {
+		} else if (typeof document.mozHidden !== 'undefined') {
 			hidden = 'mozHidden';
 			visibilityChange = 'mozvisibilitychange';
-		}
-		else if (typeof document.webkitHidden !== 'undefined') {
+		} else if (typeof document.webkitHidden !== 'undefined') {
 			hidden = 'webkitHidden';
 			visibilityChange = 'webkitvisibilitychange';
 		}
 
-		var visibilityChangeHandler = function(isHidden) {
+		var visibilityChangeHandler = function (isHidden) {
 			if (typeof isHidden !== 'boolean') {
 				isHidden = document[hidden];
 			}
 			if (isHidden && ((isDownloading && !isPausing) || isSaving)) {
 				emptyAudio.play();
-			}
-			else {
+			} else {
 				emptyAudio.pause();
 			}
 		};
 
 		if (visibilityChange) {
 			window.addEventListener(visibilityChange, visibilityChangeHandler);
-		}
-		else {
-			window.addEventListener('focus', function() {
+		} else {
+			window.addEventListener('focus', function () {
 				visibilityChangeHandler(false);
 			});
-			window.addEventListener('blur', function() {
+			window.addEventListener('blur', function () {
 				visibilityChangeHandler(true);
 			});
 		}
@@ -1803,7 +1876,7 @@ function initEHDownload() {
 	}
 }
 
-function initProgressTable(){
+function initProgressTable() {
 	progressTable = document.createElement('table');
 	progressTable.className = 'ehD-pt';
 	ehDownloadDialog.style.display = 'block';
@@ -1813,9 +1886,9 @@ function initProgressTable(){
 	ehDownloadDialog.scrollTop = ehDownloadDialog.scrollHeight;
 }
 
-function requestDownload(ignoreFailed){
+function requestDownload(ignoreFailed) {
 	if (isPausing) return;
-	
+
 	if (setting['delay-request']) {
 		var curTime = Date.now();
 		if (delayTime < curTime) {
@@ -1825,12 +1898,12 @@ function requestDownload(ignoreFailed){
 
 	var j = 0;
 	for (var i = fetchCount; i < (setting['thread-count'] !== undefined ? setting['thread-count'] : 5); i++) {
-		for (/*var j = 0*/; j < totalCount; j++) {
+		for ( /*var j = 0*/ ; j < totalCount; j++) {
 			if (imageData[j] == null && (ignoreFailed || (retryCount[j] || 0) <= (setting['retry-count'] !== undefined ? setting['retry-count'] : 3))) {
 				imageData[j] = 'Fetching';
 				if (imageList[j] && setting['never-new-url']) fetchOriginalImage(j);
 				else if (setting['delay-request']) {
-					setTimeout(function(j) {
+					setTimeout(function (j) {
 						if (isPausing || fetchCount >= (setting['thread-count'] !== undefined ? setting['thread-count'] : 5)) {
 							imageData[j] = null;
 							return;
@@ -1839,8 +1912,7 @@ function requestDownload(ignoreFailed){
 						fetchCount++;
 					}, delayTime - curTime + setting['delay-request'] * 1000, j);
 					delayTime += setting['delay-request'] * 1000;
-				}
-				else {
+				} else {
 					getPageData(j);
 					fetchCount++;
 				}
@@ -1891,11 +1963,11 @@ function getPageData(index) {
 	};
 
 	retryCount[index] = 0;
-	var fetchURL = (imageList[index] ? (imageList[index]['pageURL'] + ((!setting['never-send-nl'] && imageList[index]['nextNL']) ? (imageList[index]['pageURL'].indexOf('?') >= 0 ? '&' : '?') + 'nl=' + imageList[index]['nextNL'] : '')).replaceHTMLEntites() : pageURLsList[realIndex - 1])/*.replace(/^https?:/, '')*/;
+	var fetchURL = (imageList[index] ? (imageList[index]['pageURL'] + ((!setting['never-send-nl'] && imageList[index]['nextNL']) ? (imageList[index]['pageURL'].indexOf('?') >= 0 ? '&' : '?') + 'nl=' + imageList[index]['nextNL'] : '')).replaceHTMLEntites() : pageURLsList[realIndex - 1]) /*.replace(/^https?:/, '')*/ ;
 
 	// assign to fetchThread, so that we can abort them and all GM_xhr by one command fetchThread[i].abort()
 	var xhr = fetchThread[index] = new XMLHttpRequest();
-	xhr.onload = function() {
+	xhr.onload = function () {
 		if (xhr.status !== 200 || !xhr.responseText) {
 			if (retryCount[index] < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
 				retryCount[index]++;
@@ -1910,8 +1982,7 @@ function getPageData(index) {
 				xhr.open('GET', fetchURL);
 				xhr.timeout = 30000;
 				xhr.send();
-			}
-			else {
+			} else {
 				failedCount++;
 				fetchCount--;
 
@@ -1934,8 +2005,7 @@ function getPageData(index) {
 			var imageURL = (unsafeWindow.apiuid !== -1 && xhr.responseText.indexOf('fullimg.php') >= 0 && !setting['force-resized']) ? xhr.responseText.match(ehDownloadRegex.imageURL[0])[1].replaceHTMLEntites() : xhr.responseText.indexOf('id="img"') > -1 ? xhr.responseText.match(ehDownloadRegex.imageURL[1])[1].replaceHTMLEntites() : xhr.responseText.match(ehDownloadRegex.imageURL[2])[1].replaceHTMLEntites();
 			var fileName = xhr.responseText.match(ehDownloadRegex.fileName)[1].replaceHTMLEntites();
 			var nextNL = ehDownloadRegex.nl.test(xhr.responseText) ? xhr.responseText.match(ehDownloadRegex.nl)[1] : null;
-		}
-		catch (error) {
+		} catch (error) {
 			console.error('[EHD] Response content is not correct!', error);
 			if (retryCount[index] < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
 				retryCount[index]++;
@@ -1950,8 +2020,7 @@ function getPageData(index) {
 				xhr.open('GET', fetchURL);
 				xhr.timeout = 30000;
 				xhr.send();
-			}
-			else {
+			} else {
 				failedCount++;
 				fetchCount--;
 
@@ -1977,8 +2046,7 @@ function getPageData(index) {
 				var len = pagesRange.length.toString().length,
 					padding = new Array(len < 3 ? len + 1 : len).join('0');
 				imageNumber = (padding + (index + 1)).slice(0 - len);
-			}
-			else { // pages range was not set (download all pages, so index + 1 === realIndex) or number original index is required
+			} else { // pages range was not set (download all pages, so index + 1 === realIndex) or number original index is required
 				var len = pageURLsList.length.toString().length,
 					padding = new Array(len < 3 ? len + 1 : len).join('0');
 				imageNumber = (padding + realIndex).slice(0 - len);
@@ -1993,20 +2061,19 @@ function getPageData(index) {
 				name: '#' + realIndex + ': ' + fileName,
 				status: 'Force Paused',
 				progress: '',
-				progressText: '', 
+				progressText: '',
 				class: ''
 			});
 			fetchCount--;
 			imageData[index] = null;
-			
+
 			updateTotalStatus();
-		}
-		else {
+		} else {
 			fetchOriginalImage(index, nodeList);
 		}
 
 	};
-	xhr.onerror = xhr.ontimeout = function() {
+	xhr.onerror = xhr.ontimeout = function () {
 		if (retryCount[index] < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
 			retryCount[index]++;
 
@@ -2020,8 +2087,7 @@ function getPageData(index) {
 			xhr.open('GET', fetchURL);
 			xhr.timeout = 30000;
 			xhr.send();
-		}
-		else {
+		} else {
 			failedCount++;
 			fetchCount--;
 
@@ -2037,7 +2103,7 @@ function getPageData(index) {
 			checkFailed();
 		}
 	};
-	
+
 	xhr.open('GET', fetchURL);
 	xhr.timeout = 30000;
 	xhr.send();
@@ -2144,45 +2210,40 @@ function showSettings() {
 			<button data-action="save">Save</button> <button data-action="cancel">Cancel</button>\
 		</div>';
 	document.body.appendChild(ehDownloadSettingPanel);
-	
+
 	for (var i in setting) {
 		if (setting[i] instanceof Array) {
-			setting[i].forEach(function(elem){
+			setting[i].forEach(function (elem) {
 				var element = ehDownloadSettingPanel.querySelector('input[data-ehd-setting="' + i + '[]"][value="' + elem + '"], select[data-ehd-setting="' + i + '[]"] option[value="' + elem + '"]');
 				if (!element) return;
 
 				if (element.getAttribute('type') === 'checkbox') {
 					element.setAttribute('checked', 'checked');
-				}
-				else if (element.tagName.toLowerCase() === 'option') {
+				} else if (element.tagName.toLowerCase() === 'option') {
 					element.setAttribute('selected', 'selected');
-				}
-				else element.value = elem;
+				} else element.value = elem;
 			});
-		}
-		else {
+		} else {
 			var element = ehDownloadSettingPanel.querySelector('input[data-ehd-setting="' + i + '"], select[data-ehd-setting="' + i + '"]');
 			if (!element) continue;
 			if (element.getAttribute('type') === 'checkbox') {
 				if (setting[i]) element.setAttribute('checked', 'checked');
-			}
-			else if (element.tagName.toLowerCase() === 'select') {
+			} else if (element.tagName.toLowerCase() === 'select') {
 				element = element.querySelector('option[value="' + setting[i] + '"]');
 				if (!element) continue;
 				element.setAttribute('selected', 'selected');
-			}
-			else element.setAttribute('value', setting[i]);
+			} else element.setAttribute('value', setting[i]);
 		}
 	}
 
-	ehDownloadSettingPanel.getElementsByClassName('ehD-setting-tab')[0].addEventListener('click', function(event){
+	ehDownloadSettingPanel.getElementsByClassName('ehD-setting-tab')[0].addEventListener('click', function (event) {
 		var target = event.target;
 		if (target.tagName.toLowerCase() === 'li') {
 			ehDownloadSettingPanel.setAttribute('data-active-setting', target.dataset.targetSetting);
 		}
 	});
 
-	ehDownloadSettingPanel.getElementsByClassName('ehD-setting-footer')[0].addEventListener('click', function(event){
+	ehDownloadSettingPanel.getElementsByClassName('ehD-setting-footer')[0].addEventListener('click', function (event) {
 		var target = event.target;
 		if (target.tagName.toLowerCase() === 'button') {
 			if (target.dataset.action === 'save') {
@@ -2200,23 +2261,19 @@ function showSettings() {
 									curSettingName = curSettingName.split('[]')[0];
 									if (!setting[curSettingName]) setting[curSettingName] = [];
 									setting[curSettingName].push(inputs[i].getAttribute('value'));
-								}
-								else {
+								} else {
 									setting[curSettingName] = inputs[i].getAttribute('value');
 								}
-							}
-							else {
+							} else {
 								setting[curSettingName] = inputs[i].checked;
 							}
 						}
-					}
-					else if (inputs[i].getAttribute('type') === 'number') {
+					} else if (inputs[i].getAttribute('type') === 'number') {
 						setting[curSettingName] = Number(inputs[i].value);
 						if (isNaN(setting[curSettingName])) {
 							setting[curSettingName] = Number(inputs[i].getAttribute('placeholder'));
 						}
-					}
-					else {
+					} else {
 						setting[curSettingName] = inputs[i].value;
 					}
 				}
@@ -2226,16 +2283,15 @@ function showSettings() {
 
 			if (document.querySelector('.ehD-box-extend')) {
 				toggleFilenameConfirmInput('reset');
-			}
-			else {
+			} else {
 				toggleFilenameConfirmInput(!setting['recheck-file-name']);
 			}
 			showPreCalcCost();
 		}
 	});
 
-	Array.prototype.forEach.call(ehDownloadSettingPanel.getElementsByClassName('ehD-setting-content'), function(elem) {
-		elem.addEventListener('focusin', function(event){
+	Array.prototype.forEach.call(ehDownloadSettingPanel.getElementsByClassName('ehD-setting-content'), function (elem) {
+		elem.addEventListener('focusin', function (event) {
 			ehDownloadSettingPanel.setAttribute('data-active-setting', this.dataset.settingPage);
 			// prevent auto-scroll from browser
 			ehDownloadSettingPanel.scrollLeft = 0;
@@ -2243,7 +2299,7 @@ function showSettings() {
 	});
 }
 
-function getImageLimits(forced, host){
+function getImageLimits(forced, host) {
 	var host = host || location.hostname;
 	if (host === 'exhentai.org') {
 		host = 'e-hentai.org';
@@ -2261,7 +2317,7 @@ function getImageLimits(forced, host){
 		method: 'GET',
 		url: url,
 		timeout: 300000,
-		onload: function(res) {
+		onload: function (res) {
 			if (!res.responseText) return;
 			var data = res.responseText.match(ehDownloadRegex.imageLimits);
 			if (data && data.length === 3) {
@@ -2275,10 +2331,10 @@ function getImageLimits(forced, host){
 	});
 }
 
-function showImageLimits(){
-	var list = Object.keys(localStorage).filter(function(elem){
+function showImageLimits() {
+	var list = Object.keys(localStorage).filter(function (elem) {
 		return elem.indexOf('ehd-image-limits-') === 0;
-	}).sort().map(function(elem){
+	}).sort().map(function (elem) {
 		var curData = JSON.parse(localStorage.getItem(elem));
 		return curData.cur + '/' + curData.total;
 	});
@@ -2286,7 +2342,7 @@ function showImageLimits(){
 	ehDownloadBox.getElementsByClassName('ehD-box-limit')[0].innerHTML = ' | <a href="https://e-hentai.org/home.php">Image Limits: ' + list.join('; ') + '</a>';
 }
 
-var getFileSizeAndLength = function() {
+var getFileSizeAndLength = function () {
 	var context = document.getElementById('gdd').textContent;
 	var sizeText = context.split('File Size:')[1].split('Length:')[0].trim();
 	var pageText = context.split('Length:')[1].split('page')[0].trim();
@@ -2297,12 +2353,10 @@ var getFileSizeAndLength = function() {
 	if (sizeText.indexOf('MB') >= 0) {
 		sizeMB = parseFloat(sizeText) + 0.01;
 		sizeKB = sizeMB * 1024;
-	}
-	else if (sizeText.indexOf('GB') >= 0) {
+	} else if (sizeText.indexOf('GB') >= 0) {
 		sizeMB = (parseFloat(sizeText) + 0.01) * 1024;
 		sizeKB = sizeMB * 1024;
-	}
-	else {
+	} else {
 		sizeMB = 1;
 		sizeKB = parseFloat(sizeText);
 	}
@@ -2314,32 +2368,29 @@ var getFileSizeAndLength = function() {
 		page: page
 	};
 
-	getFileSizeAndLength = function(){
+	getFileSizeAndLength = function () {
 		return result;
 	};
 
 	return result;
 };
 
-function toggleFilenameConfirmInput(hide){
+function toggleFilenameConfirmInput(hide) {
 	var extendNodes = document.querySelector('.ehD-box-extend');
 	if (extendNodes) {
 		if (hide === 'reset') {
 			ehDownloadBox.removeChild(extendNodes);
 			if (setting['recheck-file-name']) toggleFilenameConfirmInput();
-		}
-		else if (hide) {
+		} else if (hide) {
 			extendNodes.style.display = 'none';
-		}
-		else {
+		} else {
 			extendNodes.style.display = 'block';
 		}
-	}
-	else if (!hide) {
+	} else if (!hide) {
 		extendNodes = document.createElement('div');
 		extendNodes.className = 'ehD-box-extend';
 		extendNodes.innerHTML = '<div class="g2">' + ehDownloadArrow + ' <a>File Name <input type="text" class="ehD-box-extend-filename"></a></div>' +
-		                        '<div class="g2">' + ehDownloadArrow + ' <a>Path Name <input type="text" class="ehD-box-extend-dirname"></a></div>';
+			'<div class="g2">' + ehDownloadArrow + ' <a>Path Name <input type="text" class="ehD-box-extend-dirname"></a></div>';
 		ehDownloadBox.appendChild(extendNodes);
 
 		dirName = getReplacedName(!setting['dir-name'] ? '{gid}_{token}' : setting['dir-name']);
@@ -2349,7 +2400,7 @@ function toggleFilenameConfirmInput(hide){
 	}
 }
 
-function showPreCalcCost(){
+function showPreCalcCost() {
 	var size = 0;
 	var page = getFileSizeAndLength().page;
 
@@ -2376,7 +2427,7 @@ var ehDownloadArrow = '<img src="data:image/gif;base64,R0lGODlhBQAHALMAAK6vr7Ozt
 var ehDownloadAction = document.createElement('div');
 ehDownloadAction.className = 'g2';
 ehDownloadAction.innerHTML = ehDownloadArrow + ' <a>Download Archive</a>';
-ehDownloadAction.addEventListener('click', function(event){
+ehDownloadAction.addEventListener('click', function (event) {
 	event.preventDefault();
 
 	var torrentsNode = document.querySelector('#gd5 a[onclick*="gallerytorrents.php"]');
@@ -2405,7 +2456,7 @@ ehDownloadBox.appendChild(ehDownloadRange);
 var ehDownloadSetting = document.createElement('div');
 ehDownloadSetting.className = 'g2';
 ehDownloadSetting.innerHTML = ehDownloadArrow + ' <a>Settings</a>';
-ehDownloadSetting.addEventListener('click', function(event){
+ehDownloadSetting.addEventListener('click', function (event) {
 	event.preventDefault();
 	showSettings();
 });
@@ -2419,22 +2470,22 @@ document.body.appendChild(ehDownloadDialog);
 
 var ehDownloadStatus = document.createElement('div');
 ehDownloadStatus.className = 'ehD-status';
-ehDownloadStatus.addEventListener('click', function(event){
+ehDownloadStatus.addEventListener('click', function (event) {
 	event.preventDefault();
 	ehDownloadDialog.classList.toggle('hidden');
 });
 
 var ehDownloadPauseBtn = document.createElement('button');
 ehDownloadPauseBtn.className = 'ehD-pause';
-ehDownloadPauseBtn.textContent ='Pause';
-ehDownloadPauseBtn.addEventListener('click', function(event){
+ehDownloadPauseBtn.textContent = 'Pause';
+ehDownloadPauseBtn.addEventListener('click', function (event) {
 	if (!isPausing) {
 		isPausing = true;
 		ehDownloadPauseBtn.textContent = 'Resume';
-		
+
 		if (setting['force-pause']) {
 			// waiting Tampermonkey for transfering string to ArrayBuffer, it may stuck for a second 
-			setTimeout(function(){
+			setTimeout(function () {
 				for (var i = 0; i < fetchThread.length; i++) {
 					if (typeof fetchThread[i] !== 'undefined' && 'abort' in fetchThread[i]) fetchThread[i].abort();
 
@@ -2458,8 +2509,7 @@ ehDownloadPauseBtn.addEventListener('click', function(event){
 		if (emptyAudio) {
 			emptyAudio.pause();
 		}
-	}
-	else {
+	} else {
 		isPausing = false;
 		ehDownloadPauseBtn.textContent = setting['force-pause'] ? 'Pause (Downloading images will be aborted)' : 'Pause (Downloading images will keep downloading)';
 
@@ -2467,7 +2517,7 @@ ehDownloadPauseBtn.addEventListener('click', function(event){
 	}
 });
 
-window.addEventListener('focus', function(){
+window.addEventListener('focus', function () {
 	if (setting['status-in-title'] === 'blur') {
 		if (!needTitleStatus) return;
 		document.title = pretitle;
@@ -2475,17 +2525,17 @@ window.addEventListener('focus', function(){
 	}
 });
 
-window.addEventListener('blur', function(){
+window.addEventListener('blur', function () {
 	if (isDownloading && setting['status-in-title'] === 'blur') {
 		needTitleStatus = true;
-		document.title = '[' + (isPausing ? '❙❙' : downloadedCount < totalCount ? '↓ ' + downloadedCount + '/' + totalCount : totalCount === 0 ? '↓' : '√' ) + '] ' + pretitle;
+		document.title = '[' + (isPausing ? '❙❙' : downloadedCount < totalCount ? '↓ ' + downloadedCount + '/' + totalCount : totalCount === 0 ? '↓' : '√') + '] ' + pretitle;
 	}
 });
 
 var forceDownloadTips = document.createElement('div');
 forceDownloadTips.className = 'ehD-force-download-tips';
 forceDownloadTips.innerHTML = 'If an error occured and script doesn\'t work, click <a href="javascript: getzip();" style="font-weight: bold; pointer-events: auto;" title="Force download won\'t stop current downloading task.">here</a> to force get your downloaded images.';
-forceDownloadTips.getElementsByTagName('a')[0].addEventListener('click', function(event){
+forceDownloadTips.getElementsByTagName('a')[0].addEventListener('click', function (event) {
 	// fixed permission denied on GreaseMonkey
 	event.preventDefault();
 	saveDownloaded(true);
@@ -2495,7 +2545,7 @@ var closeTips = document.createElement('div');
 closeTips.className = 'ehD-close-tips';
 closeTips.innerHTML = 'E-Hentai Downloader is still running, please don\'t close this tab until it finished downloading.<br><br>If any bug occured and the script doesn\'t work correctly, you can move your mouse pointer onto the progress box, and force to save downloaded images before you leave.';
 
-unsafeWindow.getzip = window.getzip = function(){
+unsafeWindow.getzip = window.getzip = function () {
 	saveDownloaded(true);
 };
 
@@ -2503,8 +2553,8 @@ initSetting();
 
 window.addEventListener('storage', showImageLimits);
 
-window.onbeforeunload = unsafeWindow.onbeforeunload = function(){
-	function clearRubbish(){
+window.onbeforeunload = unsafeWindow.onbeforeunload = function () {
+	function clearRubbish() {
 		for (var i = 0; i < fetchThread.length; i++) {
 			if (typeof fetchThread[i] !== 'undefined' && 'abort' in fetchThread[i]) fetchThread[i].abort();
 		}
@@ -2513,7 +2563,7 @@ window.onbeforeunload = unsafeWindow.onbeforeunload = function(){
 	if (isDownloading || isPausing || isSaving) {
 		document.body.appendChild(closeTips);
 
-		setTimeout(function(){
+		setTimeout(function () {
 			document.body.removeChild(closeTips);
 		}, 100);
 
