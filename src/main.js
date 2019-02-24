@@ -2210,6 +2210,9 @@ function showSettings() {
 								setting[curSettingName] = inputs[i].checked;
 							}
 						}
+						else {
+							setting[curSettingName] = inputs[i].checked;
+						}
 					}
 					else if (inputs[i].getAttribute('type') === 'number') {
 						setting[curSettingName] = Number(inputs[i].value);
