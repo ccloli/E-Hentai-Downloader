@@ -1125,6 +1125,8 @@ function fetchOriginalImage(index, nodeList) {
 						});
 					});
 					ehDownloadDialog.appendChild(cancelButton);
+
+					return;
 				}
 				// ip banned
 				else if (
@@ -1202,6 +1204,8 @@ function fetchOriginalImage(index, nodeList) {
 						});
 					});
 					ehDownloadDialog.appendChild(cancelButton);
+
+					return;
 				}
 				// res.status should be detected at here, because we should know are we reached image limits at first
 				else if (res.status !== 200) {
