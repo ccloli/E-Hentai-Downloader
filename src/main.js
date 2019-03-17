@@ -194,7 +194,7 @@ var ehDownloadStyle = '\
 		50% { -webkit-transform: translateX(0%) scaleX(0.7); transform: translateX(0%) scaleX(0.7); } \
 		to { -webkit-transform: translateX(50%) scaleX(0); transform: translateX(50%) scaleX(0); } \
 	} \
-	.ehD-box { margin: 20px auto; width: 732px; box-sizing: border-box; font-size: 12px; border: 1px groove #000000; }\
+    .ehD-box { margin: 20px auto; width: 870px; box-sizing: border-box; font-size: 12px; border: 1px groove #000000; }\
 	.ehD-box a { cursor: pointer; }\
 	.ehD-box .g2 { display: inline-block; margin: 10px; padding: 0; line-height: 14px; }\
 	.ehD-box legend { font-weight: 700; padding: 0 10px; } \
@@ -2399,6 +2399,23 @@ ehDownloadAction.addEventListener('click', function(event){
 	initEHDownload();
 });
 ehDownloadBox.appendChild(ehDownloadAction);
+
+var ehCopyAuthorName = document.createElement('div');
+ehCopyAuthorName.className = 'g2';
+ehCopyAuthorName.innerHTML = ehDownloadArrow + ' <a>Copy Author Name</a>';
+ehCopyAuthorName.addEventListener('click', function(event){
+    event.preventDefault();
+    var gj = document.getElementById('gj').innerHTML.match(/\[.*?\]/gm)[0].replace(/\[(.*)\]/, "$1");
+    var gn = document.getElementById('gn').innerHTML.match(/\[.*?\]/gm)[0];
+    const element = document.createElement('textarea');
+    element.value = gj + " " + gn;
+    ehDownloadBox.appendChild(element);
+    element.focus();
+    element.setSelectionRange(0, element.value.length);
+    document.execCommand('copy');
+    ehDownloadBox.removeChild(element);
+});
+ehDownloadBox.appendChild(ehCopyAuthorName);
 
 var ehDownloadNumberInput = document.createElement('div');
 ehDownloadNumberInput.className = 'g2';
