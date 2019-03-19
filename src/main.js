@@ -407,7 +407,7 @@ function getReplacedName(str) {
 		.replace(/\{token\}/gi, unsafeWindow.token)
 		.replace(/\{title\}/gi, getSafeName(document.getElementById('gn').textContent))
 		.replace(/\{subtitle\}/gi, document.getElementById('gj').textContent ? getSafeName(document.getElementById('gj').textContent) : getSafeName(document.getElementById('gn').textContent))
-		.replace(/\{tag\}/gi, ((document.querySelector('.ic').getAttribute('src').match(ehDownloadRegex.categoryTag) || [])[1] || document.querySelector('.ic').getAttribute('alt')).toUpperCase())
+		.replace(/\{tag\}/gi, document.querySelector('#gdc .cs').textContent.trim().toUpperCase())
 		.replace(/\{uploader\}/gi, getSafeName(document.querySelector('#gdn a').textContent))
 		.replaceHTMLEntites();
 }
@@ -1718,10 +1718,7 @@ function initEHDownload() {
 	}
 
 	if (infoNeeds.indexOf('metas') >= 0) {
-		infoStr += 'Category: ' + (
-		                (document.querySelector('.ic').getAttribute('src').match(ehDownloadRegex.categoryTag) || [])[1] ||
-		                document.querySelector('.ic').getAttribute('alt')
-		            ).toUpperCase() + '\n' +
+		infoStr += 'Category: ' + document.querySelector('#gdc .cs').textContent.trim() + '\n' +
 		           'Uploader: ' + document.querySelector('#gdn a').textContent.replaceHTMLEntites() + '\n';
 	}
 	var metaNodes = document.querySelectorAll('#gdd tr');
