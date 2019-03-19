@@ -2402,7 +2402,7 @@ ehDownloadBox.appendChild(ehDownloadAction);
 
 var ehDownloadNumberInput = document.createElement('div');
 ehDownloadNumberInput.className = 'g2';
-ehDownloadNumberInput.innerHTML = ehDownloadArrow + ' <a><label><input type="checkbox" style="vertical-align: middle; margin: 0;"> Number Images<label></a>';
+ehDownloadNumberInput.innerHTML = ehDownloadArrow + ' <a><label><input type="checkbox" style="vertical-align: middle; margin: 0;"> Number Images</label></a>';
 ehDownloadBox.appendChild(ehDownloadNumberInput);
 
 var ehDownloadRange = document.createElement('div');
