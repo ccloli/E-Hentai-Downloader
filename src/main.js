@@ -478,6 +478,21 @@ function generateZip(isFromFS, fs, isRetry, forced){
 		if (setting['save-info'] === 'file' || !setting['save-info']) {
 			(dirName && !ehDownloadRegex.slashOnly.test(dirName) ? zip.folder(dirName) : zip).file('info.txt', infoStr.replace(/\n/gi, '\r\n'));
 		}
+
+		if (setting['save-x-info']) {
+			try {
+				var data = xScripts.getFromHtml(document.documentElement, window.location.href);
+				if (data !== null) {
+					var xInfo = xScripts.toCommonJson(data);
+					xInfo.source_script = 'e-hentai-downloader';
+					var xInfoStr = JSON.stringify(xInfo, null, '  ');
+					zip.file('info.json', xInfoStr.replace(/\r?\n/gi, '\r\n'));
+				}
+			}
+			catch (error) {
+				console.log(error);
+			}
+		}
 	}
 
 	pushDialog('\n\nGenerating Zip file...\n');
@@ -2122,6 +2137,7 @@ function showSettings() {
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="replace-with-full-width"> Replace forbidden characters with full-width characters instead of dash (-)</label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="force-pause"> Force drop downloaded images data when pausing download</label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="save-as-cbz"> Save as CBZ (Comic book archive) file<sup>(5)</sup></label></div>\
+					<div class="g2"><label><input type="checkbox" data-ehd-setting="save-x-info"> Save gallery metadata JSON file </label><sup>(6)</sup></div>\
 					<div class="ehD-setting-note">\
 						<div class="g2">\
 							(1) This may reduce memory usage but some decompress softwares may not support the Zip file. See <a href="https://stuk.github.io/jszip/documentation/api_jszip/generate_async.html" target="_blank" style="color: #ffffff;">JSZip Docs</a> for more info.\
@@ -2137,6 +2153,9 @@ function showSettings() {
 						</div>\
 						<div class="g2">\
 							(5) <a href="https://en.wikipedia.org/wiki/Comic_book_archive">Comic book archive</a> is a file type to archive comic images, you can open it with some comic viewer like CDisplay/CDisplayEX, or just extract it as a Zip file. To keep the order of images, you can also enable numbering images.\
+						</div>\
+						<div class="g2">\
+							(6) Some external archive managers read tags and other gallery metadata from an info.json file.\
 						</div>\
 					</div>\
 				</div>\

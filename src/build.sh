@@ -8,4 +8,5 @@ cat $meta_js_path>$output_path
 cat $parts_js_dir"first.js">>$output_path
 cat $parts_js_dir"JSZip.js">>$output_path
 cat $parts_js_dir"FileSaver.js">>$output_path
+cat $parts_js_dir"xScripts.js">>$output_path
 cat $parts_js_dir"main.js">>$output_path
