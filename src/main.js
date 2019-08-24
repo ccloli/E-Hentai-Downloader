@@ -1101,7 +1101,7 @@ function fetchOriginalImage(index, nodeList) {
 
 						isPausing = false;
 						initProgressTable();
-						requestDownload();
+						checkFailed();
 					});
 					ehDownloadDialog.appendChild(continueButton);
 
@@ -1181,7 +1181,7 @@ function fetchOriginalImage(index, nodeList) {
 
 						isPausing = false;
 						initProgressTable();
-						requestDownload();
+						checkFailed();
 					});
 					ehDownloadDialog.appendChild(continueButton);
 
@@ -2468,7 +2468,7 @@ ehDownloadPauseBtn.addEventListener('click', function(event){
 		isPausing = false;
 		ehDownloadPauseBtn.textContent = setting['force-pause'] ? 'Pause (Downloading images will be aborted)' : 'Pause (Downloading images will keep downloading)';
 
-		requestDownload();
+		checkFailed();
 	}
 });
 
