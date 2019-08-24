@@ -12164,22 +12164,22 @@ var ehDownloadFS = {
 var ehDownloadStyle = '\
 	@-webkit-keyframes progress { \
 		from { -webkit-transform: translateX(-50%) scaleX(0); transform: translateX(-50%) scaleX(0); } \
-		50% { -webkit-transform: translateX(0%) scaleX(0.7); transform: translateX(0%) scaleX(0.7); } \
+		60% { -webkit-transform: translateX(15%) scaleX(0.7); transform: translateX(15%) scaleX(0.7); } \
 		to { -webkit-transform: translateX(50%) scaleX(0); transform: translateX(50%) scaleX(0); } \
 	} \
 	@-moz-keyframes progress { \
 		from { -moz-transform: translateX(-50%) scaleX(0); transform: translateX(-50%) scaleX(0); } \
-		50% { -moz-transform: translateX(0%) scaleX(0.7); transform: translateX(0%) scaleX(0.7); } \
+		60% { -moz-transform: translateX(15%) scaleX(0.7); transform: translateX(15%) scaleX(0.7); } \
 		to { -moz-transform: translateX(50%) scaleX(0); transform: translateX(50%) scaleX(0); } \
 	} \
 	@-ms-keyframes progress { \
 		from { -ms-transform: translateX(-50%) scaleX(0); transform: translateX(-50%) scaleX(0); } \
-		50% { -ms-transform: translateX(0%) scaleX(0.7); transform: translateX(0%) scaleX(0.7); } \
+		60% { -ms-transform: translateX(15%) scaleX(0.7); transform: translateX(15%) scaleX(0.7); } \
 		to { -ms-transform: translateX(50%) scaleX(0); transform: translateX(50%) scaleX(0); } \
 	} \
 	@keyframes progress { \
 		from { -webkit-transform: translateX(-50%) scaleX(0); transform: translateX(-50%) scaleX(0); } \
-		50% { -webkit-transform: translateX(0%) scaleX(0.7); transform: translateX(0%) scaleX(0.7); } \
+		60% { -webkit-transform: translateX(15%) scaleX(0.7); transform: translateX(15%) scaleX(0.7); } \
 		to { -webkit-transform: translateX(50%) scaleX(0); transform: translateX(50%) scaleX(0); } \
 	} \
 	.ehD-box { margin: 20px auto; width: 732px; box-sizing: border-box; font-size: 12px; border: 1px groove #000000; }\
@@ -12189,6 +12189,7 @@ var ehDownloadStyle = '\
 	.ehD-box legend a { color: inherit; text-decoration: none; }\
 	.ehD-box input[type="text"] { width: 250px; }\
 	.ehD-box-extend input[type="text"] { width: 255px; }\
+	.ehD-box input::placeholder { color: #999999; -webkit-text-fill-color: #999999; }\
 	.ehD-setting { position: fixed; left: 0; right: 0; top: 0; bottom: 0; padding: 5px; border: 1px solid #000000; background: #34353b; color: #dddddd; width: 600px; height: 380px; max-width: 100%; max-height: 100%; overflow-x: hidden; overflow-y: auto; box-sizing: border-box; margin: auto; z-index: 999; text-align: left; font-size: 12px; outline: 5px rgba(0, 0, 0, 0.25) solid; }\
 	.ehD-setting-tab { list-style: none; margin: 5px 0; padding: 0 10px; border-bottom: 1px solid #cccccc; overflow: auto; }\
 	.ehD-setting-tab li { float: left; padding: 5px 10px; border-bottom: 0; cursor: pointer; }\
@@ -12213,7 +12214,7 @@ var ehDownloadStyle = '\
 	.ehD-dialog progress::-webkit-progress-value { background: #4f535b; -webkit-transition: all 0.2s ease; transition: all 0.2s ease; } \
 	.ehD-dialog progress::-moz-progress-bar { background: #4f535b; -moz-transition: all 0.2s ease; transition: all 0.2s ease; } \
 	.ehD-dialog progress::-ms-fill { background: #4f535b; -ms-transition: all 0.2s ease; transition: all 0.2s ease; } \
-	.ehD-dialog progress:not([value])::after { content: ""; will-change: transform; width: 100%; height: 100%; left: 0; top: 0; display: block; background: #4f535b; position: absolute; -webkit-animation: progress 1s cubic-bezier(0.9, 0.4, 0.1, 0.6) alternate infinite; -moz-animation: progress 1s cubic-bezier(0.9, 0.4, 0.1, 0.6) alternate infinite; -ms-animation: progress 1s cubic-bezier(0.9, 0.4, 0.1, 0.6) alternate infinite; animation: progress 1s cubic-bezier(0.9, 0.4, 0.1, 0.6) alternate infinite; } \
+	.ehD-dialog progress:not([value])::after { content: ""; will-change: transform; width: 100%; height: 100%; left: 0; top: 0; display: block; background: #4f535b; position: absolute; -webkit-animation: progress 1s linear infinite; -moz-animation: progress 1s linear infinite; -ms-animation: progress 1s linear infinite; animation: progress 1s linear infinite; } \
 	.ehD-dialog progress:not([value])::-moz-progress-bar { width: 0px !important; } \
 	.ehD-pt { table-layout: fixed; width: 100%; }\
 	.ehD-pt-name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }\
@@ -12395,7 +12396,7 @@ function getReplacedName(str) {
 		.replace(/\{token\}/gi, unsafeWindow.token)
 		.replace(/\{title\}/gi, getSafeName(document.getElementById('gn').textContent))
 		.replace(/\{subtitle\}/gi, document.getElementById('gj').textContent ? getSafeName(document.getElementById('gj').textContent) : getSafeName(document.getElementById('gn').textContent))
-		.replace(/\{tag\}/gi, document.querySelector('#gdc .cs').textContent.trim().toUpperCase())
+		.replace(/\{tag\}|\{category\}/gi, document.querySelector('#gdc .cs').textContent.trim().toUpperCase())
 		.replace(/\{uploader\}/gi, getSafeName(document.querySelector('#gdn a').textContent))
 		.replaceHTMLEntites();
 }
@@ -13089,7 +13090,7 @@ function fetchOriginalImage(index, nodeList) {
 
 						isPausing = false;
 						initProgressTable();
-						requestDownload();
+						checkFailed();
 					});
 					ehDownloadDialog.appendChild(continueButton);
 
@@ -13169,7 +13170,7 @@ function fetchOriginalImage(index, nodeList) {
 
 						isPausing = false;
 						initProgressTable();
-						requestDownload();
+						checkFailed();
 					});
 					ehDownloadDialog.appendChild(continueButton);
 
@@ -13981,10 +13982,10 @@ function getPageData(index) {
 		if (isPausing) {
 			updateProgress(nodeList, {
 				name: '#' + realIndex + ': ' + fileName,
-				status: 'Force Paused',
+				status: 'Auto Paused',
 				progress: '',
 				progressText: '', 
-				class: ''
+				class: 'ehD-pt-failed'
 			});
 			fetchCount--;
 			imageData[index] = null;
@@ -14087,12 +14088,12 @@ function showSettings() {
 					<div class="ehD-setting-note">\
 						<div class="g2">\
 							* Available templates: \
-							<span title="You can find GID and token at the address bar like this: exhentai.org/g/[GID]/[Token]/">{gid} Gallery GID</sapn> | \
-							<span title="You can find GID and token at the address bar like this: exhentai.org/g/[GID]/[Token]/">{token} Gallery token</sapn> | \
-							<span title="This title is the English title or Latin transliteration, you can find it as the first line of the title.">{title} Gallery title</span> | \
-							<span title="This title is the original language title, you can find it as the second line of the title.">{subtitle} Gallery sub-title</span> | \
-							<span title="This tag means the sort name of the gallery, and its output string is upper.">{tag} Gallery tag</span> | \
-							<span title="You can find it at the left of the gallery page.">{uploader} Gallery uploader</span>\
+							<span title="You can find GID and token at the address bar like this: exhentai.org/g/[GID]/[Token]/"><code>{gid}</code> Gallery GID</sapn> | \
+							<span title="You can find GID and token at the address bar like this: exhentai.org/g/[GID]/[Token]/"><code>{token}</code> Gallery token</sapn> | \
+							<span title="This title is the English title or Latin transliteration, you can find it as the first line of the title."><code>{title}</code> Gallery title</span> | \
+							<span title="This title is the original language title, you can find it as the second line of the title."><code>{subtitle}</code> Gallery sub-title</span> | \
+							<span title="This tag means the sort name of the gallery, and its output string is upper."><code>{tag}</code>, <code>{category}</code> Gallery category</span> | \
+							<span title="You can find it at the left of the gallery page."><code>{uploader}</code> Gallery uploader</span>\
 						</div>\
 					</div>\
 				</div>\
@@ -14331,8 +14332,8 @@ function toggleFilenameConfirmInput(hide){
 	else if (!hide) {
 		extendNodes = document.createElement('div');
 		extendNodes.className = 'ehD-box-extend';
-		extendNodes.innerHTML = '<div class="g2">' + ehDownloadArrow + ' <a>File Name <input type="text" class="ehD-box-extend-filename"></a></div>' +
-		                        '<div class="g2">' + ehDownloadArrow + ' <a>Path Name <input type="text" class="ehD-box-extend-dirname"></a></div>';
+		extendNodes.innerHTML = '<div class="g2">' + ehDownloadArrow + ' <a><label>File Name <input type="text" class="ehD-box-extend-filename"></label></a></div>' +
+		                        '<div class="g2">' + ehDownloadArrow + ' <a><label>Path Name <input type="text" class="ehD-box-extend-dirname"</label>></a></div>';
 		ehDownloadBox.appendChild(extendNodes);
 
 		dirName = getReplacedName(!setting['dir-name'] ? '{gid}_{token}' : setting['dir-name']);
@@ -14456,7 +14457,7 @@ ehDownloadPauseBtn.addEventListener('click', function(event){
 		isPausing = false;
 		ehDownloadPauseBtn.textContent = setting['force-pause'] ? 'Pause (Downloading images will be aborted)' : 'Pause (Downloading images will keep downloading)';
 
-		requestDownload();
+		checkFailed();
 	}
 });
 
