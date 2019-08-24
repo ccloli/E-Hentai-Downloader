@@ -1993,10 +1993,10 @@ function getPageData(index) {
 		if (isPausing) {
 			updateProgress(nodeList, {
 				name: '#' + realIndex + ': ' + fileName,
-				status: 'Force Paused',
+				status: 'Auto Paused',
 				progress: '',
 				progressText: '', 
-				class: ''
+				class: 'ehD-pt-failed'
 			});
 			fetchCount--;
 			imageData[index] = null;
