@@ -407,7 +407,7 @@ function getReplacedName(str) {
 		.replace(/\{token\}/gi, unsafeWindow.token)
 		.replace(/\{title\}/gi, getSafeName(document.getElementById('gn').textContent))
 		.replace(/\{subtitle\}/gi, document.getElementById('gj').textContent ? getSafeName(document.getElementById('gj').textContent) : getSafeName(document.getElementById('gn').textContent))
-		.replace(/\{tag\}/gi, document.querySelector('#gdc .cs').textContent.trim().toUpperCase())
+		.replace(/\{tag\}|\{category\}/gi, document.querySelector('#gdc .cs').textContent.trim().toUpperCase())
 		.replace(/\{uploader\}/gi, getSafeName(document.querySelector('#gdn a').textContent))
 		.replaceHTMLEntites();
 }
@@ -2099,12 +2099,12 @@ function showSettings() {
 					<div class="ehD-setting-note">\
 						<div class="g2">\
 							* Available templates: \
-							<span title="You can find GID and token at the address bar like this: exhentai.org/g/[GID]/[Token]/">{gid} Gallery GID</sapn> | \
-							<span title="You can find GID and token at the address bar like this: exhentai.org/g/[GID]/[Token]/">{token} Gallery token</sapn> | \
-							<span title="This title is the English title or Latin transliteration, you can find it as the first line of the title.">{title} Gallery title</span> | \
-							<span title="This title is the original language title, you can find it as the second line of the title.">{subtitle} Gallery sub-title</span> | \
-							<span title="This tag means the sort name of the gallery, and its output string is upper.">{tag} Gallery tag</span> | \
-							<span title="You can find it at the left of the gallery page.">{uploader} Gallery uploader</span>\
+							<span title="You can find GID and token at the address bar like this: exhentai.org/g/[GID]/[Token]/"><code>{gid}</code> Gallery GID</sapn> | \
+							<span title="You can find GID and token at the address bar like this: exhentai.org/g/[GID]/[Token]/"><code>{token}</code> Gallery token</sapn> | \
+							<span title="This title is the English title or Latin transliteration, you can find it as the first line of the title."><code>{title}</code> Gallery title</span> | \
+							<span title="This title is the original language title, you can find it as the second line of the title."><code>{subtitle}</code> Gallery sub-title</span> | \
+							<span title="This tag means the sort name of the gallery, and its output string is upper."><code>{tag}</code>, <code>{category}</code> Gallery category</span> | \
+							<span title="You can find it at the left of the gallery page."><code>{uploader}</code> Gallery uploader</span>\
 						</div>\
 					</div>\
 				</div>\
