@@ -293,6 +293,7 @@ function initSetting() {
 		ehDownloadPauseBtn.textContent = setting['force-pause'] ? 'Pause (Downloading images will be aborted)' : 'Pause (Downloading images will keep downloading)';
 
 		if (!setting['hide-image-limits']) {
+			getResolutionSetting(true);
 			getImageLimits(true);
 			setInterval(getImageLimits, 60000);
 		}
@@ -2355,15 +2356,54 @@ function toggleFilenameConfirmInput(hide){
 	}
 }
 
+function getResolutionSetting(forced){
+	var url = '/uconfig.php';
+
+	var preData = JSON.parse(localStorage.getItem('ehd-resolution') || '{"timestamp":0}');
+	if (!forced && new Date() - preData.timestamp < 3600e3) {
+		return;
+	}
+
+	console.log('[EHD] Request Resolution Setting');
+
+	var xhr = new XMLHttpRequest();
+	xhr.onload = function() {
+		if (!xhr.responseText) return;
+		var preData = {
+			withoutHentaiAtHome: +((xhr.responseText.match(/id="uh_(\d)" checked/) || [])[1] || 0),
+			resolution: +((xhr.responseText.match(/id="xr_(\d)" checked/) || [])[1] || 0),
+			timestamp: Date.now()
+		};
+		console.log('[EHD] Resolution Setting >', JSON.stringify(preData));
+		localStorage.setItem('ehd-resolution', JSON.stringify(preData));
+		showPreCalcCost();
+	};
+	xhr.open('GET', url);
+	xhr.send();
+}
+
 function showPreCalcCost(){
+	var resolutionSetting = JSON.parse(localStorage.getItem('ehd-resolution') || '{"timestamp":0}');
+	var resolutionCost = {
+		0: 1,
+		1: 1,
+		2: 1,
+		3: 1,
+		4: 3,
+		5: 5
+	};
 	var size = 0;
 	var page = getFileSizeAndLength().page;
-	var cost = page;
+	var perCost = resolutionCost[resolutionSetting.resolution || 0];
+	if (resolutionSetting.withoutHentaiAtHome) {
+		perCost += 5;
+	}
+	var cost = page * perCost;
 
 	if (!setting['force-resized']) {
 		size = getFileSizeAndLength().sizeMB;
 		// 1 point per 0.1 MB since August 2019, less than 0.1 MB will also be counted, so asumme each image size has the extra < 100 KB
-		cost = Math.ceil(size * 10) + page * 2;
+		cost = Math.ceil((size * 10) + page * (1 + perCost));
 	}
 
 	ehDownloadBox.getElementsByClassName('ehD-box-cost')[0].innerHTML = ' | <a href="https://github.com/ccloli/E-Hentai-Downloader/wiki/E%E2%88%92Hentai-Image-Viewing-Limits" target="_blank" title="1 point per 0.1 MB since August 2019, less than 0.1 MB will also be counted">Estimated Limits Cost: ' + cost + '</a>';
