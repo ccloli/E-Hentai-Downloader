@@ -1226,9 +1226,8 @@ function fetchOriginalImage(index, nodeList) {
 					}
 					return failedFetching(index, nodeList);
 				}
-				// GM_xhr doesn't support xhr.getResponseHeader() function
-				//if (res.getResponseHeader('Content-Type').split('/')[0] != 'image') {
-				else if (mime[0] !== 'image') {
+				// hot fix for new E-Hentai original image server, as it returns an invalid `Content-Type` header (#153)
+				else if (['image', 'jpg', 'jpeg', 'gif', 'png', 'bmp', 'tif', 'tiff', 'webp', 'apng'].indexOf(mime[0]) < 0) {
 					console.log('[EHD] #' + (index + 1) + ': Wrong Content-Type');
 					console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL, '\nFinal URL >', res.finalUrl, '\nResposeHeaders >' + res.responseHeaders);
 
