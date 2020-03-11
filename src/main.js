@@ -1131,67 +1131,106 @@ function fetchOriginalImage(index, nodeList) {
 					return;
 				}
 				// ip banned
-				else if (
-					(mime[0] === 'text' && (res.responseText || new TextDecoder().decode(new DataView(response))).indexOf('Your IP address has been temporarily banned') >= 0)
-				) {
-					console.log('[EHD] #' + (index + 1) + ': IP address banned');
-					console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL, '\nFinal URL >', res.finalUrl, '\nResposeHeaders >' + res.responseHeaders);
+				else if (mime[0] === 'text') {
+					var responseText = res.responseText || new TextDecoder().decode(new DataView(response));
+					if (responseText.indexOf('Your IP address has been temporarily banned') >= 0) {
+						console.log('[EHD] #' + (index + 1) + ': IP address banned');
+						console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL, '\nFinal URL >', res.finalUrl, '\nResposeHeaders >' + res.responseHeaders);
 
-					updateProgress(nodeList, {
-						status: 'Failed! (IP banned)',
-						progress: '0',
-						progressText: '',
-						class: 'ehD-pt-failed'
-					});
+						updateProgress(nodeList, {
+							status: 'Failed! (IP banned)',
+							progress: '0',
+							progressText: '',
+							class: 'ehD-pt-failed'
+						});
 
-					for (var i in res) {
-						delete res[i];
+						for (var i in res) {
+							delete res[i];
+						}
+
+						failedCount++;
+						fetchCount--;
+						updateTotalStatus();
+
+						if (isPausing) return;
+
+						pushDialog('Your IP address has been temporarily banned.\n');
+						isPausing = true;
+						updateTotalStatus();
+						if (emptyAudio) {
+							emptyAudio.pause();
+						}
+
+						if (ehDownloadDialog.contains(ehDownloadPauseBtn)) {
+							ehDownloadDialog.removeChild(ehDownloadPauseBtn);
+						}
+
+						var expiredTime = (res.responseText || new TextDecoder().decode(new DataView(response))).match(ehDownloadRegex.IPBanExpires);
+
+						alert('Your IP address has been temporarily banned. \n\n\
+							Make sure your download settings are not configured to download too fast. If you are using conservative rules, check if your computer is infected with malware, or if you are using a shared IP with others.\n\
+							If you can change your IP (like using a proxy) or wait until you\'re unblocked, you can then continue your download; or cancel your download and get downloaded images.\n\n' + 
+							(expiredTime ? '\n' + expiredTime[0] : '')
+						);
+
+						var continueButton = document.createElement('button');
+						continueButton.innerHTML = 'Continue Download';
+						continueButton.addEventListener('click', function () {
+							//fetchCount = 0;
+							ehDownloadDialog.removeChild(continueButton);
+							ehDownloadDialog.removeChild(cancelButton);
+							ehDownloadDialog.appendChild(ehDownloadPauseBtn);
+
+							isPausing = false;
+							initProgressTable();
+							checkFailed();
+						});
+						ehDownloadDialog.appendChild(continueButton);
+
+						var cancelButton = document.createElement('button');
+						cancelButton.innerHTML = 'Cancel Download';
+						cancelButton.addEventListener('click', function () {
+							ehDownloadDialog.removeChild(continueButton);
+							ehDownloadDialog.removeChild(cancelButton);
+
+							if (setting['auto-download-cancel'] || confirm('Would you like to save downloaded images?')) {
+								saveDownloaded();
+							}
+							else {
+								insertCloseButton();
+							}
+							isPausing = false;
+							isDownloading = false;
+							zip.file(/.*/).forEach(function (elem) {
+								zip.remove(elem);
+							});
+						});
+						ehDownloadDialog.appendChild(cancelButton);
+
+						return;
 					}
+					if (responseText.indexOf('as your account has been suspended') >= 0) {
+						console.log('[EHD] #' + (index + 1) + ': Account Suspended');
+						console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL, '\nFinal URL >', res.finalUrl, '\nResposeHeaders >' + res.responseHeaders);
 
-					failedCount++;
-					fetchCount--;
-					updateTotalStatus();
+						updateProgress(nodeList, {
+							status: 'Failed! (Suspended)',
+							progress: '0',
+							progressText: '',
+							class: 'ehD-pt-failed'
+						});
 
-					if (isPausing) return;
-
-					pushDialog('Your IP address has been temporarily banned.\n');
-					isPausing = true;
-					updateTotalStatus();
-					if (emptyAudio) {
-						emptyAudio.pause();
-					}
-
-					if (ehDownloadDialog.contains(ehDownloadPauseBtn)) {
-						ehDownloadDialog.removeChild(ehDownloadPauseBtn);
-					}
-
-					var expiredTime = (res.responseText || new TextDecoder().decode(new DataView(response))).match(ehDownloadRegex.IPBanExpires);
-
-					alert('Your IP address has been temporarily banned. \n\n\
-						Make sure your download settings are not configured to download too fast. If you are using conservative rules, check if your computer is infected with malware, or if you are using a shared IP with others.\n\
-						If you can change your IP (like using a proxy) or wait until you\'re unblocked, you can then continue your download; or cancel your download and get downloaded images.\n\n' + 
-						(expiredTime ? '\n' + expiredTime[0] : '')
-					);
-
-					var continueButton = document.createElement('button');
-					continueButton.innerHTML = 'Continue Download';
-					continueButton.addEventListener('click', function () {
-						//fetchCount = 0;
-						ehDownloadDialog.removeChild(continueButton);
-						ehDownloadDialog.removeChild(cancelButton);
-						ehDownloadDialog.appendChild(ehDownloadPauseBtn);
-
-						isPausing = false;
-						initProgressTable();
-						checkFailed();
-					});
-					ehDownloadDialog.appendChild(continueButton);
-
-					var cancelButton = document.createElement('button');
-					cancelButton.innerHTML = 'Cancel Download';
-					cancelButton.addEventListener('click', function () {
-						ehDownloadDialog.removeChild(continueButton);
-						ehDownloadDialog.removeChild(cancelButton);
+						for (var i in res) {
+							delete res[i];
+						}
+						
+						if (setting['force-resized'] || confirm('Your account has been suspended.\n\n\
+							Your account is suspended by E-Hentai, and you can check your unblock time on E-Hentai forum. At this time, you cannot access to any user-related page and download original images.\n\
+							You can still access to resized images, would you like to switch to download resized images?')) {
+							setting['force-resized'] = true;
+							getPageData(index);
+							return;
+						}
 
 						if (setting['auto-download-cancel'] || confirm('Would you like to save downloaded images?')) {
 							saveDownloaded();
@@ -1199,15 +1238,12 @@ function fetchOriginalImage(index, nodeList) {
 						else {
 							insertCloseButton();
 						}
-						isPausing = false;
-						isDownloading = false;
 						zip.file(/.*/).forEach(function (elem) {
 							zip.remove(elem);
 						});
-					});
-					ehDownloadDialog.appendChild(cancelButton);
-
-					return;
+						isDownloading = false;
+						return;
+					}
 				}
 				// res.status should be detected at here, because we should know are we reached image limits at first
 				else if (res.status !== 200) {
@@ -2269,14 +2305,19 @@ function getImageLimits(forced, host){
 		timeout: 300000,
 		onload: function(res) {
 			if (!res.responseText) return;
-			var data = res.responseText.match(ehDownloadRegex.imageLimits);
-			if (data && data.length === 3) {
+			preData.timestamp = new Date().getTime();
+			if (res.responseText.indexOf('as your account has been suspended') >= 0) {
+				preData.suspended = true;
+			}
+			else {
+				var data = res.responseText.match(ehDownloadRegex.imageLimits);
+				if (!data || data.length < 3) return;
 				preData.cur = data[1];
 				preData.total = data[2];
-				preData.timestamp = new Date().getTime();
-				localStorage.setItem('ehd-image-limits-' + host, JSON.stringify(preData));
-				showImageLimits();
+				delete preData.suspended;
 			}
+			localStorage.setItem('ehd-image-limits-' + host, JSON.stringify(preData));
+			showImageLimits();
 		}
 	});
 }
@@ -2286,6 +2327,9 @@ function showImageLimits(){
 		return elem.indexOf('ehd-image-limits-') === 0;
 	}).sort().map(function(elem){
 		var curData = JSON.parse(localStorage.getItem(elem));
+		if (curData.suspended) {
+			return '<a href="https://forums.e-hentai.org/" target="_blank" style="color: #f00">! Account Suspended !</span>';
+		}
 		return curData.cur + '/' + curData.total;
 	});
 
