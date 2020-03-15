@@ -2464,9 +2464,9 @@ function showPreCalcCost(){
 	var cost = page * perCost;
 
 	if (!setting['force-resized']) {
-		size = getFileSizeAndLength().sizeMB;
+		size = getFileSizeAndLength().size;
 		// 1 point per 0.1 MB since August 2019, less than 0.1 MB will also be counted, so asumme each image size has the extra < 100 KB
-		cost = Math.ceil((size * 10) + page * (1 + perCost));
+		cost = Math.ceil((size / 1e5) + page * (1 + perCost));
 	}
 
 	ehDownloadBox.getElementsByClassName('ehD-box-cost')[0].innerHTML = ' | <a href="https://github.com/ccloli/E-Hentai-Downloader/wiki/E%E2%88%92Hentai-Image-Viewing-Limits" target="_blank" title="1 point per 0.1 MB since August 2019, less than 0.1 MB will also be counted">Estimated Limits Cost: ' + cost + '</a>';
