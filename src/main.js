@@ -779,6 +779,8 @@ function checkFailed() {
 					zip.remove(elem);
 				});
 				isDownloading = false;
+
+				getImageLimits(true);
 			}
 		}
 	}
@@ -792,6 +794,8 @@ function checkFailed() {
 			zip.remove(elem);
 		});
 		isDownloading = false;
+
+		getImageLimits(true);
 	}
 }
 
@@ -1125,6 +1129,8 @@ function fetchOriginalImage(index, nodeList) {
 						zip.file(/.*/).forEach(function (elem) {
 							zip.remove(elem);
 						});
+
+						getImageLimits(true);
 					});
 					ehDownloadDialog.appendChild(cancelButton);
 
@@ -1204,6 +1210,8 @@ function fetchOriginalImage(index, nodeList) {
 							zip.file(/.*/).forEach(function (elem) {
 								zip.remove(elem);
 							});
+
+							getImageLimits(true);
 						});
 						ehDownloadDialog.appendChild(cancelButton);
 
@@ -1242,6 +1250,8 @@ function fetchOriginalImage(index, nodeList) {
 							zip.remove(elem);
 						});
 						isDownloading = false;
+
+						getImageLimits(true);
 						return;
 					}
 				}
