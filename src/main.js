@@ -900,7 +900,9 @@ function fetchOriginalImage(index, nodeList) {
 			class: 'ehD-pt-warning'
 		});
 
-		if (imageList[index]['imageURL'].indexOf('fullimg.php') >= 0) imageList[index]['imageFinalURL'] = res.finalUrl;
+		if (imageList[index]['imageURL'].indexOf('fullimg.php') >= 0 && imageList[index]['imageURL'] !== res.finalUrl) {
+			imageList[index]['imageFinalURL'] = res.finalUrl;
+		}
 
 		for (var i in res) {
 			delete res[i];
@@ -972,6 +974,10 @@ function fetchOriginalImage(index, nodeList) {
 					speedInfo.expiredDetect = setTimeout(expiredSpeedHandler, (setting['speed-expired'] ? setting['speed-expired'] : 30) * 1000, res);
 					console.log('[EHD] Speed detect handler is inited for', index + 1, '!');
 				}
+			}
+
+			if (imageList[index]['imageURL'].indexOf('fullimg.php') >= 0 && imageList[index]['imageURL'] !== res.finalUrl) {
+				imageList[index]['imageFinalURL'] = res.finalUrl;
 			}
 		},
 		onload: function(res) {
@@ -1335,7 +1341,6 @@ function fetchOriginalImage(index, nodeList) {
 			}
 		},
 		onerror: function(res){
-			removeTimerHandler();
 			if (!isDownloading || imageData[index] instanceof ArrayBuffer) return; // Temporarily fixes #31
 
 			console.log('[EHD] #' + (index + 1) + ': Network Error');
@@ -1348,7 +1353,9 @@ function fetchOriginalImage(index, nodeList) {
 				class: 'ehD-pt-warning'
 			});
 
-			if (imageList[index]['imageURL'].indexOf('fullimg.php') >= 0) imageList[index]['imageFinalURL'] = res.finalUrl;
+			if (imageList[index]['imageURL'].indexOf('fullimg.php') >= 0 && imageList[index]['imageURL'] !== res.finalUrl) {
+				imageList[index]['imageFinalURL'] = res.finalUrl;
+			}
 
 			for (var i in res) {
 				delete res[i];
@@ -1370,7 +1377,10 @@ function fetchOriginalImage(index, nodeList) {
 				class: 'ehD-pt-warning'
 			});
 
-			if (imageList[index]['imageURL'].indexOf('fullimg.php') >= 0) imageList[index]['imageFinalURL'] = res.finalUrl;
+			if (imageList[index]['imageURL'].indexOf('fullimg.php') >= 0 && imageList[index]['imageURL'] !== res.finalUrl) {
+				imageList[index]['imageFinalURL'] = res.finalUrl;
+			}
+
 
 			for (var i in res) {
 				delete res[i];
