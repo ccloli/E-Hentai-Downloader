@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.31.7
+// @version      1.31.8
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -12767,6 +12767,8 @@ function checkFailed() {
 					zip.remove(elem);
 				});
 				isDownloading = false;
+
+				getImageLimits(true);
 			}
 		}
 	}
@@ -12780,6 +12782,8 @@ function checkFailed() {
 			zip.remove(elem);
 		});
 		isDownloading = false;
+
+		getImageLimits(true);
 	}
 }
 
@@ -12884,7 +12888,9 @@ function fetchOriginalImage(index, nodeList) {
 			class: 'ehD-pt-warning'
 		});
 
-		if (imageList[index]['imageURL'].indexOf('fullimg.php') >= 0) imageList[index]['imageFinalURL'] = res.finalUrl;
+		if (imageList[index]['imageURL'].indexOf('fullimg.php') >= 0 && imageList[index]['imageURL'] !== res.finalUrl) {
+			imageList[index]['imageFinalURL'] = res.finalUrl;
+		}
 
 		for (var i in res) {
 			delete res[i];
@@ -12956,6 +12962,10 @@ function fetchOriginalImage(index, nodeList) {
 					speedInfo.expiredDetect = setTimeout(expiredSpeedHandler, (setting['speed-expired'] ? setting['speed-expired'] : 30) * 1000, res);
 					console.log('[EHD] Speed detect handler is inited for', index + 1, '!');
 				}
+			}
+
+			if (imageList[index]['imageURL'].indexOf('fullimg.php') >= 0 && imageList[index]['imageURL'] !== res.finalUrl) {
+				imageList[index]['imageFinalURL'] = res.finalUrl;
 			}
 		},
 		onload: function(res) {
@@ -13113,6 +13123,8 @@ function fetchOriginalImage(index, nodeList) {
 						zip.file(/.*/).forEach(function (elem) {
 							zip.remove(elem);
 						});
+
+						getImageLimits(true);
 					});
 					ehDownloadDialog.appendChild(cancelButton);
 
@@ -13192,6 +13204,8 @@ function fetchOriginalImage(index, nodeList) {
 							zip.file(/.*/).forEach(function (elem) {
 								zip.remove(elem);
 							});
+
+							getImageLimits(true);
 						});
 						ehDownloadDialog.appendChild(cancelButton);
 
@@ -13230,6 +13244,8 @@ function fetchOriginalImage(index, nodeList) {
 							zip.remove(elem);
 						});
 						isDownloading = false;
+
+						getImageLimits(true);
 						return;
 					}
 				}
@@ -13313,7 +13329,6 @@ function fetchOriginalImage(index, nodeList) {
 			}
 		},
 		onerror: function(res){
-			removeTimerHandler();
 			if (!isDownloading || imageData[index] instanceof ArrayBuffer) return; // Temporarily fixes #31
 
 			console.log('[EHD] #' + (index + 1) + ': Network Error');
@@ -13326,7 +13341,9 @@ function fetchOriginalImage(index, nodeList) {
 				class: 'ehD-pt-warning'
 			});
 
-			if (imageList[index]['imageURL'].indexOf('fullimg.php') >= 0) imageList[index]['imageFinalURL'] = res.finalUrl;
+			if (imageList[index]['imageURL'].indexOf('fullimg.php') >= 0 && imageList[index]['imageURL'] !== res.finalUrl) {
+				imageList[index]['imageFinalURL'] = res.finalUrl;
+			}
 
 			for (var i in res) {
 				delete res[i];
@@ -13348,7 +13365,10 @@ function fetchOriginalImage(index, nodeList) {
 				class: 'ehD-pt-warning'
 			});
 
-			if (imageList[index]['imageURL'].indexOf('fullimg.php') >= 0) imageList[index]['imageFinalURL'] = res.finalUrl;
+			if (imageList[index]['imageURL'].indexOf('fullimg.php') >= 0 && imageList[index]['imageURL'] !== res.finalUrl) {
+				imageList[index]['imageFinalURL'] = res.finalUrl;
+			}
+
 
 			for (var i in res) {
 				delete res[i];
@@ -14432,9 +14452,9 @@ function showPreCalcCost(){
 	var cost = page * perCost;
 
 	if (!setting['force-resized']) {
-		size = getFileSizeAndLength().sizeMB;
+		size = getFileSizeAndLength().size;
 		// 1 point per 0.1 MB since August 2019, less than 0.1 MB will also be counted, so asumme each image size has the extra < 100 KB
-		cost = Math.ceil((size * 10) + page * (1 + perCost));
+		cost = Math.ceil((size / 1e5) + page * (1 + perCost));
 	}
 
 	ehDownloadBox.getElementsByClassName('ehD-box-cost')[0].innerHTML = ' | <a href="https://github.com/ccloli/E-Hentai-Downloader/wiki/E%E2%88%92Hentai-Image-Viewing-Limits" target="_blank" title="1 point per 0.1 MB since August 2019, less than 0.1 MB will also be counted">Estimated Limits Cost: ' + cost + '</a>';
