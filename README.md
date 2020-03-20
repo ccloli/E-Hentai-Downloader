@@ -20,6 +20,7 @@ Download E-Hentai archive as zip file :package:
 ## Install This Script
 
 - [Download from GitHub](https://github.com/ccloli/E-Hentai-Downloader/raw/master/e-hentai-downloader.user.js)
+- [从GitHub下载中文版](https://github.com/ccloli/E-Hentai-Downloader/raw/master/e-hentai-downloader-zh.user.js)
 - [Download from GreasyFork](https://sleazyfork.org/scripts/10379-e-hentai-downloader)
 
 
