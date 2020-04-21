@@ -1013,7 +1013,7 @@ function fetchOriginalImage(index, nodeList) {
 
 					// res.response polyfill is useless, so it has been removed
 				}
-				else if (byteLength === 925) { // '403 Access Denied' Image Byte Size
+				if (byteLength === 925) { // '403 Access Denied' Image Byte Size
 					// GM_xhr only support abort()
 					console.log('[EHD] #' + (index + 1) + ': 403 Access Denied');
 					console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL, '\nFinal URL >', res.finalUrl, '\nResposeHeaders >' + res.responseHeaders);
@@ -1030,7 +1030,7 @@ function fetchOriginalImage(index, nodeList) {
 					}
 					return failedFetching(index, nodeList, true);
 				}
-				else if (byteLength === 28) { // 'An error has occurred. (403)' Length
+				if (byteLength === 28) { // 'An error has occurred. (403)' Length
 					console.log('[EHD] #' + (index + 1) + ': An error has occurred. (403)');
 					console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL, '\nFinal URL >', res.finalUrl, '\nResposeHeaders >' + res.responseHeaders);
 					
@@ -1046,7 +1046,7 @@ function fetchOriginalImage(index, nodeList) {
 					}
 					return failedFetching(index, nodeList, true);
 				}
-				else if (
+				if (
 					byteLength === 142 ||   // Image Viewing Limits String Byte Size (exhentai)
 					byteLength === 144 ||   // Image Viewing Limits String Byte Size (g.e-hentai)
 					byteLength === 28658 || // '509 Bandwidth Exceeded' Image Byte Size
@@ -1143,7 +1143,7 @@ function fetchOriginalImage(index, nodeList) {
 					return;
 				}
 				// ip banned
-				else if (mime[0] === 'text') {
+				if (mime[0] === 'text') {
 					var responseText = res.responseText || new TextDecoder().decode(new DataView(response));
 					if (responseText.indexOf('Your IP address has been temporarily banned') >= 0) {
 						console.log('[EHD] #' + (index + 1) + ': IP address banned');
@@ -1262,12 +1262,12 @@ function fetchOriginalImage(index, nodeList) {
 					}
 				}
 				// res.status should be detected at here, because we should know are we reached image limits at first
-				else if (res.status !== 200) {
-					console.log('[EHD] #' + (index + 1) + ': Wrong Response Status');
+				if (res.status !== 200) {
+					console.log('[EHD] #' + (index + 1) + ': Wrong Response Status (' + res.status + ')');
 					console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL, '\nFinal URL >', res.finalUrl, '\nResposeHeaders >' + res.responseHeaders);
 
 					updateProgress(nodeList, {
-						status: 'Failed! (Wrong Status)',
+						status: 'Failed! (Status ' + res.status + ')',
 						progress: '0',
 						progressText: '',
 						class: 'ehD-pt-warning'
@@ -1276,10 +1276,10 @@ function fetchOriginalImage(index, nodeList) {
 					for (var i in res) {
 						delete res[i];
 					}
-					return failedFetching(index, nodeList);
+					return failedFetching(index, nodeList, res.status === 404);
 				}
 				// hot fix for new E-Hentai original image server, as it returns an invalid `Content-Type` header (#153)
-				else if (['image', 'jpg', 'jpeg', 'gif', 'png', 'bmp', 'tif', 'tiff', 'webp', 'apng'].indexOf(mime[0]) < 0) {
+				if (['image', 'jpg', 'jpeg', 'gif', 'png', 'bmp', 'tif', 'tiff', 'webp', 'apng'].indexOf(mime[0]) < 0) {
 					console.log('[EHD] #' + (index + 1) + ': Wrong Content-Type');
 					console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL, '\nFinal URL >', res.finalUrl, '\nResposeHeaders >' + res.responseHeaders);
 
