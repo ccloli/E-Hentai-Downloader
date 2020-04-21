@@ -1341,6 +1341,7 @@ function fetchOriginalImage(index, nodeList) {
 			}
 		},
 		onerror: function(res){
+			removeTimerHandler();
 			if (!isDownloading || imageData[index] instanceof ArrayBuffer) return; // Temporarily fixes #31
 
 			console.log('[EHD] #' + (index + 1) + ': Network Error');
@@ -1391,9 +1392,7 @@ function fetchOriginalImage(index, nodeList) {
 	});
 
 	if (nodeList.status.dataset.initedAbort !== '2') {
-		nodeList.abort.addEventListener('click', function(){
-			if (!isDownloading || imageData[index] instanceof ArrayBuffer) return; // Temporarily fixes #31
-
+		nodeList.abort.addEventListener('click', function () {
 			removeTimerHandler();
 		});
 
