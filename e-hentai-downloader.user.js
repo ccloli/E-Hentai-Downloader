@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.31.11
+// @version      1.31.12
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -36,19 +36,23 @@ console.log('[EHD] Bugs Report >', 'https://github.com/ccloli/E-Hentai-Downloade
 console.log('[EHD] To report a bug, it\'s recommended to provide the logs started with "[EHD]", thanks. =w=');
 
 // GreaseMonkey 4.x compatible
-if (typeof GM_getValue === 'undefined' && typeof GM !== 'undefined') {
-	var loadSetting = GM.getValue.bind(this, 'ehD-setting');
-	self.GM_setValue = GM.setValue;
-	self.GM_xmlhttpRequest = GM.xmlHttpRequest;
-	self.GM_info = GM.info;
+var GM_setValue = self.GM_setValue;
+var GM_xmlhttpRequest = self.GM_xmlhttpRequest;
+var GM_info = self.GM_info;
+var loadSetting;
+if (typeof GM !== 'undefined') {
+	loadSetting = GM.getValue.bind(this, 'ehD-setting');
+	GM_setValue = GM.setValue;
+	GM_xmlhttpRequest = GM.xmlHttpRequest;
+	GM_info = GM.info;
 }
 else {
-	var loadSetting = function(key, init) {
-		return new Promise(function(resolve, reject){
+	loadSetting = function (key, init) {
+		return new Promise(function (resolve, reject) {
 			try {
 				resolve(GM_getValue('ehD-setting'));
 			}
-			catch(e) {
+			catch (e) {
 				reject(e);
 			}
 		});
@@ -12041,6 +12045,13 @@ var ehDownloadRegex = {
 	slashOnly: /^[\\/]*$/
 };
 
+var dateOffset = new Date().getTimezoneOffset() * 60000;
+Object.defineProperty(JSZip.defaults, 'date', {
+	get: function() {
+		return new Date(Date.now() - dateOffset);
+	}
+});
+
 var requestFileSystem = window.requestFileSystem || window.webkitRequestFileSystem;
 var ehDownloadFS = {
 	fs: undefined,
@@ -12574,51 +12585,7 @@ function generateZip(isFromFS, fs, isRetry, forced){
 		}, 10e3); // 10s to fixed Chrome delay downloads
 	};
 
-	try {
-		var lastMetaTime = 0;
-		// build arraybuffer object to detect if it generates successfully
-		zip.generateAsync({
-			type: 'arraybuffer',
-			compression: setting['compression-level'] ? 'DEFLATE' : 'STORE',
-			compressionOptions: {
-				level: setting['compression-level'] > 0 ? (setting['compression-level'] < 10 ? setting['compression-level'] : 9) : 1
-			},
-			streamFiles: setting['file-descriptor'] ? true : false,
-			comment: setting['save-info'] === 'comment' ? infoStr.replace(/\n/gi, '\r\n') : undefined
-		}, function(meta){
-			// meta update function will be called nearly every 1ms, for performance, update every 300ms
-			// anyway it's still too fast so that you may still cannot see the update
-			var thisMetaTime = Date.now();
-			if (thisMetaTime - lastMetaTime < 300) {
-				return;
-			}
-			lastMetaTime = thisMetaTime;
-			progress.value = meta.percent / 100;
-			curFile.textContent = meta.currentFile || 'Calculating extra data...';
-		}).then(function(abData){
-			progress.value = 1;
-
-			if (!forced) {
-				if (emptyAudio) {
-					emptyAudio.pause();
-				}
-			}
-
-			if (isFromFS || ehDownloadFS.needFileSystem) { // using filesystem to save file is needed
-				saveToFileSystem(abData);
-			}
-			else { // or just using blob
-				saveToBlob(abData);
-			}
-
-			if (!forced) {
-				zip.file(/.*/).forEach(function(elem){
-					zip.remove(elem);
-				});
-			}
-		});
-	}
-	catch (error) {
+	const errorHandler = function (error) {
 		abData = undefined;
 
 		pushDialog('An error occurred when generating Zip file as ArrayBuffer.');
@@ -12682,6 +12649,54 @@ function generateZip(isFromFS, fs, isRetry, forced){
 			};
 			requestFileSystem(window.TEMPORARY, 1024 * 1024 * 1024 * 1024, initFS, fsErrorHandler);
 		}
+	}
+
+	try {
+		var lastMetaTime = 0;
+		// build arraybuffer object to detect if it generates successfully
+		zip.generateAsync({
+			type: 'arraybuffer',
+			compression: setting['compression-level'] ? 'DEFLATE' : 'STORE',
+			compressionOptions: {
+				level: setting['compression-level'] > 0 ? (setting['compression-level'] < 10 ? setting['compression-level'] : 9) : 1
+			},
+			streamFiles: setting['file-descriptor'] ? true : false,
+			comment: setting['save-info'] === 'comment' ? infoStr.replace(/\n/gi, '\r\n') : undefined
+		}, function(meta){
+			// meta update function will be called nearly every 1ms, for performance, update every 300ms
+			// anyway it's still too fast so that you may still cannot see the update
+			var thisMetaTime = Date.now();
+			if (thisMetaTime - lastMetaTime < 300) {
+				return;
+			}
+			lastMetaTime = thisMetaTime;
+			progress.value = meta.percent / 100;
+			curFile.textContent = meta.currentFile || 'Calculating extra data...';
+		}).then(function(abData){
+			progress.value = 1;
+
+			if (!forced) {
+				if (emptyAudio) {
+					emptyAudio.pause();
+				}
+			}
+
+			if (isFromFS || ehDownloadFS.needFileSystem) { // using filesystem to save file is needed
+				saveToFileSystem(abData);
+			}
+			else { // or just using blob
+				saveToBlob(abData);
+			}
+
+			if (!forced) {
+				zip.file(/.*/).forEach(function(elem){
+					zip.remove(elem);
+				});
+			}
+		}).catch(errorHandler);
+	}
+	catch (error) {
+		errorHandler(error);
 	}
 }
 
