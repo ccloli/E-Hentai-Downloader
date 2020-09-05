@@ -53,6 +53,13 @@ var ehDownloadRegex = {
 	slashOnly: /^[\\/]*$/
 };
 
+var dateOffset = new Date().getTimezoneOffset() * 60000;
+Object.defineProperty(JSZip.defaults, 'date', {
+	get: function() {
+		return new Date(Date.now() - dateOffset);
+	}
+});
+
 var requestFileSystem = window.requestFileSystem || window.webkitRequestFileSystem;
 var ehDownloadFS = {
 	fs: undefined,
