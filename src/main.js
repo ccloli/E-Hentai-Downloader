@@ -586,51 +586,7 @@ function generateZip(isFromFS, fs, isRetry, forced){
 		}, 10e3); // 10s to fixed Chrome delay downloads
 	};
 
-	try {
-		var lastMetaTime = 0;
-		// build arraybuffer object to detect if it generates successfully
-		zip.generateAsync({
-			type: 'arraybuffer',
-			compression: setting['compression-level'] ? 'DEFLATE' : 'STORE',
-			compressionOptions: {
-				level: setting['compression-level'] > 0 ? (setting['compression-level'] < 10 ? setting['compression-level'] : 9) : 1
-			},
-			streamFiles: setting['file-descriptor'] ? true : false,
-			comment: setting['save-info'] === 'comment' ? infoStr.replace(/\n/gi, '\r\n') : undefined
-		}, function(meta){
-			// meta update function will be called nearly every 1ms, for performance, update every 300ms
-			// anyway it's still too fast so that you may still cannot see the update
-			var thisMetaTime = Date.now();
-			if (thisMetaTime - lastMetaTime < 300) {
-				return;
-			}
-			lastMetaTime = thisMetaTime;
-			progress.value = meta.percent / 100;
-			curFile.textContent = meta.currentFile || 'Calculating extra data...';
-		}).then(function(abData){
-			progress.value = 1;
-
-			if (!forced) {
-				if (emptyAudio) {
-					emptyAudio.pause();
-				}
-			}
-
-			if (isFromFS || ehDownloadFS.needFileSystem) { // using filesystem to save file is needed
-				saveToFileSystem(abData);
-			}
-			else { // or just using blob
-				saveToBlob(abData);
-			}
-
-			if (!forced) {
-				zip.file(/.*/).forEach(function(elem){
-					zip.remove(elem);
-				});
-			}
-		});
-	}
-	catch (error) {
+	const errorHandler = function (error) {
 		abData = undefined;
 
 		pushDialog('An error occurred when generating Zip file as ArrayBuffer.');
@@ -694,6 +650,54 @@ function generateZip(isFromFS, fs, isRetry, forced){
 			};
 			requestFileSystem(window.TEMPORARY, 1024 * 1024 * 1024 * 1024, initFS, fsErrorHandler);
 		}
+	}
+
+	try {
+		var lastMetaTime = 0;
+		// build arraybuffer object to detect if it generates successfully
+		zip.generateAsync({
+			type: 'arraybuffer',
+			compression: setting['compression-level'] ? 'DEFLATE' : 'STORE',
+			compressionOptions: {
+				level: setting['compression-level'] > 0 ? (setting['compression-level'] < 10 ? setting['compression-level'] : 9) : 1
+			},
+			streamFiles: setting['file-descriptor'] ? true : false,
+			comment: setting['save-info'] === 'comment' ? infoStr.replace(/\n/gi, '\r\n') : undefined
+		}, function(meta){
+			// meta update function will be called nearly every 1ms, for performance, update every 300ms
+			// anyway it's still too fast so that you may still cannot see the update
+			var thisMetaTime = Date.now();
+			if (thisMetaTime - lastMetaTime < 300) {
+				return;
+			}
+			lastMetaTime = thisMetaTime;
+			progress.value = meta.percent / 100;
+			curFile.textContent = meta.currentFile || 'Calculating extra data...';
+		}).then(function(abData){
+			progress.value = 1;
+
+			if (!forced) {
+				if (emptyAudio) {
+					emptyAudio.pause();
+				}
+			}
+
+			if (isFromFS || ehDownloadFS.needFileSystem) { // using filesystem to save file is needed
+				saveToFileSystem(abData);
+			}
+			else { // or just using blob
+				saveToBlob(abData);
+			}
+
+			if (!forced) {
+				zip.file(/.*/).forEach(function(elem){
+					zip.remove(elem);
+				});
+			}
+		}).catch(errorHandler);
+	}
+	catch (error) {
+		errorHandler(error);
 	}
 }
 
