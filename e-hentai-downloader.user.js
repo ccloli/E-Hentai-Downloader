@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.31.12
+// @version      1.32
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -12926,15 +12926,21 @@ function fetchOriginalImage(index, nodeList) {
 		}
 	};
 
+	var requestHeaders = {
+		Referer: imageList[index]['pageURL'],
+		'X-Alt-Referer': imageList[index]['pageURL']
+	};
+
+	if (setting['pass-cookies']) {
+		requestHeaders.Cookie = document.cookie + '; __cf=1';
+	}
+
 	fetchThread[index] = GM_xmlhttpRequest({
 		method: 'GET',
 		url: requestURL,
 		responseType: 'arraybuffer',
 		timeout: (setting['timeout'] !== undefined) ? Number(setting['timeout']) * 1000 : 300000,
-		headers: {
-			'Referer': imageList[index]['pageURL'],
-			'X-Alt-Referer': imageList[index]['pageURL']
-		},
+		headers: requestHeaders,
 		onprogress: function(res) {
 			var t = new Date().getTime();
 			var speedText;
@@ -14181,6 +14187,7 @@ function showSettings() {
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="replace-with-full-width"> Replace forbidden characters with full-width characters instead of dash (-)</label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="force-pause"> Force drop downloaded images data when pausing download</label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="save-as-cbz"> Save as CBZ (Comic book archive) file<sup>(5)</sup></label></div>\
+					<div class="g2"><label><input type="checkbox" data-ehd-setting="pass-cookies"> Pass cookies manually when downloading images <sup>(6)</sup></label></div>\
 					<div class="ehD-setting-note">\
 						<div class="g2">\
 							(1) This may reduce memory usage but some decompress softwares may not support the Zip file. See <a href="https://stuk.github.io/jszip/documentation/api_jszip/generate_async.html" target="_blank" style="color: #ffffff;">JSZip Docs</a> for more info.\
@@ -14196,6 +14203,9 @@ function showSettings() {
 						</div>\
 						<div class="g2">\
 							(5) <a href="https://en.wikipedia.org/wiki/Comic_book_archive">Comic book archive</a> is a file type to archive comic images, you can open it with some comic viewer like CDisplay/CDisplayEX, or just extract it as a Zip file. To keep the order of images, you can also enable numbering images.\
+						</div>\
+						<div class="g2">\
+							(6) If you cannot original images, but you\'ve already logged in and your account is not blocked or used up your limits, it may caused by your cookies is not sent to the server. This feature may helps you to pass your current cookies to the download request, but please enable it ONLY if you cannot download any original images.\
 						</div>\
 					</div>\
 				</div>\
