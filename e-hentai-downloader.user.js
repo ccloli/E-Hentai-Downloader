@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.32
+// @version      1.32.1
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -16,6 +16,9 @@
 // @updateURL    https://github.com/ccloli/E-Hentai-Downloader/raw/master/e-hentai-downloader.meta.js
 // @downloadURL  https://github.com/ccloli/E-Hentai-Downloader/raw/master/e-hentai-downloader.user.js
 // @supportURL   https://github.com/ccloli/E-Hentai-Downloader/issues
+// @connect      e-hentai.org
+// @connect      exhentai.org
+// @connect      hath.network
 // @connect      *
 // @grant        GM_getValue
 // @grant        GM_setValue
@@ -36,15 +39,12 @@ console.log('[EHD] Bugs Report >', 'https://github.com/ccloli/E-Hentai-Downloade
 console.log('[EHD] To report a bug, it\'s recommended to provide the logs started with "[EHD]", thanks. =w=');
 
 // GreaseMonkey 4.x compatible
-var GM_setValue = self.GM_setValue;
-var GM_xmlhttpRequest = self.GM_xmlhttpRequest;
-var GM_info = self.GM_info;
 var loadSetting;
-if (typeof GM !== 'undefined') {
+if (typeof GM !== 'undefined' && (GM.info.scriptHandler || '').indexOf('GreaseMonkey') >= 0) {
 	loadSetting = GM.getValue.bind(this, 'ehD-setting');
-	GM_setValue = GM.setValue;
-	GM_xmlhttpRequest = GM.xmlHttpRequest;
-	GM_info = GM.info;
+	self.GM_setValue = GM.setValue;
+	self.GM_xmlhttpRequest = GM.xmlHttpRequest;
+	self.GM_info = GM.info;
 }
 else {
 	loadSetting = function (key, init) {
