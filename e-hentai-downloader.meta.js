@@ -16,6 +16,9 @@
 // @updateURL    https://github.com/ccloli/E-Hentai-Downloader/raw/master/e-hentai-downloader.meta.js
 // @downloadURL  https://github.com/ccloli/E-Hentai-Downloader/raw/master/e-hentai-downloader.user.js
 // @supportURL   https://github.com/ccloli/E-Hentai-Downloader/issues
+// @connect      e-hentai.org
+// @connect      exhentai.org
+// @connect      hath.network
 // @connect      *
 // @grant        GM_getValue
 // @grant        GM_setValue
