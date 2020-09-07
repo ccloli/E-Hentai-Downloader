@@ -8,15 +8,12 @@ console.log('[EHD] Bugs Report >', 'https://github.com/ccloli/E-Hentai-Downloade
 console.log('[EHD] To report a bug, it\'s recommended to provide the logs started with "[EHD]", thanks. =w=');
 
 // GreaseMonkey 4.x compatible
-var GM_setValue = self.GM_setValue;
-var GM_xmlhttpRequest = self.GM_xmlhttpRequest;
-var GM_info = self.GM_info;
 var loadSetting;
-if (typeof GM !== 'undefined') {
+if (typeof GM !== 'undefined' && (GM.info.scriptHandler || '').indexOf('GreaseMonkey') >= 0) {
 	loadSetting = GM.getValue.bind(this, 'ehD-setting');
-	GM_setValue = GM.setValue;
-	GM_xmlhttpRequest = GM.xmlHttpRequest;
-	GM_info = GM.info;
+	self.GM_setValue = GM.setValue;
+	self.GM_xmlhttpRequest = GM.xmlHttpRequest;
+	self.GM_info = GM.info;
 }
 else {
 	loadSetting = function (key, init) {
