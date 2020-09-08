@@ -9,7 +9,7 @@ console.log('[EHD] To report a bug, it\'s recommended to provide the logs starte
 
 // GreaseMonkey 4.x compatible
 var loadSetting;
-if (typeof GM !== 'undefined' && (GM.info.scriptHandler || '').indexOf('GreaseMonkey') >= 0) {
+if (typeof GM !== 'undefined' && ((GM.info || {}).scriptHandler || '').toLowerCase().indexOf('greasemonkey') >= 0) {
 	loadSetting = GM.getValue.bind(this, 'ehD-setting');
 	self.GM_setValue = GM.setValue;
 	self.GM_xmlhttpRequest = GM.xmlHttpRequest;
