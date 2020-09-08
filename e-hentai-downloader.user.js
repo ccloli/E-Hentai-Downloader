@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.32.1
+// @version      1.32.2
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -40,7 +40,7 @@ console.log('[EHD] To report a bug, it\'s recommended to provide the logs starte
 
 // GreaseMonkey 4.x compatible
 var loadSetting;
-if (typeof GM !== 'undefined' && (GM.info.scriptHandler || '').indexOf('GreaseMonkey') >= 0) {
+if (typeof GM !== 'undefined' && ((GM.info || {}).scriptHandler || '').toLowerCase().indexOf('greasemonkey') >= 0) {
 	loadSetting = GM.getValue.bind(this, 'ehD-setting');
 	self.GM_setValue = GM.setValue;
 	self.GM_xmlhttpRequest = GM.xmlHttpRequest;
