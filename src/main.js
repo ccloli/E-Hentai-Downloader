@@ -661,16 +661,16 @@ function generateZip(isFromFS, fs, isRetry, forced){
 
 	try {
 		var lastMetaTime = 0;
-		// build arraybuffer object to detect if it generates successfully
-		zip.generateAsync({
+		var generateConfig = {
 			type: 'arraybuffer',
 			compression: setting['compression-level'] ? 'DEFLATE' : 'STORE',
 			compressionOptions: {
-				level: setting['compression-level'] > 0 ? (setting['compression-level'] < 10 ? setting['compression-level'] : 9) : 1
+				level: Math.min(Math.max(setting['compression-level'], 1), 9)
 			},
 			streamFiles: setting['file-descriptor'] ? true : false,
 			comment: setting['save-info'] === 'comment' ? infoStr.replace(/\n/gi, '\r\n') : undefined
-		}, function(meta){
+		};
+		var onProgress = function (meta) {
 			// meta update function will be called nearly every 1ms, for performance, update every 300ms
 			// anyway it's still too fast so that you may still cannot see the update
 			var thisMetaTime = Date.now();
@@ -680,28 +680,112 @@ function generateZip(isFromFS, fs, isRetry, forced){
 			lastMetaTime = thisMetaTime;
 			progress.value = meta.percent / 100;
 			curFile.textContent = meta.currentFile || 'Calculating extra data...';
-		}).then(function(abData){
-			progress.value = 1;
+		};
 
-			if (!forced) {
-				if (emptyAudio) {
-					emptyAudio.pause();
+		var defaultHandle = function() {
+			// build arraybuffer object to detect if it generates successfully
+			zip.generateAsync(generateConfig, onProgress).then(function (abData) {
+				progress.value = 1;
+
+				if (!forced) {
+					if (emptyAudio) {
+						emptyAudio.pause();
+					}
 				}
-			}
 
-			if (isFromFS || ehDownloadFS.needFileSystem) { // using filesystem to save file is needed
-				saveToFileSystem(abData);
-			}
-			else { // or just using blob
-				saveToBlob(abData);
-			}
+				if (isFromFS || ehDownloadFS.needFileSystem) { // using filesystem to save file is needed
+					saveToFileSystem(abData);
+				}
+				else { // or just using blob
+					saveToBlob(abData);
+				}
 
-			if (!forced) {
-				zip.file(/.*/).forEach(function(elem){
-					zip.remove(elem);
-				});
-			}
-		}).catch(errorHandler);
+				if (!forced) {
+					zip.file(/.*/).forEach(function (elem) {
+						zip.remove(elem);
+					});
+				}
+			}).catch(errorHandler);
+		};
+
+		var streamHandle = function () {
+			var stream = zip.generateInternalStream(generateConfig, onProgress);
+			var fs = fs || ehDownloadFS.fs;
+			var writer;
+
+			var fsErrorHandler = function (err) {
+				console.error('[EHD] An error occurred when generating Zip file as stream, fallback to default generate.');
+				console.error(err);
+				pushDialog('An error occurred when generating Zip file as stream, fallback to default generate.');
+				stream.pause();
+				defaultHandle();
+			};
+
+			var chunk = [];
+			var done = false;
+			stream.on('data', function (data, meta) {
+				if (!writer) {
+					throw new Error('FileWriter is not usable.');
+				}
+
+				onProgress(meta);
+				chunk.push(data);
+			}).on('end', function () {
+				progress.value = 1;
+
+				if (!forced) {
+					if (emptyAudio) {
+						emptyAudio.pause();
+					}
+					zip.file(/.*/).forEach(function (elem) {
+						zip.remove(elem);
+					});
+				}
+				done = true;
+			}).on('error', fsErrorHandler);
+
+			fs.root.getFile(unsafeWindow.gid + '.zip', { create: true }, function (fileEntry) {
+				if (fileEntry.isFile) fileEntry.remove(function () {
+					console.log('[EHD] File', fileName, 'is removed.');
+				}, fsErrorHandler);
+				else if (fileEntry.isDirectory) fileEntry.removeRecursively(function () {
+					console.log('[EHD] Directory', fileName, 'is removed.');
+				}, fsErrorHandler);
+
+				fs.root.getFile(unsafeWindow.gid + '.zip', { create: true }, function (entry) {
+					entry.createWriter(function (fileWriter) {
+						writer = fileWriter;
+						writer.onwriteend = function (e) {
+							if (done && !chunk.length) {
+								setTimeout(function () {
+									ehDownloadFS.saveAs(isFromFS ? fs : undefined, forced);
+									isSaving = false;
+								}, 0);
+								return;
+							}
+							var blob = createBlob(chunk, { type: 'application/zip' });
+							writer.write(blob);
+							if ('close' in blob) blob.close(); // File Blob.close() API, depreated
+							blob = null;
+							chunk = [];
+						};
+						writer.onerror = fsErrorHandler;
+						if (stream) {
+							stream.resume();
+							setTimeout(() => {
+								writer.write(new Blob(chunk, { type: 'application/zip' }));
+							}, 0);
+						}
+					});
+				}, fsErrorHandler);
+			}, fsErrorHandler);
+		}
+
+		if (isFromFS || ehDownloadFS.needFileSystem) {
+			streamHandle();
+			return;
+		}
+		defaultHandle();
 	}
 	catch (error) {
 		errorHandler(error);
@@ -940,7 +1024,7 @@ function fetchOriginalImage(index, nodeList) {
 	};
 
 	if (setting['pass-cookies']) {
-		requestHeaders.Cookie = document.cookie + '; __cf=1';
+		requestHeaders.Cookie = document.cookie;
 	}
 
 	fetchThread[index] = GM_xmlhttpRequest({
