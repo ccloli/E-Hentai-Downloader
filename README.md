@@ -46,10 +46,14 @@ This script won't download archive from E-Hentai archive download page, so it wo
 
 ## Should Be Noticed
 
-- If you are using the latest Tampermonkey, or receive a warning of _"A userscript wants to access a cross-origin resource"_ from Tampermonkey, please **Allow All** or turn off "@connect mode" at setting page. For more info, [see details here](https://github.com/ccloli/E-Hentai-Downloader/wiki/Cross-origin-request-warning-from-Tampermonkey)
-- If you see a message about out of memory on Firefox, or file not found on Chrome, [see solution here](https://github.com/ccloli/E-Hentai-Downloader/wiki/Can't-make-Zip-file-successfully). In short, use Pages Range to limit each zip file under 500 MB is recommended, and enable File System if you're using Chrome, or use other tools, or upgrade your PC with more RAM
-- ~~ViolentMonkey doesn't support timeout, final URL and download progress~~ It's supported now
-- ~~Single-thread download mode is removed in 1.18, if you need it, roll back to [old version](https://github.com/ccloli/E-Hentai-Downloader/releases/tag/v1.17.4)~~ Don't use an old version, it doesn't support current site
+- ~~If you are using the latest Tampermonkey, or receive a warning of _"A userscript wants to access a cross-origin resource"_ from Tampermonkey, please **Allow All** or turn off "@connect mode" at setting page. For more info, [see details here](https://github.com/ccloli/E-Hentai-Downloader/wiki/Cross-origin-request-warning-from-Tampermonkey)~~  
+  E-Hentai now uses `hath.network` domain to access images, and it's now listed in `@connect`, so you're not needed to set this with latest Tampermonkey
+- If you see a message about out of memory on Firefox, or file not found on Chrome, [see solution here](https://github.com/ccloli/E-Hentai-Downloader/wiki/Can't-make-Zip-file-successfully).  
+  In short, use Pages Range to limit each zip file under 500 MB is recommended, and enable File System if you're using Chrome, or use other tools, or upgrade your PC with more RAM
+- ~~ViolentMonkey doesn't support timeout, final URL and download progress~~  
+  The latest ViolentMonkey supports these features now
+- ~~Single-thread download mode is removed in 1.18, if you need it, roll back to [old version](https://github.com/ccloli/E-Hentai-Downloader/releases/tag/v1.17.4)~~  
+  Don't use an old version, it doesn't support current site
 - You can also have a look at [E-Hentai Image Viewing Limits](https://github.com/ccloli/E-Hentai-Downloader/wiki/E%E2%88%92Hentai-Image-Viewing-Limits)
 - Most of galleries may have torrents to download. You can download archive with torrent to get stable download experience, get bonus content (most in cosplay gallery), earn GP and credit, and reduce the pressure of E-Hentai original servers (though it's a P2P site)
 
