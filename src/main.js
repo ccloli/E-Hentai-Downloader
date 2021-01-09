@@ -645,7 +645,7 @@ function generateZip(isFromFS, fs, isRetry, forced){
 									pushDialog('Success!\nPlease close this tab and open a new tab to download.\nIf you still can\'t download it, try using <a href="https://chrome.google.com/webstore/detail/nhnjmpbdkieehidddbaeajffijockaea" target="_blank">HTML5 FileSystem Explorer</a> to save them.');
 
 									files.forEach(function(elem){
-										zip.remove(elem);
+										zip.remove(elem.name);
 									});
 									zip = undefined;
 									isSaving = false;
@@ -687,12 +687,6 @@ function generateZip(isFromFS, fs, isRetry, forced){
 			zip.generateAsync(generateConfig, onProgress).then(function (abData) {
 				progress.value = 1;
 
-				if (!forced) {
-					if (emptyAudio) {
-						emptyAudio.pause();
-					}
-				}
-
 				if (isFromFS || ehDownloadFS.needFileSystem) { // using filesystem to save file is needed
 					saveToFileSystem(abData);
 				}
@@ -701,8 +695,11 @@ function generateZip(isFromFS, fs, isRetry, forced){
 				}
 
 				if (!forced) {
+					if (emptyAudio) {
+						emptyAudio.pause();
+					}
 					zip.file(/.*/).forEach(function (elem) {
-						zip.remove(elem);
+						zip.remove(elem.name);
 					});
 				}
 			}).catch(errorHandler);
@@ -738,7 +735,7 @@ function generateZip(isFromFS, fs, isRetry, forced){
 						emptyAudio.pause();
 					}
 					zip.file(/.*/).forEach(function (elem) {
-						zip.remove(elem);
+						zip.remove(elem.name);
 					});
 				}
 				done = true;
@@ -870,9 +867,6 @@ function checkFailed() {
 				else {
 					insertCloseButton();
 				}
-				zip.file(/.*/).forEach(function (elem) {
-					zip.remove(elem);
-				});
 				isDownloading = false;
 
 				getImageLimits(true);
@@ -885,9 +879,6 @@ function checkFailed() {
 			(dirName && !ehDownloadRegex.slashOnly.test(dirName) ? zip.folder(dirName) : zip).file(imageList[j]['imageName'], imageData.shift());
 		}
 		generateZip();
-		zip.file(/.*/).forEach(function (elem) {
-			zip.remove(elem);
-		});
 		isDownloading = false;
 
 		getImageLimits(true);
@@ -1233,9 +1224,6 @@ function fetchOriginalImage(index, nodeList) {
 						}
 						isPausing = false;
 						isDownloading = false;
-						zip.file(/.*/).forEach(function (elem) {
-							zip.remove(elem);
-						});
 
 						getImageLimits(true);
 					});
@@ -1314,9 +1302,6 @@ function fetchOriginalImage(index, nodeList) {
 							}
 							isPausing = false;
 							isDownloading = false;
-							zip.file(/.*/).forEach(function (elem) {
-								zip.remove(elem);
-							});
 
 							getImageLimits(true);
 						});
@@ -1353,9 +1338,6 @@ function fetchOriginalImage(index, nodeList) {
 						else {
 							insertCloseButton();
 						}
-						zip.file(/.*/).forEach(function (elem) {
-							zip.remove(elem);
-						});
 						isDownloading = false;
 
 						getImageLimits(true);
@@ -1527,6 +1509,9 @@ function insertCloseButton() {
 	exitButton.onclick = function(){
 		ehDownloadDialog.removeChild(exitButton);
 		ehDownloadDialog.style.display = 'none';
+		zip.file(/.*/).forEach(function (elem) {
+			zip.remove(elem.name);
+		});
 		if (ehDownloadFS.needFileSystem) ehDownloadFS.removeFile(unsafeWindow.gid + '.zip');
 	};
 	ehDownloadDialog.appendChild(exitButton);
