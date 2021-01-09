@@ -2396,7 +2396,10 @@ function showSettings() {
 			else {
 				toggleFilenameConfirmInput(!setting['recheck-file-name']);
 			}
-			showPreCalcCost();
+			try {
+				showPreCalcCost();
+			}
+			catch (e) { }
 		}
 	});
 
@@ -2543,7 +2546,10 @@ function getResolutionSetting(forced){
 		};
 		console.log('[EHD] Resolution Setting >', JSON.stringify(preData));
 		localStorage.setItem('ehd-resolution', JSON.stringify(preData));
-		showPreCalcCost();
+		try {
+			showPreCalcCost();
+		}
+		catch (e) { }
 	};
 	xhr.open('GET', url);
 	xhr.send();
