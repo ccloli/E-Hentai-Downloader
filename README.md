@@ -47,15 +47,16 @@ This script won't download archive from E-Hentai archive download page, so it wo
 ## Should Be Noticed
 
 - If you are using the latest Tampermonkey, or receive a warning of _"A userscript wants to access a cross-origin resource"_ from Tampermonkey, please **Allow All** or turn off "@connect mode" at setting page. For more info, [see details here](https://github.com/ccloli/E-Hentai-Downloader/wiki/Cross-origin-request-warning-from-Tampermonkey)
-- If you receive a message about out of memory on Firefox, or file not found on Chrome, [see solution here](https://github.com/ccloli/E-Hentai-Downloader/wiki/Can't-make-Zip-file-successfully)
-- ViolentMonkey doesn't support timeout, final URL and download progress
-- Single-thread download mode is removed in 1.18, if you need it, roll back to [old version](https://github.com/ccloli/E-Hentai-Downloader/releases/tag/v1.17.4)
+- If you see a message about out of memory on Firefox, or file not found on Chrome, [see solution here](https://github.com/ccloli/E-Hentai-Downloader/wiki/Can't-make-Zip-file-successfully). In short, use Pages Range to limit each zip file under 500 MB is recommended, and enable File System if you're using Chrome, or use other tools, or upgrade your PC with more RAM
+- ~~ViolentMonkey doesn't support timeout, final URL and download progress~~ It's supported now
+- ~~Single-thread download mode is removed in 1.18, if you need it, roll back to [old version](https://github.com/ccloli/E-Hentai-Downloader/releases/tag/v1.17.4)~~ Don't use an old version, it doesn't support current site
 - You can also have a look at [E-Hentai Image Viewing Limits](https://github.com/ccloli/E-Hentai-Downloader/wiki/E%E2%88%92Hentai-Image-Viewing-Limits)
 - Most of galleries may have torrents to download. You can download archive with torrent to get stable download experience, get bonus content (most in cosplay gallery), earn GP and credit, and reduce the pressure of E-Hentai original servers (though it's a P2P site)
 
 Here are some other compatible information, which is not important.
 
-- Tampermonkey uses a dirty way to give `GM_xhr.response` content (transfers `String` to `ArrayBuffer` everytime), so it'll stuck for 1~3 seconds or more after downloaded image (depend on your device). If you are using Microsoft Edge, you may often see the working tab is stuck, saying it's not responding. Just let it go and do nothing. And if you are using Firefox, it's better to use GreaseMonkey from this side
+- ~~Tampermonkey uses a dirty way to give `GM_xhr.response` content (transfers `String` to `ArrayBuffer` everytime), so it'll stuck for 1~3 seconds or more after downloaded image (depend on your device). If you are using Microsoft Edge, you may often see the working tab is stuck, saying it's not responding. Just let it go and do nothing. And if you are using Firefox, it's better to use GreaseMonkey from this side~~  
+  The freeze problem should be fixed in Tampermonkey [4.12.6125](https://github.com/Tampermonkey/tampermonkey/issues/279)
 - Dolphin Browser (Android) doesn't support blob URL, so this script cannot be run in Tampermonkey for Dolphin probably
 - UC Browser (Android) doesn't support blob constructor, so this script cannot be run in Tampermonkey for UC probably
 - Opera 12- doesn't support blob URL, and if generated as data URL, it may crash, so it's not supported
@@ -80,19 +81,21 @@ _(This part is a bit long, you can just read the table)_
 
 Different browsers have different maximum file size limits. Here is a table to show the maximum size the supported browser can handle.
 
-| Browser                      | Maximum Size            |
-| ---------------------------- | ----------------------- |
-| Chrome 56-                   | 500 MB                  |
-| Chrome 57+                   | 2 GB or (total RAM / 5) |
-| Chrome (with File System)    | 1 GB                    |
-| Firefox                      | ?                       |
-| Opera 15+                    | Same as Chrome          |
-| Safari 10.1+                 | ?                       |
-| Maxthon                      | ?                       |
+| Browser                      | Maximum Size                  |
+| ---------------------------- | ----------------------------- |
+| Chrome 56-                   | 500 MB                        |
+| Chrome 57+                   | 2 GB or (total RAM / 5)       |
+| Chrome (with File System)    | 1 GB / > 2GB (with 1.33+)     |
+| Firefox                      | > 800MB (depends on your RAM) |
+| Opera 15+                    | Same as Chrome                |
+| Edge 18-                     | ?                             |
+| Edge 79+                     | Same as Chrome                |
+| Safari 10.1+                 | ?                             |
+| Maxthon                      | ?                             |
 
-For **Google Chrome 56-**, it has a hard limit at **500 MB** on **Blob Storage** for years. That means all the files that in storage cannot be larger than 500MB in total, and if the storage doesn't have enough free space to save the next file, it'll return a **fake** Blob instance silently **without any errors**. Also for Chrome 45-, `Blob.close()` didn't implement, so we cannot free those used Blob immediately at that time, only to pary the browser will GC them ASAP (and for most of time it didn't work). That's why here is [a wiki page](https://github.com/ccloli/E-Hentai-Downloader/wiki/Can't-make-Zip-file-successfully) to help you work around this.
+For **Google Chrome 56-**, it has a hard limit at **500 MB** on **Blob Storage** for years. That means all the files that in storage cannot be larger than 500MB in total, and if the storage doesn't have enough free space to save the next file, it'll return a **fake** Blob instance silently **without any errors**. Also for Chrome 45-, `Blob.close()` didn't implement (and it's depreated so no browser supports it now), so we cannot free those used Blob immediately at that time, only to pary the browser will GC them ASAP (and for most of time it didn't work). That's why here is [a wiki page](https://github.com/ccloli/E-Hentai-Downloader/wiki/Can't-make-Zip-file-successfully) to help you work around this.
 
-So to help you save larger files, the script can save the Zip file into **File System**, a deprecated HTML5 API but still works on Chrome (as it's Chrome introduce the standard first). With the API, you can handle larger file because the file data will be writing to your disk instead of storing in Blob Storage, its limit is also big enough (10% of your disk free storage, 15 GB in maximum). But when processing the file, the files are still keeping in RAM, and if datas are too large, Chrome may also cannot handle them. From my test the maximum limit maybe **1 GB**, but it may also depends on your device.
+So to help you save larger files, the script can save the Zip file into **File System**, a deprecated HTML5 API but still works on Chrome (as it's Chrome introduce the standard first). With the API, you can handle larger file because the file data will be writing to your disk instead of storing in Blob Storage, its limit is also big enough (10% of your disk free storage, 15 GB in maximum). But when processing the file, the files are still keeping in RAM, and if datas are too large, Chrome may also cannot handle them. From my test the maximum limit maybe **1 GB** if you only have 8 GB RAM, but it may also depends on your device. If you have enough RAM, you can download a gallery larger than **2 GB** with 1.33+.
 
 **Chrome 57+** [fixes the 500 MB limit of Blob Storage](https://bugs.chromium.org/p/chromium/issues/detail?id=375297#c107), so that it can handler larger files in RAM just like File System. Its quota is still exist but it's larger, which bases on the limits below, and [here are some examples](https://stackoverflow.com/a/43816041) to make it more clear:
 
