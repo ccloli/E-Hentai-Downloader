@@ -2614,7 +2614,7 @@ ehDownloadBox.appendChild(ehDownloadNumberInput);
 
 var ehDownloadRange = document.createElement('div');
 ehDownloadRange.className = 'g2';
-ehDownloadRange.innerHTML = ehDownloadArrow + ' <a><label>Pages Range <input type="text" placeholder="eg. -10,12,14-20,27,30-40/2,50-60/3,70-"></label></a>';
+ehDownloadRange.innerHTML = ehDownloadArrow + ' <a><label title="Download ranges of pages, split each range with comma (,)&#13;Example: &#13;-10:   Download from page 1 to 10&#13;12:   Download page 12&#13;14-20:   Download from page 14 to 20&#13;27:   Download page 27&#13;30-40/2:   Download each 2 pages in 30-40 (30, 32, 34, 36, 38, 40)&#13;50-60/3:   Download each 3 pages in 50-60 (50, 53, 56, 59)&#13;70-:   Download from page 70 to the last page">Pages Range <input type="text" placeholder="eg. -10,12,14-20,27,30-40/2,50-60/3,70-"></label></a>';
 ehDownloadBox.appendChild(ehDownloadRange);
 
 var ehDownloadSetting = document.createElement('div');
