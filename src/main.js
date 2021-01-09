@@ -461,9 +461,7 @@ function storeRes(res, index) {
 	updateTotalStatus();
 	if (!isPausing) checkFailed();
 	
-	for (var i in res) {
-		delete res[i];
-	}
+	res = null;
 }
 
 function generateZip(isFromFS, fs, isRetry, forced){
@@ -472,6 +470,9 @@ function generateZip(isFromFS, fs, isRetry, forced){
 	// remove pause button
 	if (!forced && ehDownloadDialog.contains(ehDownloadPauseBtn)) {
 		ehDownloadDialog.removeChild(ehDownloadPauseBtn);
+		while (fetchThread[0]) {
+			fetchThread.pop();
+		}
 	}
 
 	if (!isFromFS && !isRetry) {
@@ -567,30 +568,32 @@ function generateZip(isFromFS, fs, isRetry, forced){
 
 	var saveToBlob = function(abData){
 		curFile.textContent = 'Generating Blob object...';
-		var blob = createBlob([abData], {type: setting['save-as-cbz'] ? 'application/vnd.comicbook+zip' : 'application/zip'});
-		saveAs(blob, fileName + (setting['save-as-cbz'] ? '.cbz' : '.zip'));
-
-		var redownloadBtn = document.createElement('button');
-		redownloadBtn.textContent = 'Not download? Click here to download';
-		redownloadBtn.addEventListener('click', function(){
+		var save = function() {
 			// rebuild blob object if "File is not exist" occured
-			blob = createBlob([abData], {type: setting['save-as-cbz'] ? 'application/vnd.comicbook+zip' : 'application/zip'});
+			var blob = createBlob([abData], {type: setting['save-as-cbz'] ? 'application/vnd.comicbook+zip' : 'application/zip'});
 			saveAs(blob, fileName + (setting['save-as-cbz'] ? '.cbz' : '.zip'));
 
 			setTimeout(function(){
 				if ('close' in blob) blob.close();
 				blob = null;
 			}, 10e3); // 10s to fixed Chrome delay downloads
-		});
+		}
+		save();
+
+		var redownloadBtn = document.createElement('button');
+		redownloadBtn.textContent = 'Not download? Click here to download';
+		redownloadBtn.addEventListener('click', save);
 		ehDownloadDialog.appendChild(redownloadBtn);
 
-		if (!forced) insertCloseButton();
+		if (!forced) {
+			insertCloseButton(function() {
+				redownloadBtn.removeEventListener('click', save);
+				ehDownloadDialog.removeChild(redownloadBtn);
+				abData = null;
+				save = null;
+			});
+		}
 		isSaving = false;
-
-		setTimeout(function(){
-			if ('close' in blob) blob.close();
-			blob = null;
-		}, 10e3); // 10s to fixed Chrome delay downloads
 	};
 
 	const errorHandler = function (error) {
@@ -702,6 +705,7 @@ function generateZip(isFromFS, fs, isRetry, forced){
 						zip.remove(elem.name);
 					});
 				}
+				abData = undefined;
 			}).catch(errorHandler);
 		};
 
@@ -1501,7 +1505,7 @@ function retryAllFailed(){
 	requestDownload();
 }
 
-function insertCloseButton() {
+function insertCloseButton(handle) {
 	var exitButton = document.createElement('button');
 	exitButton.style.display = 'block';
 	exitButton.style.margin = '0 auto';
@@ -1512,6 +1516,10 @@ function insertCloseButton() {
 		zip.file(/.*/).forEach(function (elem) {
 			zip.remove(elem.name);
 		});
+		exitButton.onclick = null;
+		if (handle) {
+			handle();
+		}
 		if (ehDownloadFS.needFileSystem) ehDownloadFS.removeFile(unsafeWindow.gid + '.zip');
 	};
 	ehDownloadDialog.appendChild(exitButton);
