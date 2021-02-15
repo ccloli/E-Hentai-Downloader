@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.33
+// @version      1.33.1
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -13082,6 +13082,10 @@ function fetchOriginalImage(index, nodeList) {
 				
 				// use regex to fixed compatibility with http/2, as its headers are lower case (at least fixed with Yandex Turbo)
 				var mime = responseHeaders.match(/Content-Type:/i) ? responseHeaders.split(/Content-Type:/i)[1].split('\n')[0].trim().split('/') : ['', ''];
+				var responseText;
+				if (mime[0] === 'text') {
+					responseText = new TextDecoder().decode(new DataView(response));
+				}
 
 				if (!response) {
 					console.log('[EHD] #' + (index + 1) + ': Empty Response (See: https://github.com/ccloli/E-Hentai-Downloader/issues/16 )');
@@ -13138,7 +13142,7 @@ function fetchOriginalImage(index, nodeList) {
 					byteLength === 142 ||   // Image Viewing Limits String Byte Size (exhentai)
 					byteLength === 144 ||   // Image Viewing Limits String Byte Size (g.e-hentai)
 					byteLength === 28658 || // '509 Bandwidth Exceeded' Image Byte Size
-					(mime[0] === 'text' && (res.responseText || new TextDecoder().decode(new DataView(response))).indexOf('You have exceeded your image viewing limits') >= 0) // directly detect response content in case byteLength will be modified
+					(mime[0] === 'text' && responseText.indexOf('You have exceeded your image viewing limits') >= 0) // directly detect response content in case byteLength will be modified
 				) {
 					// thought exceed the limits, downloading image is still accessable
 					/*for (var i = 0; i < fetchThread.length; i++) {
@@ -13229,7 +13233,6 @@ function fetchOriginalImage(index, nodeList) {
 				}
 				// ip banned
 				if (mime[0] === 'text') {
-					var responseText = res.responseText || new TextDecoder().decode(new DataView(response));
 					if (responseText.indexOf('Your IP address has been temporarily banned') >= 0) {
 						console.log('[EHD] #' + (index + 1) + ': IP address banned');
 						console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL, '\nFinal URL >', res.finalUrl, '\nResposeHeaders >' + res.responseHeaders);
@@ -13262,7 +13265,7 @@ function fetchOriginalImage(index, nodeList) {
 							ehDownloadDialog.removeChild(ehDownloadPauseBtn);
 						}
 
-						var expiredTime = (res.responseText || new TextDecoder().decode(new DataView(response))).match(ehDownloadRegex.IPBanExpires);
+						var expiredTime = responseText.match(ehDownloadRegex.IPBanExpires);
 
 						alert('Your IP address has been temporarily banned. \n\n\
 							Make sure your download settings are not configured to download too fast. If you are using conservative rules, check if your computer is infected with malware, or if you are using a shared IP with others.\n\
@@ -13527,7 +13530,8 @@ function getPagesURLFromMPV() {
 	var xhr = new XMLHttpRequest();
 	xhr.open('GET', mpvURL);
 	xhr.onload = function () {
-		if (xhr.status !== 200 || !xhr.responseText) {
+		var responseText = xhr.responseText;
+		if (xhr.status !== 200 || !responseText) {
 			if (retryCount < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
 				pushDialog('Failed! Retrying... ');
 				retryCount++;
@@ -13543,7 +13547,7 @@ function getPagesURLFromMPV() {
 			return;
 		}
 
-		var listMatch = xhr.responseText.match(ehDownloadRegex.mpvKey);
+		var listMatch = responseText.match(ehDownloadRegex.mpvKey);
 		if (!listMatch) {
 			console.error('[EHD] Response content is incorrect!');
 			if (retryCount < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
@@ -13646,7 +13650,8 @@ function getAllPagesURL() {
 
 		var xhr = fetchPagesXHR;
 		xhr.onload = function(){
-			if (xhr.status !== 200 || !xhr.responseText) {
+			var responseText = xhr.responseText;
+			if (xhr.status !== 200 || !responseText) {
 				if (retryCount < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
 					pushDialog('Failed! Retrying... ');
 					retryCount++;
@@ -13662,7 +13667,7 @@ function getAllPagesURL() {
 				return;
 			}
 
-			var pagesURL = xhr.responseText.split('<div id="gdt">')[1].split('<div class="c">')[0].match(ehDownloadRegex.pagesURL);
+			var pagesURL = responseText.split('<div id="gdt">')[1].split('<div class="c">')[0].match(ehDownloadRegex.pagesURL);
 			if (!pagesURL) {
 				console.error('[EHD] Response content is incorrect!');
 				if (retryCount < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
@@ -13696,7 +13701,7 @@ function getAllPagesURL() {
 			curPage++;
 			
 			if (!pagesLength) { // can't get pagesLength correctly before
-				pagesLength = xhr.responseText.match(ehDownloadRegex.pagesLength)[1] - 0;
+				pagesLength = responseText.match(ehDownloadRegex.pagesLength)[1] - 0;
 			}
 		
 			if (curPage === pagesLength) {
@@ -14040,7 +14045,8 @@ function getPageData(index) {
 	// assign to fetchThread, so that we can abort them and all GM_xhr by one command fetchThread[i].abort()
 	var xhr = fetchThread[index] = new XMLHttpRequest();
 	xhr.onload = function() {
-		if (xhr.status !== 200 || !xhr.responseText) {
+		var responseText = xhr.responseText;
+		if (xhr.status !== 200 || !responseText) {
 			if (retryCount[index] < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
 				retryCount[index]++;
 
@@ -14075,9 +14081,9 @@ function getPageData(index) {
 		}
 
 		try {
-			var imageURL = ((unsafeWindow.apiuid !== -1 || setting['force-as-login']) && xhr.responseText.indexOf('fullimg.php') >= 0 && !setting['force-resized']) ? xhr.responseText.match(ehDownloadRegex.imageURL[0])[1].replaceHTMLEntites() : xhr.responseText.indexOf('id="img"') > -1 ? xhr.responseText.match(ehDownloadRegex.imageURL[1])[1].replaceHTMLEntites() : xhr.responseText.match(ehDownloadRegex.imageURL[2])[1].replaceHTMLEntites();
-			var fileName = xhr.responseText.match(ehDownloadRegex.fileName)[1].replaceHTMLEntites();
-			var nextNL = ehDownloadRegex.nl.test(xhr.responseText) ? xhr.responseText.match(ehDownloadRegex.nl)[1] : null;
+			var imageURL = ((unsafeWindow.apiuid !== -1 || setting['force-as-login']) && responseText.indexOf('fullimg.php') >= 0 && !setting['force-resized']) ? responseText.match(ehDownloadRegex.imageURL[0])[1].replaceHTMLEntites() : responseText.indexOf('id="img"') > -1 ? responseText.match(ehDownloadRegex.imageURL[1])[1].replaceHTMLEntites() : responseText.match(ehDownloadRegex.imageURL[2])[1].replaceHTMLEntites();
+			var fileName = responseText.match(ehDownloadRegex.fileName)[1].replaceHTMLEntites();
+			var nextNL = ehDownloadRegex.nl.test(responseText) ? responseText.match(ehDownloadRegex.nl)[1] : null;
 		}
 		catch (error) {
 			console.error('[EHD] Response content is not correct!', error);
@@ -14420,13 +14426,14 @@ function getImageLimits(forced, host){
 		url: url,
 		timeout: 300000,
 		onload: function(res) {
-			if (!res.responseText) return;
+			var responseText = res.responseText;
+			if (!responseText) return;
 			preData.timestamp = new Date().getTime();
-			if (res.responseText.indexOf('as your account has been suspended') >= 0) {
+			if (responseText.indexOf('as your account has been suspended') >= 0) {
 				preData.suspended = true;
 			}
 			else {
-				var data = res.responseText.match(ehDownloadRegex.imageLimits);
+				var data = responseText.match(ehDownloadRegex.imageLimits);
 				if (!data || data.length < 3) return;
 				preData.cur = data[1];
 				preData.total = data[2];
@@ -14527,10 +14534,11 @@ function getResolutionSetting(forced){
 
 	var xhr = new XMLHttpRequest();
 	xhr.onload = function() {
-		if (!xhr.responseText) return;
+		var responseText = xhr.responseText;
+		if (!responseText) return;
 		var preData = {
-			withoutHentaiAtHome: +((xhr.responseText.match(/id="uh_(\d)" checked/) || [])[1] || 0),
-			resolution: +((xhr.responseText.match(/id="xr_(\d)" checked/) || [])[1] || 0),
+			withoutHentaiAtHome: +((responseText.match(/id="uh_(\d)" checked/) || [])[1] || 0),
+			resolution: +((responseText.match(/id="xr_(\d)" checked/) || [])[1] || 0),
 			timestamp: Date.now()
 		};
 		console.log('[EHD] Resolution Setting >', JSON.stringify(preData));
