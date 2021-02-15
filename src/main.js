@@ -1535,7 +1535,8 @@ function getPagesURLFromMPV() {
 	var xhr = new XMLHttpRequest();
 	xhr.open('GET', mpvURL);
 	xhr.onload = function () {
-		if (xhr.status !== 200 || !xhr.responseText) {
+		var responseText = xhr.responseText;
+		if (xhr.status !== 200 || !responseText) {
 			if (retryCount < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
 				pushDialog('Failed! Retrying... ');
 				retryCount++;
@@ -1551,7 +1552,7 @@ function getPagesURLFromMPV() {
 			return;
 		}
 
-		var listMatch = xhr.responseText.match(ehDownloadRegex.mpvKey);
+		var listMatch = responseText.match(ehDownloadRegex.mpvKey);
 		if (!listMatch) {
 			console.error('[EHD] Response content is incorrect!');
 			if (retryCount < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
@@ -1654,7 +1655,8 @@ function getAllPagesURL() {
 
 		var xhr = fetchPagesXHR;
 		xhr.onload = function(){
-			if (xhr.status !== 200 || !xhr.responseText) {
+			var responseText = xhr.responseText;
+			if (xhr.status !== 200 || !responseText) {
 				if (retryCount < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
 					pushDialog('Failed! Retrying... ');
 					retryCount++;
@@ -1670,7 +1672,7 @@ function getAllPagesURL() {
 				return;
 			}
 
-			var pagesURL = xhr.responseText.split('<div id="gdt">')[1].split('<div class="c">')[0].match(ehDownloadRegex.pagesURL);
+			var pagesURL = responseText.split('<div id="gdt">')[1].split('<div class="c">')[0].match(ehDownloadRegex.pagesURL);
 			if (!pagesURL) {
 				console.error('[EHD] Response content is incorrect!');
 				if (retryCount < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
@@ -1704,7 +1706,7 @@ function getAllPagesURL() {
 			curPage++;
 			
 			if (!pagesLength) { // can't get pagesLength correctly before
-				pagesLength = xhr.responseText.match(ehDownloadRegex.pagesLength)[1] - 0;
+				pagesLength = responseText.match(ehDownloadRegex.pagesLength)[1] - 0;
 			}
 		
 			if (curPage === pagesLength) {
@@ -2048,7 +2050,8 @@ function getPageData(index) {
 	// assign to fetchThread, so that we can abort them and all GM_xhr by one command fetchThread[i].abort()
 	var xhr = fetchThread[index] = new XMLHttpRequest();
 	xhr.onload = function() {
-		if (xhr.status !== 200 || !xhr.responseText) {
+		var responseText = xhr.responseText;
+		if (xhr.status !== 200 || !responseText) {
 			if (retryCount[index] < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
 				retryCount[index]++;
 
@@ -2083,9 +2086,9 @@ function getPageData(index) {
 		}
 
 		try {
-			var imageURL = ((unsafeWindow.apiuid !== -1 || setting['force-as-login']) && xhr.responseText.indexOf('fullimg.php') >= 0 && !setting['force-resized']) ? xhr.responseText.match(ehDownloadRegex.imageURL[0])[1].replaceHTMLEntites() : xhr.responseText.indexOf('id="img"') > -1 ? xhr.responseText.match(ehDownloadRegex.imageURL[1])[1].replaceHTMLEntites() : xhr.responseText.match(ehDownloadRegex.imageURL[2])[1].replaceHTMLEntites();
-			var fileName = xhr.responseText.match(ehDownloadRegex.fileName)[1].replaceHTMLEntites();
-			var nextNL = ehDownloadRegex.nl.test(xhr.responseText) ? xhr.responseText.match(ehDownloadRegex.nl)[1] : null;
+			var imageURL = ((unsafeWindow.apiuid !== -1 || setting['force-as-login']) && responseText.indexOf('fullimg.php') >= 0 && !setting['force-resized']) ? responseText.match(ehDownloadRegex.imageURL[0])[1].replaceHTMLEntites() : responseText.indexOf('id="img"') > -1 ? responseText.match(ehDownloadRegex.imageURL[1])[1].replaceHTMLEntites() : responseText.match(ehDownloadRegex.imageURL[2])[1].replaceHTMLEntites();
+			var fileName = responseText.match(ehDownloadRegex.fileName)[1].replaceHTMLEntites();
+			var nextNL = ehDownloadRegex.nl.test(responseText) ? responseText.match(ehDownloadRegex.nl)[1] : null;
 		}
 		catch (error) {
 			console.error('[EHD] Response content is not correct!', error);
@@ -2428,13 +2431,14 @@ function getImageLimits(forced, host){
 		url: url,
 		timeout: 300000,
 		onload: function(res) {
-			if (!res.responseText) return;
+			var responseText = res.responseText;
+			if (!responseText) return;
 			preData.timestamp = new Date().getTime();
-			if (res.responseText.indexOf('as your account has been suspended') >= 0) {
+			if (responseText.indexOf('as your account has been suspended') >= 0) {
 				preData.suspended = true;
 			}
 			else {
-				var data = res.responseText.match(ehDownloadRegex.imageLimits);
+				var data = responseText.match(ehDownloadRegex.imageLimits);
 				if (!data || data.length < 3) return;
 				preData.cur = data[1];
 				preData.total = data[2];
@@ -2535,10 +2539,11 @@ function getResolutionSetting(forced){
 
 	var xhr = new XMLHttpRequest();
 	xhr.onload = function() {
-		if (!xhr.responseText) return;
+		var responseText = xhr.responseText;
+		if (!responseText) return;
 		var preData = {
-			withoutHentaiAtHome: +((xhr.responseText.match(/id="uh_(\d)" checked/) || [])[1] || 0),
-			resolution: +((xhr.responseText.match(/id="xr_(\d)" checked/) || [])[1] || 0),
+			withoutHentaiAtHome: +((responseText.match(/id="uh_(\d)" checked/) || [])[1] || 0),
+			resolution: +((responseText.match(/id="xr_(\d)" checked/) || [])[1] || 0),
 			timestamp: Date.now()
 		};
 		console.log('[EHD] Resolution Setting >', JSON.stringify(preData));
