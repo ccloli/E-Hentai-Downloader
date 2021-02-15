@@ -1090,6 +1090,10 @@ function fetchOriginalImage(index, nodeList) {
 				
 				// use regex to fixed compatibility with http/2, as its headers are lower case (at least fixed with Yandex Turbo)
 				var mime = responseHeaders.match(/Content-Type:/i) ? responseHeaders.split(/Content-Type:/i)[1].split('\n')[0].trim().split('/') : ['', ''];
+				var responseText;
+				if (mime[0] === 'text') {
+					responseText = new TextDecoder().decode(new DataView(response));
+				}
 
 				if (!response) {
 					console.log('[EHD] #' + (index + 1) + ': Empty Response (See: https://github.com/ccloli/E-Hentai-Downloader/issues/16 )');
@@ -1146,7 +1150,7 @@ function fetchOriginalImage(index, nodeList) {
 					byteLength === 142 ||   // Image Viewing Limits String Byte Size (exhentai)
 					byteLength === 144 ||   // Image Viewing Limits String Byte Size (g.e-hentai)
 					byteLength === 28658 || // '509 Bandwidth Exceeded' Image Byte Size
-					(mime[0] === 'text' && (res.responseText || new TextDecoder().decode(new DataView(response))).indexOf('You have exceeded your image viewing limits') >= 0) // directly detect response content in case byteLength will be modified
+					(mime[0] === 'text' && responseText.indexOf('You have exceeded your image viewing limits') >= 0) // directly detect response content in case byteLength will be modified
 				) {
 					// thought exceed the limits, downloading image is still accessable
 					/*for (var i = 0; i < fetchThread.length; i++) {
@@ -1237,7 +1241,6 @@ function fetchOriginalImage(index, nodeList) {
 				}
 				// ip banned
 				if (mime[0] === 'text') {
-					var responseText = res.responseText || new TextDecoder().decode(new DataView(response));
 					if (responseText.indexOf('Your IP address has been temporarily banned') >= 0) {
 						console.log('[EHD] #' + (index + 1) + ': IP address banned');
 						console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL, '\nFinal URL >', res.finalUrl, '\nResposeHeaders >' + res.responseHeaders);
@@ -1270,7 +1273,7 @@ function fetchOriginalImage(index, nodeList) {
 							ehDownloadDialog.removeChild(ehDownloadPauseBtn);
 						}
 
-						var expiredTime = (res.responseText || new TextDecoder().decode(new DataView(response))).match(ehDownloadRegex.IPBanExpires);
+						var expiredTime = responseText.match(ehDownloadRegex.IPBanExpires);
 
 						alert('Your IP address has been temporarily banned. \n\n\
 							Make sure your download settings are not configured to download too fast. If you are using conservative rules, check if your computer is infected with malware, or if you are using a shared IP with others.\n\
