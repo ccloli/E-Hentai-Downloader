@@ -5,16 +5,23 @@ Download E-Hentai archive as zip file :package:
 
 ## Required Environment
 
-- Firefox > [GreaseMonkey](https://addons.mozilla.org/en-US/firefox/addon/greasemonkey/) 3.2 beta2+ | [Tampermonkey](https://addons.mozilla.org/en-US/firefox/addon/tampermonkey/) 4.0.5054+ | [Violentmonkey](https://addons.mozilla.org/firefox/addon/violentmonkey/) 2.8.18+
-- Chrome > [Tampermonkey](http://tampermonkey.net/) 3.5.3630+ | [Violentmonkey](https://chrome.google.com/webstore/detail/jinjaccalgkegednnccohejagnlnfdag)
-- Opera 15+ > [Tampermonkey](https://addons.opera.com/extensions/details/tampermonkey-beta/) 3.5.3630+ | [Violentmonkey](https://addons.opera.com/extensions/details/violent-monkey/)
-- Maxthon > [Violentmonkey](http://extension.maxthon.cn/detail/index.php?view_id=1680)
-- Microsoft Edge > [Tampermonkey](https://www.microsoft.com/store/p/tampermonkey/9nblggh5162s) 4.2.5284.0+  
-  > You must upgrade your Windows 10 to 14393 which supports Edge extension.
-- Safari 10.1+ > [Tampermonkey](https://tampermonkey.net/?browser=safari) 4.3.5421+  
-  > You must upgrade your macOS to 10.12.4 which supports `download` attribute of `<a>` tag.
-- Yandex Browser for Android > [Tampermonkey](https://addons.opera.com/zh-cn/extensions/details/tampermonkey-beta/) 4.2.5291+  
-  > Anyway it's not a good idea to use it on mobile with limited RAM resources, but it can work, so it's up to you ;-)
+| Browser | [GreaseMonkey](https://www.greasespot.net/) | [Tampermonkey](http://tampermonkey.net/) | [Violentmonkey](https://violentmonkey.github.io/) |
+| ------- | ------------ | ------------ | ------------- |
+| Firefox | [3.2 beta2+](https://addons.mozilla.org/firefox/addon/greasemonkey/)  | [4.0.5054+](https://addons.mozilla.org/firefox/addon/tampermonkey/) | [2.8.18+](https://addons.mozilla.org/firefox/addon/violentmonkey/) |
+| Chrome |  | [3.5.3630+](https://chrome.google.com/webstore/detail/dhdgffkkebhmkfjojejmpbldmpobfkfo)  | [2.2.6+](https://chrome.google.com/webstore/detail/jinjaccalgkegednnccohejagnlnfdag) |
+| Opera (15+) | |  [3.5.3630+](https://addons.opera.com/extensions/details/tampermonkey-beta/)  | [2.1.10+](https://addons.opera.com/extensions/details/violent-monkey/) |
+| Safari (10.1+) <sup>(1)</sup> | | [4.3.5421+](https://tampermonkey.net/?browser=safari) |
+| Edge (18-) <sup>(2)</sup> | | [4.2.5284+](https://www.microsoft.com/store/p/tampermonkey/9nblggh5162s) |
+| Edge (79+) | | [4.10.6111+](https://microsoftedge.microsoft.com/addons/detail/tampermonkey/iikmkjmpaadaobahmlepeloendndfphd) | [2.12.8+](https://microsoftedge.microsoft.com/addons/detail/eeagobfjdenkkddmbclomhiblgggliao) |
+| Maxthon | | | [2.1.10+](http://extension.maxthon.cn/detail/index.php?view_id=1680) |
+| Yandex Browser for Android <sup>(3)</sup> | | [4.2.5291+](https://chrome.google.com/webstore/detail/dhdgffkkebhmkfjojejmpbldmpobfkfo/) | [2.2.6+](https://chrome.google.com/webstore/detail/jinjaccalgkegednnccohejagnlnfdag) |
+| Firefox for Android (68-)<sup>(3)</sup> | Incompatible | Incompatible | [2.12.0+](https://addons.mozilla.org/firefox/addon/violentmonkey/) |
+| Firefox Nightly for Android (85+) <sup>(3)(4)</sup> | Incompatible | [4.11.6120+](https://addons.mozilla.org/firefox/addon/tampermonkey/) | [2.12.8+](https://addons.mozilla.org/firefox/addon/violentmonkey/) |
+
+> (1) You must upgrade your Windows 10 to 14393 which supports Edge extension.  
+> (2) You must upgrade your macOS to 10.12.4 which supports `download` attribute of `<a>` tag.  
+> (3) It's not a good idea to use it on mobile with limited RAM, but it can work, so it's up to you.  
+> (4) Firefox Nightly user requires to follow [this steps](https://blog.mozilla.org/addons/2020/09/29/expanded-extension-support-in-firefox-for-android-nightly/) to install extensions not in default list.  
 
 
 ## Install This Script
