@@ -7,7 +7,8 @@ Download E-Hentai archive as zip file :package:
 
 | Browser | [GreaseMonkey](https://www.greasespot.net/) | [Tampermonkey](http://tampermonkey.net/) | [Violentmonkey](https://violentmonkey.github.io/) |
 | ------- | ------------ | ------------ | ------------- |
-| Firefox | [3.2 beta2+](https://addons.mozilla.org/firefox/addon/greasemonkey/)  | [4.0.5054+](https://addons.mozilla.org/firefox/addon/tampermonkey/) | [2.8.18+](https://addons.mozilla.org/firefox/addon/violentmonkey/) |
+| Firefox (56-) | [3.2 beta2+](https://addons.mozilla.org/firefox/addon/greasemonkey/)  |  | |
+| Firefox (57+) | [4.1 beta5+](https://addons.mozilla.org/firefox/addon/greasemonkey/)  | [4.0.5054+](https://addons.mozilla.org/firefox/addon/tampermonkey/) | [2.8.18+](https://addons.mozilla.org/firefox/addon/violentmonkey/) |
 | Chrome |  | [3.5.3630+](https://chrome.google.com/webstore/detail/dhdgffkkebhmkfjojejmpbldmpobfkfo)  | [2.2.6+](https://chrome.google.com/webstore/detail/jinjaccalgkegednnccohejagnlnfdag) |
 | Opera (15+) | |  [3.5.3630+](https://addons.opera.com/extensions/details/tampermonkey-beta/)  | [2.1.10+](https://addons.opera.com/extensions/details/violent-monkey/) |
 | Safari (10.1+) <sup>(1)</sup> | | [4.3.5421+](https://tampermonkey.net/?browser=safari) |
@@ -15,7 +16,8 @@ Download E-Hentai archive as zip file :package:
 | Edge (79+) | | [4.10.6111+](https://microsoftedge.microsoft.com/addons/detail/tampermonkey/iikmkjmpaadaobahmlepeloendndfphd) | [2.12.8+](https://microsoftedge.microsoft.com/addons/detail/eeagobfjdenkkddmbclomhiblgggliao) |
 | Maxthon | | | [2.1.10+](http://extension.maxthon.cn/detail/index.php?view_id=1680) |
 | Yandex Browser for Android <sup>(3)</sup> | | [4.2.5291+](https://chrome.google.com/webstore/detail/dhdgffkkebhmkfjojejmpbldmpobfkfo/) | [2.2.6+](https://chrome.google.com/webstore/detail/jinjaccalgkegednnccohejagnlnfdag) |
-| Firefox for Android (68-)<sup>(3)</sup> | Incompatible | Incompatible | [2.12.0+](https://addons.mozilla.org/firefox/addon/violentmonkey/) |
+| Kiwi Browser <sup>(3)</sup> | | [4.11+](https://chrome.google.com/webstore/detail/dhdgffkkebhmkfjojejmpbldmpobfkfo/) | [2.12.8+](https://chrome.google.com/webstore/detail/jinjaccalgkegednnccohejagnlnfdag) |
+| Firefox for Android (68-)<sup>(3)</sup> | Incompatible | Incompatible | [2.12.8+](https://addons.mozilla.org/firefox/addon/violentmonkey/) |
 | Firefox Nightly for Android (85+) <sup>(3)(4)</sup> | Incompatible | [4.11.6120+](https://addons.mozilla.org/firefox/addon/tampermonkey/) | [2.12.8+](https://addons.mozilla.org/firefox/addon/violentmonkey/) |
 
 > (1) You must upgrade your Windows 10 to 14393 which supports Edge extension.  
