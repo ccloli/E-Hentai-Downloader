@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.33.1
+// @version      1.33.2
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -12016,6 +12016,7 @@ var getAllPagesURLFin = false;
 var pretitle = document.title;
 var needTitleStatus = false;
 var delayTime = 0;
+var visibleState = true;
 var fetchPagesXHR = new XMLHttpRequest();
 var emptyAudio;
 var emptyAudioFile = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU3LjcxLjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAEAAABVgANTU1NTU1Q0NDQ0NDUFBQUFBQXl5eXl5ea2tra2tra3l5eXl5eYaGhoaGhpSUlJSUlKGhoaGhoaGvr6+vr6+8vLy8vLzKysrKysrX19fX19fX5eXl5eXl8vLy8vLy////////AAAAAExhdmM1Ny44OQAAAAAAAAAAAAAAACQCgAAAAAAAAAVY82AhbwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/+MYxAALACwAAP/AADwQKVE9YWDGPkQWpT66yk4+zIiYPoTUaT3tnU487uNhOvEmQDaCm1Yz1c6DPjbs6zdZVBk0pdGpMzxF/+MYxA8L0DU0AP+0ANkwmYaAMkOKDDjmYoMtwNMyDxMzDHE/MEsLow9AtDnBlQgDhTx+Eye0GgMHoCyDC8gUswJcMVMABBGj/+MYxBoK4DVpQP8iAtVmDk7LPgi8wvDzI4/MWAwK1T7rxOQwtsItMMQBazAowc4wZMC5MF4AeQAGDpruNuMEzyfjLBJhACU+/+MYxCkJ4DVcAP8MAO9J9THVg6oxRMGNMIqCCTAEwzwwBkINOPAs/iwjgBnMepYyId0PhWo+80PXMVsBFzD/AiwwfcKGMEJB/+MYxDwKKDVkAP8eAF8wMwIxMlpU/OaDPLpNKkEw4dRoBh6qP2FC8jCJQFcweQIPMHOBtTBoAVcwOoCNMYDI0u0Dd8ANTIsy/+MYxE4KUDVsAP8eAFBVpgVVPjdGeTEWQr0wdcDtMCeBgDBkgRgwFYB7Pv/zqx0yQQMCCgKNgonHKj6RRVkxM0GwML0AhDAN/+MYxF8KCDVwAP8MAIHZMDDA3DArAQo3K+TF5WOBDQw0lgcKQUJxhT5sxRcwQQI+EIPWMA7AVBoTABgTgzfBN+ajn3c0lZMe/+MYxHEJyDV0AP7MAA4eEwsqP/PDmzC/gNcwXUGaMBVBIwMEsmB6gaxhVuGkpoqMZMQjooTBwM0+S8FTMC0BcjBTgPwwOQDm/+MYxIQKKDV4AP8WADAzAKQwI4CGPhWOEwCFAiBAYQnQMT+uwXUeGzjBWQVkwTcENMBzA2zAGgFEJfSPkPSZzPXgqFy2h0xB/+MYxJYJCDV8AP7WAE0+7kK7MQrATDAvQRIwOADKMBuA9TAYQNM3AiOSPjGxowgHMKFGcBNMQU1FMy45OS41VVU/31eYM4sK/+MYxKwJaDV8AP7SAI4y1Yq0MmOIADGwBZwwlgIJMztCM0qU5TQPG/MSkn8yEROzCdAxECVMQU1FMy45OS41VTe7Ohk+Pqcx/+MYxMEJMDWAAP6MADVLDFUx+4J6Mq7NsjN2zXo8V5fjVJCXNOhwM0vTCDAxFpMYYQU+RlVMQU1FMy45OS41VVVVVVVVVVVV/+MYxNcJADWAAP7EAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+MYxOsJwDWEAP7SAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+MYxPMLoDV8AP+eAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+MYxPQL0DVcAP+0AFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV';
@@ -12303,6 +12304,8 @@ function initSetting() {
 			}
 			catch (e) { }
 		}
+
+		initVisibilityListener();
 
 		// Forced request File System to check if have temp archive
 		if (setting['store-in-fs'] && requestFileSystem) {
@@ -13906,50 +13909,57 @@ function initEHDownload() {
 	getAllPagesURL();
 
 	// init playing music
-	if (setting['play-silent-music']) {
+	if (setting['play-silent-music'] && !emptyAudio) {
 		emptyAudio = new Audio(emptyAudioFile);
 		emptyAudio.loop = true;
+	}
+}
 
-		var hidden, visibilityChange;
-		if (typeof document.hidden !== 'undefined') { // Opera 12.10 and Firefox 18 and later support 
-			hidden = 'hidden';
-			visibilityChange = 'visibilitychange';
-		}
-		else if (typeof document.mozHidden !== 'undefined') {
-			hidden = 'mozHidden';
-			visibilityChange = 'mozvisibilitychange';
-		}
-		else if (typeof document.webkitHidden !== 'undefined') {
-			hidden = 'webkitHidden';
-			visibilityChange = 'webkitvisibilitychange';
-		}
+function initVisibilityListener() {
+	var hidden, visibilityChange;
+	if (typeof document.hidden !== 'undefined') { // Opera 12.10 and Firefox 18 and later support 
+		hidden = 'hidden';
+		visibilityChange = 'visibilitychange';
+	}
+	else if (typeof document.mozHidden !== 'undefined') {
+		hidden = 'mozHidden';
+		visibilityChange = 'mozvisibilitychange';
+	}
+	else if (typeof document.webkitHidden !== 'undefined') {
+		hidden = 'webkitHidden';
+		visibilityChange = 'webkitvisibilitychange';
+	}
 
-		var visibilityChangeHandler = function(isHidden) {
-			if (typeof isHidden !== 'boolean') {
-				isHidden = document[hidden];
-			}
-			if (isHidden && ((isDownloading && !isPausing) || isSaving)) {
-				emptyAudio.play();
-			}
-			else {
-				emptyAudio.pause();
-			}
-		};
-
-		if (visibilityChange) {
-			window.addEventListener(visibilityChange, visibilityChangeHandler);
+	var visibilityChangeHandler = function (isHidden) {
+		if (typeof isHidden !== 'boolean') {
+			isHidden = document[hidden];
+		}
+		visibleState = !isHidden;
+		if (!emptyAudio) {
+			return;
+		}
+		if (isHidden && ((isDownloading && !isPausing) || isSaving)) {
+			emptyAudio.play();
 		}
 		else {
-			window.addEventListener('focus', function() {
-				visibilityChangeHandler(false);
-			});
-			window.addEventListener('blur', function() {
-				visibilityChangeHandler(true);
-			});
+			emptyAudio.pause();
+			getImageLimits();
 		}
+	};
 
-		visibilityChangeHandler();
+	if (visibilityChange) {
+		window.addEventListener(visibilityChange, visibilityChangeHandler);
 	}
+	else {
+		window.addEventListener('focus', function () {
+			visibilityChangeHandler(false);
+		});
+		window.addEventListener('blur', function () {
+			visibilityChangeHandler(true);
+		});
+	}
+
+	visibilityChangeHandler();
 }
 
 function initProgressTable(){
@@ -14408,6 +14418,9 @@ function showSettings() {
 }
 
 function getImageLimits(forced, host){
+	if (!visibleState) {
+		return;
+	}
 	var host = host || location.hostname;
 	if (host === 'exhentai.org') {
 		host = 'e-hentai.org';
@@ -14432,12 +14445,16 @@ function getImageLimits(forced, host){
 			if (responseText.indexOf('as your account has been suspended') >= 0) {
 				preData.suspended = true;
 			}
+			else if (responseText.indexOf('Your IP address has been temporarily banned') >= 0) {
+				preData.ipBanned = true;
+			}
 			else {
 				var data = responseText.match(ehDownloadRegex.imageLimits);
 				if (!data || data.length < 3) return;
 				preData.cur = data[1];
 				preData.total = data[2];
 				delete preData.suspended;
+				delete preData.ipBanned;
 			}
 			localStorage.setItem('ehd-image-limits-' + host, JSON.stringify(preData));
 			showImageLimits();
@@ -14452,6 +14469,9 @@ function showImageLimits(){
 		var curData = JSON.parse(localStorage.getItem(elem));
 		if (curData.suspended) {
 			return '<a href="https://forums.e-hentai.org/" target="_blank" style="color: #f00">! Account Suspended !</span>';
+		}
+		if (curData.ipBanned) {
+			return '<a href="https://e-hentai.org/home.php" target="_blank" style="color: #f00">! IP Banned !</span>';
 		}
 		return curData.cur + '/' + curData.total;
 	});
