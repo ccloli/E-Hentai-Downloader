@@ -420,7 +420,7 @@ function getReplacedName(str) {
 		.replace(/\{title\}/gi, getSafeName(document.getElementById('gn').textContent))
 		.replace(/\{subtitle\}/gi, document.getElementById('gj').textContent ? getSafeName(document.getElementById('gj').textContent) : getSafeName(document.getElementById('gn').textContent))
 		.replace(/\{tag\}|\{category\}/gi, document.querySelector('#gdc .cs').textContent.trim().toUpperCase())
-		.replace(/\{uploader\}/gi, getSafeName(document.querySelector('#gdn a').textContent))
+		.replace(/\{uploader\}/gi, getSafeName(document.querySelector('#gdn').textContent))
 		.replaceHTMLEntites();
 }
 
@@ -1877,7 +1877,7 @@ function initEHDownload() {
 
 	if (infoNeeds.indexOf('metas') >= 0) {
 		infoStr += 'Category: ' + document.querySelector('#gdc .cs').textContent.trim() + '\n' +
-		           'Uploader: ' + document.querySelector('#gdn a').textContent.replaceHTMLEntites() + '\n';
+		           'Uploader: ' + document.querySelector('#gdn').textContent.replaceHTMLEntites() + '\n';
 	}
 	var metaNodes = document.querySelectorAll('#gdd tr');
 	for (var i = 0; i < metaNodes.length; i++) {
