@@ -799,7 +799,7 @@ function generateZip(isFromFS, fs, isRetry, forced){
 // update progress table info
 function updateProgress(nodeList, data) {
 	if (data.name !== undefined) nodeList.fileName.textContent = data.name;
-	if (data.progress !== undefined) nodeList.progress.value = data.progress;
+	if (data.progress !== undefined && !Number.isNaN(data.progress)) nodeList.progress.value = data.progress;
 	if (data.progressText !== undefined) nodeList.progressText.textContent = data.progressText;
 	if (data.status !== undefined) nodeList.statusText.textContent = data.status;
 	if (data.class !== undefined) nodeList.current.className = ['ehD-pt-item', data.class].join(' ').trim();
@@ -1044,7 +1044,7 @@ function fetchOriginalImage(index, nodeList) {
 
 			updateProgress(nodeList, {
 				name: '#' + imageList[index]['realIndex'] + ': ' + imageList[index]['imageName'],
-				progress: res.lengthComputable ? res.loaded / res.total : '',
+				progress: res.lengthComputable ? res.loaded / (res.total || 1) : '',
 				progressText: speedText,
 				class: '',
 				status: retryCount[index] === 0 ? 'Downloading...' : 'Retrying (' + retryCount[index] + '/' + (setting['retry-count'] !== undefined ? setting['retry-count'] : 3) + ') ...'
@@ -1088,15 +1088,10 @@ function fetchOriginalImage(index, nodeList) {
 				// (Tampermonkey uses a dirty way to give res.response, transfer string to arraybuffer every time)
 				// now store progress just spent ~1s instead of ~8s
 				var response = res.response;
-				var byteLength = response.byteLength;
 				var responseHeaders = res.responseHeaders;
 				
 				// use regex to fixed compatibility with http/2, as its headers are lower case (at least fixed with Yandex Turbo)
 				var mime = responseHeaders.match(/Content-Type:/i) ? responseHeaders.split(/Content-Type:/i)[1].split('\n')[0].trim().split('/') : ['', ''];
-				var responseText;
-				if (mime[0] === 'text') {
-					responseText = new TextDecoder().decode(new DataView(response));
-				}
 
 				if (!response) {
 					console.log('[EHD] #' + (index + 1) + ': Empty Response (See: https://github.com/ccloli/E-Hentai-Downloader/issues/16 )');
@@ -1116,6 +1111,13 @@ function fetchOriginalImage(index, nodeList) {
 
 					// res.response polyfill is useless, so it has been removed
 				}
+
+				var byteLength = response.byteLength;
+				var responseText;
+				if (mime[0] === 'text') {
+					responseText = new TextDecoder().decode(new DataView(response));
+				}
+
 				if (byteLength === 925) { // '403 Access Denied' Image Byte Size
 					// GM_xhr only support abort()
 					console.log('[EHD] #' + (index + 1) + ': 403 Access Denied');
