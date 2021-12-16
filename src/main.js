@@ -331,7 +331,7 @@ console.log('[EHD] Current URL >', window.location.href);
 console.log('[EHD] Is Logged In >', unsafeWindow.apiuid !== -1);
 
 
-String.prototype.replaceHTMLEntites = function() {
+var replaceHTMLEntites = function(str) {
 	var matchEntity = function(entity) {
 		var entitesList = {"euro":"€","nbsp":" ","quot":"\"","amp":"&","lt":"<","gt":">","iexcl":"¡","cent":"¢","pound":"£","curren":"¤","yen":"¥","brvbar":"¦","sect":"§","uml":"¨","copy":"©","ordf":"ª","not":"¬","shy":"","reg":"®","macr":"¯","deg":"°","plusmn":"±","sup2":"²","sup3":"³","acute":"´","micro":"µ","para":"¶","middot":"·","cedil":"¸","sup1":"¹","ordm":"º","raquo":"»","frac14":"¼","frac12":"½","frac34":"¾","iquest":"¿","agrave":"à","aacute":"á","acirc":"â","atilde":"ã","auml":"ä","aring":"å","aelig":"æ","ccedil":"ç","egrave":"è","eacute":"é","ecirc":"ê","euml":"ë","igrave":"ì","iacute":"í","icirc":"î","iuml":"ï","eth":"ð","ntilde":"ñ","ograve":"ò","oacute":"ó","ocirc":"ô","otilde":"õ","ouml":"ö","times":"×","oslash":"ø","ugrave":"ù","uacute":"ú","ucirc":"û","uuml":"ü","yacute":"ý","thorn":"þ","szlig":"ß","divide":"÷"};
 		if (entitesList[entity]) return entitesList[entity];
@@ -345,7 +345,7 @@ String.prototype.replaceHTMLEntites = function() {
 		}
 		else return '&' + entity + ';';
 	};
-	var result = this.replace(/&(#[xX]?\d+|[a-zA-Z]+);/g, function(match, entity) {
+	var result = (str || '').replace(/&(#[xX]?\d+|[a-zA-Z]+);/g, function(match, entity) {
 		return matchEntity(entity.toLowerCase());
 	});
 	return result;
@@ -415,13 +415,12 @@ function getSafeName(str, ignoreSlash) {
 
 // replace dir name and zip filename
 function getReplacedName(str) {
-	return str.replace(/\{gid\}/gi, unsafeWindow.gid)
+	return replaceHTMLEntites(str.replace(/\{gid\}/gi, unsafeWindow.gid)
 		.replace(/\{token\}/gi, unsafeWindow.token)
 		.replace(/\{title\}/gi, getSafeName(document.getElementById('gn').textContent))
 		.replace(/\{subtitle\}/gi, document.getElementById('gj').textContent ? getSafeName(document.getElementById('gj').textContent) : getSafeName(document.getElementById('gn').textContent))
 		.replace(/\{tag\}|\{category\}/gi, document.querySelector('#gdc .cs').textContent.trim().toUpperCase())
-		.replace(/\{uploader\}/gi, getSafeName(document.querySelector('#gdn').textContent))
-		.replaceHTMLEntites();
+		.replace(/\{uploader\}/gi, getSafeName(document.querySelector('#gdn').textContent)));
 }
 
 function PageData(pageURL, imageURL, imageName, nextNL, realIndex, imageNumber) {
@@ -1707,7 +1706,7 @@ function getAllPagesURL() {
 			}
 
 			for (var i = 0; i < pagesURL.length; i++) {
-				pageURLsList.push(pagesURL[i].split('"')[1].replaceHTMLEntites());
+				pageURLsList.push(replaceHTMLEntites(pagesURL[i].split('"')[1]));
 			}
 			pushDialog('Succeed!');
 
@@ -1872,19 +1871,21 @@ function initEHDownload() {
 	// Array.prototype.some() is a bit ugly, so we use toString().indexOf() lol
 	var infoNeeds = setting['save-info-list'].toString();
 	if (infoNeeds.indexOf('title') >= 0) {
-		infoStr += document.getElementById('gn').textContent.replaceHTMLEntites() + '\n' +
-		           document.getElementById('gj').textContent.replaceHTMLEntites() + '\n' +
-		           window.location.href.replaceHTMLEntites() + '\n\n';
+		infoStr += replaceHTMLEntites(
+			document.getElementById('gn').textContent + '\n' +
+			document.getElementById('gj').textContent + '\n' +
+			window.location.href + '\n\n'
+		);
 	}
 
 	if (infoNeeds.indexOf('metas') >= 0) {
 		infoStr += 'Category: ' + document.querySelector('#gdc .cs').textContent.trim() + '\n' +
-		           'Uploader: ' + document.querySelector('#gdn').textContent.replaceHTMLEntites() + '\n';
+				   'Uploader: ' + replaceHTMLEntites(document.querySelector('#gdn').textContent) + '\n';
 	}
 	var metaNodes = document.querySelectorAll('#gdd tr');
 	for (var i = 0; i < metaNodes.length; i++) {
-		var c1 = metaNodes[i].getElementsByClassName('gdt1')[0].textContent.replaceHTMLEntites();
-		var c2 = metaNodes[i].getElementsByClassName('gdt2')[0].textContent.replaceHTMLEntites();
+		var c1 = replaceHTMLEntites(metaNodes[i].getElementsByClassName('gdt1')[0].textContent);
+		var c2 = replaceHTMLEntites(metaNodes[i].getElementsByClassName('gdt2')[0].textContent);
 		if (infoNeeds.indexOf('metas') >= 0) infoStr += c1 + ' ' + c2 + '\n';
 	}
 	if (infoNeeds.indexOf('metas') >= 0) infoStr += 'Rating: ' + unsafeWindow.average_rating + '\n\n';
@@ -2060,7 +2061,13 @@ function getPageData(index) {
 	};
 
 	retryCount[index] = 0;
-	var fetchURL = (imageList[index] ? (imageList[index]['pageURL'] + ((!setting['never-send-nl'] && imageList[index]['nextNL']) ? (imageList[index]['pageURL'].indexOf('?') >= 0 ? '&' : '?') + 'nl=' + imageList[index]['nextNL'] : '')).replaceHTMLEntites() : pageURLsList[realIndex - 1])/*.replace(/^https?:/, '')*/;
+	var fetchURL = replaceHTMLEntites(imageList[index] ? (
+		imageList[index]['pageURL'] + (
+			(!setting['never-send-nl'] && imageList[index]['nextNL']) ? (
+				imageList[index]['pageURL'].indexOf('?') >= 0 ? '&' : '?'
+			) + 'nl=' + imageList[index]['nextNL'] : ''
+		)
+	) : pageURLsList[realIndex - 1])/*.replace(/^https?:/, '')*/;
 
 	// assign to fetchThread, so that we can abort them and all GM_xhr by one command fetchThread[i].abort()
 	var xhr = fetchThread[index] = new XMLHttpRequest();
@@ -2101,8 +2108,18 @@ function getPageData(index) {
 		}
 
 		try {
-			var imageURL = ((unsafeWindow.apiuid !== -1 || setting['force-as-login']) && responseText.indexOf('fullimg.php') >= 0 && !setting['force-resized']) ? responseText.match(ehDownloadRegex.imageURL[0])[1].replaceHTMLEntites() : responseText.indexOf('id="img"') > -1 ? responseText.match(ehDownloadRegex.imageURL[1])[1].replaceHTMLEntites() : responseText.match(ehDownloadRegex.imageURL[2])[1].replaceHTMLEntites();
-			var fileName = responseText.match(ehDownloadRegex.fileName)[1].replaceHTMLEntites();
+			var imageURL = replaceHTMLEntites(
+				(
+					(unsafeWindow.apiuid !== -1 || setting['force-as-login'])
+					&& responseText.indexOf('fullimg.php') >= 0
+					&& !setting['force-resized']
+				) ? responseText.match(ehDownloadRegex.imageURL[0])[1] : (
+					responseText.indexOf('id="img"') > -1
+						? responseText.match(ehDownloadRegex.imageURL[1])[1]
+						: responseText.match(ehDownloadRegex.imageURL[2])[1]
+				)
+			);
+			var fileName = replaceHTMLEntites(responseText.match(ehDownloadRegex.fileName)[1]);
 			var nextNL = ehDownloadRegex.nl.test(responseText) ? responseText.match(ehDownloadRegex.nl)[1] : null;
 		}
 		catch (error) {
