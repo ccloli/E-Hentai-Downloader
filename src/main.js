@@ -598,7 +598,7 @@ function generateZip(isFromFS, fs, isRetry, forced){
 		isSaving = false;
 	};
 
-	const errorHandler = function (error) {
+	var errorHandler = function (error) {
 		abData = undefined;
 
 		pushDialog('An error occurred when generating Zip file as ArrayBuffer.');
