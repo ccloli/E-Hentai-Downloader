@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.33.5
+// @version      1.34
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -8,6 +8,7 @@
 // @include      http://e-hentai.org/g/*
 // @include      http://g.e-hentai.org/g/*
 // @include      http://r.e-hentai.org/g/*
+// @include      http://exhentai55ld2wyap5juskbm67czulomrouspdacjamjeloj7ugjbsad.onion/g/*
 // @include      https://exhentai.org/g/*
 // @include      https://e-hentai.org/g/*
 // @include      https://g.e-hentai.org/g/*
@@ -18,6 +19,7 @@
 // @supportURL   https://github.com/ccloli/E-Hentai-Downloader/issues
 // @connect      e-hentai.org
 // @connect      exhentai.org
+// @connect      exhentai55ld2wyap5juskbm67czulomrouspdacjamjeloj7ugjbsad.onion
 // @connect      hath.network
 // @connect      *
 // @grant        GM_getValue
@@ -12017,6 +12019,7 @@ var pretitle = document.title;
 var needTitleStatus = false;
 var delayTime = 0;
 var visibleState = true;
+var isTor = location.hostname === 'exhentai55ld2wyap5juskbm67czulomrouspdacjamjeloj7ugjbsad.onion';
 var fetchPagesXHR = new XMLHttpRequest();
 var emptyAudio;
 var emptyAudioFile = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU3LjcxLjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAEAAABVgANTU1NTU1Q0NDQ0NDUFBQUFBQXl5eXl5ea2tra2tra3l5eXl5eYaGhoaGhpSUlJSUlKGhoaGhoaGvr6+vr6+8vLy8vLzKysrKysrX19fX19fX5eXl5eXl8vLy8vLy////////AAAAAExhdmM1Ny44OQAAAAAAAAAAAAAAACQCgAAAAAAAAAVY82AhbwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/+MYxAALACwAAP/AADwQKVE9YWDGPkQWpT66yk4+zIiYPoTUaT3tnU487uNhOvEmQDaCm1Yz1c6DPjbs6zdZVBk0pdGpMzxF/+MYxA8L0DU0AP+0ANkwmYaAMkOKDDjmYoMtwNMyDxMzDHE/MEsLow9AtDnBlQgDhTx+Eye0GgMHoCyDC8gUswJcMVMABBGj/+MYxBoK4DVpQP8iAtVmDk7LPgi8wvDzI4/MWAwK1T7rxOQwtsItMMQBazAowc4wZMC5MF4AeQAGDpruNuMEzyfjLBJhACU+/+MYxCkJ4DVcAP8MAO9J9THVg6oxRMGNMIqCCTAEwzwwBkINOPAs/iwjgBnMepYyId0PhWo+80PXMVsBFzD/AiwwfcKGMEJB/+MYxDwKKDVkAP8eAF8wMwIxMlpU/OaDPLpNKkEw4dRoBh6qP2FC8jCJQFcweQIPMHOBtTBoAVcwOoCNMYDI0u0Dd8ANTIsy/+MYxE4KUDVsAP8eAFBVpgVVPjdGeTEWQr0wdcDtMCeBgDBkgRgwFYB7Pv/zqx0yQQMCCgKNgonHKj6RRVkxM0GwML0AhDAN/+MYxF8KCDVwAP8MAIHZMDDA3DArAQo3K+TF5WOBDQw0lgcKQUJxhT5sxRcwQQI+EIPWMA7AVBoTABgTgzfBN+ajn3c0lZMe/+MYxHEJyDV0AP7MAA4eEwsqP/PDmzC/gNcwXUGaMBVBIwMEsmB6gaxhVuGkpoqMZMQjooTBwM0+S8FTMC0BcjBTgPwwOQDm/+MYxIQKKDV4AP8WADAzAKQwI4CGPhWOEwCFAiBAYQnQMT+uwXUeGzjBWQVkwTcENMBzA2zAGgFEJfSPkPSZzPXgqFy2h0xB/+MYxJYJCDV8AP7WAE0+7kK7MQrATDAvQRIwOADKMBuA9TAYQNM3AiOSPjGxowgHMKFGcBNMQU1FMy45OS41VVU/31eYM4sK/+MYxKwJaDV8AP7SAI4y1Yq0MmOIADGwBZwwlgIJMztCM0qU5TQPG/MSkn8yEROzCdAxECVMQU1FMy45OS41VTe7Ohk+Pqcx/+MYxMEJMDWAAP6MADVLDFUx+4J6Mq7NsjN2zXo8V5fjVJCXNOhwM0vTCDAxFpMYYQU+RlVMQU1FMy45OS41VVVVVVVVVVVV/+MYxNcJADWAAP7EAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+MYxOsJwDWEAP7SAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+MYxPMLoDV8AP+eAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+MYxPQL0DVcAP+0AFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV';
@@ -12343,6 +12346,15 @@ var replaceHTMLEntites = function(str) {
 	return result;
 };
 
+function isInPeakHours() {
+	// 2022-06-06
+	// - Using the "Download source image" function will now consume GP during peak hours. "Peak hours" for this purpose is (in UTC) weekdays between 14:00 and 20:00, and weekends between Saturday 14:00 until Sunday 20:00. This will also be used outside of peak hours if the image viewing limit is exhausted.
+	var date = new Date();
+	var day = date.getUTCDay();
+	var hour = date.getUTCHours();
+	return (day === 6 || hour < 20) && (!day || hour >= 14);
+}
+
 function createBlob(abdata, config) {
 	try { // to detect if blob generates successfully
 		return new Blob(abdata, config);
@@ -12590,7 +12602,7 @@ function generateZip(isFromFS, fs, isRetry, forced){
 		isSaving = false;
 	};
 
-	const errorHandler = function (error) {
+	var errorHandler = function (error) {
 		abData = undefined;
 
 		pushDialog('An error occurred when generating Zip file as ArrayBuffer.');
@@ -12895,6 +12907,10 @@ function fetchOriginalImage(index, nodeList) {
 	var requestURL = imageList[index]['imageFinalURL'] || imageList[index]['imageURL'];
 	var needScrollIntoView = ehDownloadDialog.clientHeight + ehDownloadDialog.scrollTop >= ehDownloadDialog.scrollHeight;
 
+	if (setting['original-download-domain']) {
+		requestURL = requestURL.replace(location.hostname, setting['original-download-domain']);
+	}
+
 	if (nodeList === undefined) {
 		var node = progressTable.querySelector('tr[data-index="' + index + '"]');
 		if (!node) {
@@ -13146,7 +13162,13 @@ function fetchOriginalImage(index, nodeList) {
 					byteLength === 142 ||   // Image Viewing Limits String Byte Size (exhentai)
 					byteLength === 144 ||   // Image Viewing Limits String Byte Size (g.e-hentai)
 					byteLength === 28658 || // '509 Bandwidth Exceeded' Image Byte Size
-					(mime[0] === 'text' && responseText.indexOf('You have exceeded your image viewing limits') >= 0) // directly detect response content in case byteLength will be modified
+					byteLength === 102 || // You have reached the image limit, and do not have sufficient GP to buy a download quota.
+					byteLength === 93 || // Downloading original files during peak hours requires GP, and you do not have enough.
+					(mime[0] === 'text' && (
+						responseText.indexOf('You have exceeded your image viewing limits') >= 0 ||
+						responseText.indexOf('do not have sufficient GP to buy') >= 0 ||
+						responseText.indexOf('requires GP, and you do not have enough') >= 0
+					)) // directly detect response content in case byteLength will be modified
 				) {
 					// thought exceed the limits, downloading image is still accessable
 					/*for (var i = 0; i < fetchThread.length; i++) {
@@ -13156,7 +13178,7 @@ function fetchOriginalImage(index, nodeList) {
 					console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL, '\nFinal URL >', res.finalUrl, '\nResposeHeaders >' + res.responseHeaders);
 
 					updateProgress(nodeList, {
-						status: 'Failed! (Exceed Limits)',
+						status: 'Failed! (Exceed Limits/GPs)',
 						progress: '0',
 						progressText: '',
 						class: 'ehD-pt-failed'
@@ -13172,7 +13194,7 @@ function fetchOriginalImage(index, nodeList) {
 
 					if (isPausing) return;
 
-					pushDialog('You have exceeded your image viewing limits.\n');
+					pushDialog('You have exceeded your image viewing limits, or you need GP to download.\n');
 					isPausing = true;
 					updateTotalStatus();
 					if (emptyAudio) {
@@ -13183,12 +13205,21 @@ function fetchOriginalImage(index, nodeList) {
 						ehDownloadDialog.removeChild(ehDownloadPauseBtn);
 					}
 
-					if (confirm('You have temporarily reached the limit for how many images you can browse.\n\n\
-						- If you are not signed in, sign up/in with an E-Hentai account at E-Hentai Forums to get double daily quota.\n\
-						- You can run Hentai@Home to support E-Hentai and get some points which you can pay to increase your limit.\n\
-						- Check back in a few hours, and you will be able to download more (3 points are reduced per minute by default).\n\
-						- You can reset your image viewing limits to continue by paying your GPs or credits.\n\n\
-						If you want to reset your limits by paying your GPs or credits right now, choose YES, and you can reset it in the opened window. Or if you want to wait a few minutes until you have enough free limit, then continue, choose NO.')) {
+					if (confirm('You have temporarily reached the limit for how many images you can browse.\n\
+If you don\'t have enough limit, or you have but it\'s in site\'s peak hours, you need to use GP to download, but you don\'t have enough GP to add quota.\n\n\
+To increase viewing limits, you can:\n\
+- If you are not signed in, sign in to get quota.\n\
+- Run Hentai@Home to get points which you can pay to increase your limit.\n\
+- Check back in a few hours, and it\'ll slowly recovered (3 points per minute by default).\n\
+- You can reset it by paying your GPs or credits.\n\n\
+To gain GP, you can:\n\
+- Upload galleries and earn GP from visits and users using offical archive download.\n\
+- Run Hentai@Home to earn GP from hit.\n\
+- Upload torrents.\n\
+- Write comments and gain from others voting.\n\
+- Exchange GP with credits or hath, or donation.\n\
+- Wait till your limits recovered or the peak hours passed.\n\n\
+If you want to reset your limits by paying your GPs or credits right now, or exchange GPs, choose YES, and do it in the opened window. Or if you want to wait a few minutes until you have enough free limit, then continue, choose NO.')) {
 						window.open('https://e-hentai.org/home.php');
 					}
 
@@ -14291,6 +14322,7 @@ function showSettings() {
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="force-resized"> Force download resized image (never download original image) </label><sup>(2)</sup></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="never-new-url"> Never get new image URL when failed to download image </label><sup>(2)</sup></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="never-send-nl"> Never send "nl" GET parameter when getting new image URL </label><sup>(2)</sup></div>\
+					<div class="g2"><label><input type="checkbox" data-ehd-setting="never-warn-peak-hours"> Never show warning when it\'s in peak hours now </label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="never-warn-large-gallery"> Never show warning when downloading a large gallery (>= 300 MB) </label></div>\
 					<div class="g2"' + (requestFileSystem ? '' : ' style="opacity: 0.5;" title="Only Chrome supports this feature"') + '><label><input type="checkbox" data-ehd-setting="store-in-fs"> Use File System to handle large Zip file</label> <label>when gallery is larger than <input type="number" data-ehd-setting="fs-size" min="0" placeholder="200" style="width: 46px;"> MB (0 is always)</label><sup>(3)</sup></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="play-silent-music"> Play silent music during the process to avoid downloading freeze </label><sup>(4)</sup></div>\
@@ -14301,6 +14333,7 @@ function showSettings() {
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="save-as-cbz"> Save as CBZ (Comic book archive) file<sup>(5)</sup></label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="pass-cookies"> Pass cookies manually when downloading images <sup>(6)</sup></label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="force-as-login"> Force as logged in (actual login state: ' + (unsafeWindow.apiuid === -1 ? 'no' : 'yes') + ', uid: ' + unsafeWindow.apiuid + ') <sup>(7)</sup></label></div>\
+					<div class="g2"><label>Download original images from <select data-ehd-setting="original-download-domain"><option value="">current origin</option><option value="e-hentai.org">e-hentai.org</option><option value="exhentai.org">exhentai.org</option></select> <sup>(8)</sup></label></div>\
 					<div class="ehD-setting-note">\
 						<div class="g2">\
 							(1) This may reduce memory usage but some decompress softwares may not support the Zip file. See <a href="https://stuk.github.io/jszip/documentation/api_jszip/generate_async.html" target="_blank" style="color: #ffffff;">JSZip Docs</a> for more info.\
@@ -14322,6 +14355,9 @@ function showSettings() {
 						</div>\
 						<div class="g2">\
 							(7) If you have already logged in, but the script detects that you\'re not logged in, you can enable this to skip login check. Please note that if you are not logged in actually, the script will not work as expect.\
+						</div>\
+						<div class="g2">\
+							(8) If you have problem to download on the same site, like account session is misleading, you can force redirect original download link to another domain. Pass cookies manually may be needed.\
 						</div>\
 					</div>\
 				</div>\
@@ -14482,6 +14518,11 @@ function getImageLimits(forced, host){
 }
 
 function showImageLimits(){
+	// tor doesn't count to normal account since the ip is dynamic, but not sure if it counts for donator/hath perk account
+	// if (isTor) {
+	// 	return;
+	// }
+
 	var list = Object.keys(localStorage).filter(function(elem){
 		return elem.indexOf('ehd-image-limits-') === 0;
 	}).sort().map(function(elem){
@@ -14569,6 +14610,16 @@ function getResolutionSetting(forced){
 		return;
 	}
 
+	// tor site don't have original image feature
+	if (isTor) {
+		localStorage.setItem('ehd-resolution', JSON.stringify({
+			withoutHentaiAtHome: 0,
+			resolution: 0,
+			timestamp: Date.now()
+		}));
+		return;
+	}
+
 	console.log('[EHD] Request Resolution Setting');
 
 	var xhr = new XMLHttpRequest();
@@ -14592,6 +14643,11 @@ function getResolutionSetting(forced){
 }
 
 function showPreCalcCost(){
+	// tor doesn't count to normal account since the ip is dynamic, but not sure if it counts for donator/hath perk account
+	// if (isTor) {
+	// 	return;
+	// }
+
 	var resolutionSetting = JSON.parse(localStorage.getItem('ehd-resolution') || '{"timestamp":0}');
 	var resolutionCost = {
 		0: 1,
@@ -14601,21 +14657,35 @@ function showPreCalcCost(){
 		4: 3,
 		5: 5
 	};
-	var size = 0;
-	var page = getFileSizeAndLength().page;
+	var info = getFileSizeAndLength();
+	var size = info.size;
+	var page = info.page;
 	var perCost = resolutionCost[resolutionSetting.resolution || 0];
 	if (resolutionSetting.withoutHentaiAtHome) {
 		perCost += 5;
 	}
-	var cost = page * perCost;
+	var leastCost = page * perCost;
+	var cost = leastCost;
+	var gp = Math.ceil(size / 1e5) * 2 + page;
+	var isUsingGP = false;
+	var isUsingOriginal = !setting['force-resized'] && !isTor;
 
-	if (!setting['force-resized']) {
-		size = getFileSizeAndLength().size;
-		// 1 point per 0.1 MB since August 2019, less than 0.1 MB will also be counted, so asumme each image size has the extra < 100 KB
-		cost = Math.ceil((size / 1e5) + page * (1 + perCost));
+	// tor site don't have original image feature
+	if (isUsingOriginal) {
+		if (isInPeakHours()) {
+			isUsingGP = true;
+		} else {
+			// 1 point per 0.1 MB since August 2019, less than 0.1 MB will also be counted, so asumme each image size has the extra < 100 KB
+			cost = Math.ceil((size / 1e5) + page * (1 + perCost));
+		}
 	}
 
-	ehDownloadBox.getElementsByClassName('ehD-box-cost')[0].innerHTML = ' | <a href="https://github.com/ccloli/E-Hentai-Downloader/wiki/E%E2%88%92Hentai-Image-Viewing-Limits" target="_blank" title="1 point per 0.1 MB since August 2019, less than 0.1 MB will also be counted">Estimated Limits Cost: ' + cost + '</a>';
+	ehDownloadBox.getElementsByClassName('ehD-box-cost')[0].innerHTML = ' | \
+		<a \
+			href="https://github.com/ccloli/E-Hentai-Downloader/wiki/E%E2%88%92Hentai-Image-Viewing-Limits" \
+			target="_blank" \
+			title="' + (isUsingOriginal && !isUsingGP ? '...or ' + leastCost + ' + ' + gp + ' GP if you don\'t have enough viewing limits.\n' : '') + '1 point per 0.1 MB since August 2019, less than 0.1 MB will also be counted.\nDuring peak hours, downloading original images will cost GPs. The GP cost is the same as resetting viewing limits.\nEstimated GP cost is a bit more than using offical archive download, in case the sum of each images will be larger than the packed.">'
+		+ 'Estimated Limits Cost: ' + cost + (isUsingGP ? ' + ' + gp + ' GP' : '') + '</a>';
 }
 
 // EHD Box, thanks to JingJang@GitHub, source: https://github.com/JingJang/E-Hentai-Downloader
@@ -14640,10 +14710,15 @@ ehDownloadAction.addEventListener('click', function(event){
 	var torrentsNode = document.querySelector('#gd5 a[onclick*="gallerytorrents.php"]');
 	var torrentsCount = torrentsNode ? torrentsNode.textContent.match(/\d+/)[0] - 0 : 0;
 	if (isDownloading && !confirm('E-Hentai Downloader is working now, are you sure to stop downloading and start a new download?')) return;
-	else if (!setting['ignore-torrent'] && torrentsCount > 0 && !confirm('There are ' + torrentsCount + ' torrent(s) available for this gallery. You can download the torrent(s) to get a stable and controllable download experience without spending your image limits, or even get bonus content.\n\nContinue downloading with E-Hentai Downloader (Yes) or use torrent(s) directly (No)?\n(You can disable this notification in the Settings)')) {
+
+	if (!setting['ignore-torrent'] && torrentsCount > 0 && !confirm('There are ' + torrentsCount + ' torrent(s) available for this gallery. You can download the torrent(s) to get a stable and controllable download experience without spending your image limits, or even get bonus content.\n\nContinue downloading with E-Hentai Downloader (Yes) or use torrent(s) directly (No)?\n(You can disable this notification in the Settings)')) {
 		return torrentsNode.dispatchEvent(new MouseEvent('click'));
 	}
+
 	if (unsafeWindow.apiuid === -1 && !setting['force-as-login'] && !confirm('You are not logged in to E-Hentai Forums, so you can\'t download original images.\nIf you\'ve already logged in, please try logout and login again.\nContinue with resized images?')) return;
+
+	if (!setting['force-resized'] && !isTor && !setting['never-warn-peak-hours'] && !confirm('It\'s peak hours now, downloading original images will cost your GPs instead of viewing limits.\nContinue downloading with original images?')) return;
+
 	ehDownloadDialog.innerHTML = '';
 
 	initEHDownload();
