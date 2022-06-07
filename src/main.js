@@ -2630,22 +2630,40 @@ function showPreCalcCost(){
 		4: 3,
 		5: 5
 	};
-	var size = 0;
-	var page = getFileSizeAndLength().page;
+	var info = getFileSizeAndLength();
+	var size = info.size;
+	var page = info.page;
 	var perCost = resolutionCost[resolutionSetting.resolution || 0];
 	if (resolutionSetting.withoutHentaiAtHome) {
 		perCost += 5;
 	}
-	var cost = page * perCost;
+	var leastCost = page * perCost;
+	var cost = leastCost;
+	var gp = Math.ceil(size / 1e5) * 2 + page;
+	var isUsingGP = false;
+	var isUsingOriginal = !setting['force-resized'] && !isTor;
 
 	// tor site don't have original image feature
-	if (!setting['force-resized'] && !isTor) {
-		size = getFileSizeAndLength().size;
-		// 1 point per 0.1 MB since August 2019, less than 0.1 MB will also be counted, so asumme each image size has the extra < 100 KB
-		cost = Math.ceil((size / 1e5) + page * (1 + perCost));
+	if (isUsingOriginal) {
+		// 2022-06-06
+		// - Using the "Download source image" function will now consume GP during peak hours. "Peak hours" for this purpose is (in UTC) weekdays between 14:00 and 20:00, and weekends between Saturday 14:00 until Sunday 20:00. This will also be used outside of peak hours if the image viewing limit is exhausted.
+		var date = new Date();
+		var day = date.getUTCDay();
+		var hour = date.getUTCHours();
+		if ((day === 6 || hour < 20) && (!day || hour >= 14)) {
+			isUsingGP = true;
+		} else {
+			// 1 point per 0.1 MB since August 2019, less than 0.1 MB will also be counted, so asumme each image size has the extra < 100 KB
+			cost = Math.ceil((size / 1e5) + page * (1 + perCost));
+		}
 	}
 
-	ehDownloadBox.getElementsByClassName('ehD-box-cost')[0].innerHTML = ' | <a href="https://github.com/ccloli/E-Hentai-Downloader/wiki/E%E2%88%92Hentai-Image-Viewing-Limits" target="_blank" title="1 point per 0.1 MB since August 2019, less than 0.1 MB will also be counted">Estimated Limits Cost: ' + cost + '</a>';
+	ehDownloadBox.getElementsByClassName('ehD-box-cost')[0].innerHTML = ' | \
+		<a \
+			href="https://github.com/ccloli/E-Hentai-Downloader/wiki/E%E2%88%92Hentai-Image-Viewing-Limits" \
+			target="_blank" \
+			title="' + (isUsingOriginal && !isUsingGP ? 'Or ' + leastCost + ' + ' + gp + ' GP if you don\'t have enough viewing limits.\n' : '') + '1 point per 0.1 MB since August 2019, less than 0.1 MB will also be counted.\nDuring peak hours, downloading original images will cost GPs.\nEstimated GP cost is a bit more than using offical archive download, in case the sum of each images will be larger than the packed.">'
+		+ 'Estimated Limits Cost: ' + cost + (isUsingGP ? ' + ' + gp + ' GP' : '') + '</a>';
 }
 
 // EHD Box, thanks to JingJang@GitHub, source: https://github.com/JingJang/E-Hentai-Downloader
