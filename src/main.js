@@ -1168,7 +1168,13 @@ function fetchOriginalImage(index, nodeList) {
 					byteLength === 142 ||   // Image Viewing Limits String Byte Size (exhentai)
 					byteLength === 144 ||   // Image Viewing Limits String Byte Size (g.e-hentai)
 					byteLength === 28658 || // '509 Bandwidth Exceeded' Image Byte Size
-					(mime[0] === 'text' && responseText.indexOf('You have exceeded your image viewing limits') >= 0) // directly detect response content in case byteLength will be modified
+					byteLength === 102 || // You have reached the image limit, and do not have sufficient GP to buy a download quota.
+					byteLength === 93 || // Downloading original files during peak hours requires GP, and you do not have enough.
+					(mime[0] === 'text' && (
+						responseText.indexOf('You have exceeded your image viewing limits') >= 0 ||
+						responseText.indexOf('do not have sufficient GP to buy') >= 0 ||
+						responseText.indexOf('requires GP, and you do not have enough') >= 0
+					)) // directly detect response content in case byteLength will be modified
 				) {
 					// thought exceed the limits, downloading image is still accessable
 					/*for (var i = 0; i < fetchThread.length; i++) {
@@ -1178,7 +1184,7 @@ function fetchOriginalImage(index, nodeList) {
 					console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL, '\nFinal URL >', res.finalUrl, '\nResposeHeaders >' + res.responseHeaders);
 
 					updateProgress(nodeList, {
-						status: 'Failed! (Exceed Limits)',
+						status: 'Failed! (Exceed Limits/GPs)',
 						progress: '0',
 						progressText: '',
 						class: 'ehD-pt-failed'
@@ -1194,7 +1200,7 @@ function fetchOriginalImage(index, nodeList) {
 
 					if (isPausing) return;
 
-					pushDialog('You have exceeded your image viewing limits.\n');
+					pushDialog('You have exceeded your image viewing limits, or you need GP to download.\n');
 					isPausing = true;
 					updateTotalStatus();
 					if (emptyAudio) {
@@ -1205,12 +1211,21 @@ function fetchOriginalImage(index, nodeList) {
 						ehDownloadDialog.removeChild(ehDownloadPauseBtn);
 					}
 
-					if (confirm('You have temporarily reached the limit for how many images you can browse.\n\n\
-						- If you are not signed in, sign up/in with an E-Hentai account at E-Hentai Forums to get double daily quota.\n\
-						- You can run Hentai@Home to support E-Hentai and get some points which you can pay to increase your limit.\n\
-						- Check back in a few hours, and you will be able to download more (3 points are reduced per minute by default).\n\
-						- You can reset your image viewing limits to continue by paying your GPs or credits.\n\n\
-						If you want to reset your limits by paying your GPs or credits right now, choose YES, and you can reset it in the opened window. Or if you want to wait a few minutes until you have enough free limit, then continue, choose NO.')) {
+					if (confirm('You have temporarily reached the limit for how many images you can browse.\n\
+If you don\'t have enough limit, or you have but it\'s in site\'s peak hours, you need to use GP to download, but you don\'t have enough GP to add quota.\n\n\
+To increase viewing limits, you can:\n\
+- If you are not signed in, sign in to get quota.\n\
+- Run Hentai@Home to get points which you can pay to increase your limit.\n\
+- Check back in a few hours, and it\'ll slowly recovered (3 points per minute by default).\n\
+- You can reset it by paying your GPs or credits.\n\n\
+To gain GP, you can:\n\
+- Upload galleries and earn GP from visits and users using offical archive download.\n\
+- Run Hentai@Home to earn GP from hit.\n\
+- Upload torrents.\n\
+- Write comments and gain from others voting.\n\
+- Exchange GP with credits or hath, or donation.\n\
+- Wait till your limits recovered or the peak hours passed.\n\n\
+If you want to reset your limits by paying your GPs or credits right now, or exchange GPs, choose YES, and do it in the opened window. Or if you want to wait a few minutes until you have enough free limit, then continue, choose NO.')) {
 						window.open('https://e-hentai.org/home.php');
 					}
 
