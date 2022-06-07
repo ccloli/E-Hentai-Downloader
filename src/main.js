@@ -352,6 +352,15 @@ var replaceHTMLEntites = function(str) {
 	return result;
 };
 
+function isInPeakHours() {
+	// 2022-06-06
+	// - Using the "Download source image" function will now consume GP during peak hours. "Peak hours" for this purpose is (in UTC) weekdays between 14:00 and 20:00, and weekends between Saturday 14:00 until Sunday 20:00. This will also be used outside of peak hours if the image viewing limit is exhausted.
+	var date = new Date();
+	var day = date.getUTCDay();
+	var hour = date.getUTCHours();
+	return (day === 6 || hour < 20) && (!day || hour >= 14);
+}
+
 function createBlob(abdata, config) {
 	try { // to detect if blob generates successfully
 		return new Blob(abdata, config);
@@ -2300,6 +2309,7 @@ function showSettings() {
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="force-resized"> Force download resized image (never download original image) </label><sup>(2)</sup></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="never-new-url"> Never get new image URL when failed to download image </label><sup>(2)</sup></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="never-send-nl"> Never send "nl" GET parameter when getting new image URL </label><sup>(2)</sup></div>\
+					<div class="g2"><label><input type="checkbox" data-ehd-setting="never-warn-peak-hours"> Never show warning when it\'s in peak hours now </label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="never-warn-large-gallery"> Never show warning when downloading a large gallery (>= 300 MB) </label></div>\
 					<div class="g2"' + (requestFileSystem ? '' : ' style="opacity: 0.5;" title="Only Chrome supports this feature"') + '><label><input type="checkbox" data-ehd-setting="store-in-fs"> Use File System to handle large Zip file</label> <label>when gallery is larger than <input type="number" data-ehd-setting="fs-size" min="0" placeholder="200" style="width: 46px;"> MB (0 is always)</label><sup>(3)</sup></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="play-silent-music"> Play silent music during the process to avoid downloading freeze </label><sup>(4)</sup></div>\
@@ -2645,12 +2655,7 @@ function showPreCalcCost(){
 
 	// tor site don't have original image feature
 	if (isUsingOriginal) {
-		// 2022-06-06
-		// - Using the "Download source image" function will now consume GP during peak hours. "Peak hours" for this purpose is (in UTC) weekdays between 14:00 and 20:00, and weekends between Saturday 14:00 until Sunday 20:00. This will also be used outside of peak hours if the image viewing limit is exhausted.
-		var date = new Date();
-		var day = date.getUTCDay();
-		var hour = date.getUTCHours();
-		if ((day === 6 || hour < 20) && (!day || hour >= 14)) {
+		if (isInPeakHours()) {
 			isUsingGP = true;
 		} else {
 			// 1 point per 0.1 MB since August 2019, less than 0.1 MB will also be counted, so asumme each image size has the extra < 100 KB
@@ -2662,7 +2667,7 @@ function showPreCalcCost(){
 		<a \
 			href="https://github.com/ccloli/E-Hentai-Downloader/wiki/E%E2%88%92Hentai-Image-Viewing-Limits" \
 			target="_blank" \
-			title="' + (isUsingOriginal && !isUsingGP ? 'Or ' + leastCost + ' + ' + gp + ' GP if you don\'t have enough viewing limits.\n' : '') + '1 point per 0.1 MB since August 2019, less than 0.1 MB will also be counted.\nDuring peak hours, downloading original images will cost GPs.\nEstimated GP cost is a bit more than using offical archive download, in case the sum of each images will be larger than the packed.">'
+			title="' + (isUsingOriginal && !isUsingGP ? '...or ' + leastCost + ' + ' + gp + ' GP if you don\'t have enough viewing limits.\n' : '') + '1 point per 0.1 MB since August 2019, less than 0.1 MB will also be counted.\nDuring peak hours, downloading original images will cost GPs. The GP cost is the same as resetting viewing limits.\nEstimated GP cost is a bit more than using offical archive download, in case the sum of each images will be larger than the packed.">'
 		+ 'Estimated Limits Cost: ' + cost + (isUsingGP ? ' + ' + gp + ' GP' : '') + '</a>';
 }
 
@@ -2688,10 +2693,15 @@ ehDownloadAction.addEventListener('click', function(event){
 	var torrentsNode = document.querySelector('#gd5 a[onclick*="gallerytorrents.php"]');
 	var torrentsCount = torrentsNode ? torrentsNode.textContent.match(/\d+/)[0] - 0 : 0;
 	if (isDownloading && !confirm('E-Hentai Downloader is working now, are you sure to stop downloading and start a new download?')) return;
-	else if (!setting['ignore-torrent'] && torrentsCount > 0 && !confirm('There are ' + torrentsCount + ' torrent(s) available for this gallery. You can download the torrent(s) to get a stable and controllable download experience without spending your image limits, or even get bonus content.\n\nContinue downloading with E-Hentai Downloader (Yes) or use torrent(s) directly (No)?\n(You can disable this notification in the Settings)')) {
+
+	if (!setting['ignore-torrent'] && torrentsCount > 0 && !confirm('There are ' + torrentsCount + ' torrent(s) available for this gallery. You can download the torrent(s) to get a stable and controllable download experience without spending your image limits, or even get bonus content.\n\nContinue downloading with E-Hentai Downloader (Yes) or use torrent(s) directly (No)?\n(You can disable this notification in the Settings)')) {
 		return torrentsNode.dispatchEvent(new MouseEvent('click'));
 	}
+
 	if (unsafeWindow.apiuid === -1 && !setting['force-as-login'] && !confirm('You are not logged in to E-Hentai Forums, so you can\'t download original images.\nIf you\'ve already logged in, please try logout and login again.\nContinue with resized images?')) return;
+
+	if (!setting['force-resized'] && !isTor && !setting['never-warn-peak-hours'] && !confirm('It\'s peak hours now, downloading original images will cost your GPs instead of viewing limits.\nContinue downloading with original images?')) return;
+
 	ehDownloadDialog.innerHTML = '';
 
 	initEHDownload();
