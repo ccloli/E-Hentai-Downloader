@@ -913,6 +913,10 @@ function fetchOriginalImage(index, nodeList) {
 	var requestURL = imageList[index]['imageFinalURL'] || imageList[index]['imageURL'];
 	var needScrollIntoView = ehDownloadDialog.clientHeight + ehDownloadDialog.scrollTop >= ehDownloadDialog.scrollHeight;
 
+	if (setting['original-download-domain']) {
+		requestURL = requestURL.replace(location.hostname, setting['original-download-domain']);
+	}
+
 	if (nodeList === undefined) {
 		var node = progressTable.querySelector('tr[data-index="' + index + '"]');
 		if (!node) {
@@ -2320,6 +2324,7 @@ function showSettings() {
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="save-as-cbz"> Save as CBZ (Comic book archive) file<sup>(5)</sup></label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="pass-cookies"> Pass cookies manually when downloading images <sup>(6)</sup></label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="force-as-login"> Force as logged in (actual login state: ' + (unsafeWindow.apiuid === -1 ? 'no' : 'yes') + ', uid: ' + unsafeWindow.apiuid + ') <sup>(7)</sup></label></div>\
+					<div class="g2"><label>Download original images from <select data-ehd-setting="original-download-domain"><option value="">current origin</option><option value="e-hentai.org">e-hentai.org</option><option value="exhentai.org">exhentai.org</option></select> <sup>(8)</sup></label></div>\
 					<div class="ehD-setting-note">\
 						<div class="g2">\
 							(1) This may reduce memory usage but some decompress softwares may not support the Zip file. See <a href="https://stuk.github.io/jszip/documentation/api_jszip/generate_async.html" target="_blank" style="color: #ffffff;">JSZip Docs</a> for more info.\
@@ -2341,6 +2346,9 @@ function showSettings() {
 						</div>\
 						<div class="g2">\
 							(7) If you have already logged in, but the script detects that you\'re not logged in, you can enable this to skip login check. Please note that if you are not logged in actually, the script will not work as expect.\
+						</div>\
+						<div class="g2">\
+							(8) If you have problem to download on the same site, like account session is misleading, you can force redirect original download link to another domain. Pass cookies manually may be needed.\
 						</div>\
 					</div>\
 				</div>\
