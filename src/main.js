@@ -51,6 +51,8 @@ var ehDownloadRegex = {
 	imageLimits: /You are currently at <strong>(\d+)<\/strong> towards a limit of <strong>(\d+)<\/strong>/,
 	pagesLength: /<table class="ptt".+>(\d+)<\/a>.+?<\/table>/,
 	IPBanExpires: /The ban expires in \d+ hours?( and \d+ minutes?)?/,
+	donatorPower: /<td>Donations<\/td><td.*>([+-]?[\d\.]+)<\/td>/,
+	postedTime: /<td.*?>Posted:<\/td><td.*?>(.*?)<\/td>/,
 	categoryTag: /g\/c\/(\w+)\./,
 	slashOnly: /^[\\/]*$/
 };
@@ -359,6 +361,29 @@ function isInPeakHours() {
 	var day = date.getUTCDay();
 	var hour = date.getUTCHours();
 	return (day === 6 || hour < 20) && (!day || hour >= 14);
+}
+
+function isRecentGallery() {
+	// 2022-06-07
+	// A couple of minor tweaks to the "Download source image" changes, since it dropped the utilization by a lot more than we needed it to:
+	// - It no longer applies to galleries posted in the last 7 days.
+	// - It no longer applies for donators.
+	var galleryTime = (document.documentElement.innerHTML.match(ehDownloadRegex.postedTime) || [])[1];
+	var time = Date.parse(galleryTime + '+0000');
+	return Date.now() - time < 7 * 24 * 60 * 60 * 1000;
+}
+
+function isDonator() {
+	return Object.keys(localStorage).filter(function (elem) {
+		return elem.indexOf('ehd-image-limits-') === 0;
+	}).some(function(elem) {
+		try {
+			var curData = JSON.parse(localStorage.getItem(elem));
+			return curData.donatorPower;
+		} catch (err) {
+			return false;
+		}
+	});
 }
 
 function createBlob(abdata, config) {
@@ -2514,6 +2539,9 @@ function getImageLimits(forced, host){
 				if (!data || data.length < 3) return;
 				preData.cur = data[1];
 				preData.total = data[2];
+
+				var donatorPower = responseText.match(ehDownloadRegex.donatorPower);
+				preData.donatorPower = +donatorPower;
 				delete preData.suspended;
 				delete preData.ipBanned;
 			}
@@ -2678,7 +2706,7 @@ function showPreCalcCost(){
 
 	// tor site don't have original image feature
 	if (isUsingOriginal) {
-		if (isInPeakHours()) {
+		if (isInPeakHours() && !isRecentGallery() && !isDonator()) {
 			isUsingGP = true;
 		} else {
 			// 1 point per 0.1 MB since August 2019, less than 0.1 MB will also be counted, so asumme each image size has the extra < 100 KB
@@ -2723,11 +2751,15 @@ ehDownloadAction.addEventListener('click', function(event){
 
 	if (unsafeWindow.apiuid === -1 && !setting['force-as-login'] && !confirm('You are not logged in to E-Hentai Forums, so you can\'t download original images.\nIf you\'ve already logged in, please try logout and login again.\nContinue with resized images?')) return;
 
+	console.log('[EHD] Is Peak Hours >', isInPeakHours(), ' | Is Recent Gallery >', isRecentGallery(), ' | Is Donator >', isDonator());
+
 	if (
 		!setting['force-resized'] &&
 		!isTor &&
 		!setting['never-warn-peak-hours'] &&
 		isInPeakHours() &&
+		!isRecentGallery() &&
+		!isDonator() &&
 		!confirm('It\'s peak hours now, downloading original images will cost your GPs instead of viewing limits.\nYou can download resized images or disable this notification in script\'s settings.\n\nContinue downloading with original images?')
 	) return;
 
