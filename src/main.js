@@ -2723,7 +2723,13 @@ ehDownloadAction.addEventListener('click', function(event){
 
 	if (unsafeWindow.apiuid === -1 && !setting['force-as-login'] && !confirm('You are not logged in to E-Hentai Forums, so you can\'t download original images.\nIf you\'ve already logged in, please try logout and login again.\nContinue with resized images?')) return;
 
-	if (!setting['force-resized'] && !isTor && !setting['never-warn-peak-hours'] && !confirm('It\'s peak hours now, downloading original images will cost your GPs instead of viewing limits.\nContinue downloading with original images?')) return;
+	if (
+		!setting['force-resized'] &&
+		!isTor &&
+		!setting['never-warn-peak-hours'] &&
+		isInPeakHours() &&
+		!confirm('It\'s peak hours now, downloading original images will cost your GPs instead of viewing limits.\nYou can download resized images or disable this notification in script\'s settings.\n\nContinue downloading with original images?')
+	) return;
 
 	ehDownloadDialog.innerHTML = '';
 
