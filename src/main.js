@@ -366,11 +366,11 @@ function isInPeakHours() {
 function isRecentGallery() {
 	// 2022-06-07
 	// A couple of minor tweaks to the "Download source image" changes, since it dropped the utilization by a lot more than we needed it to:
-	// - It no longer applies to galleries posted in the last 7 days.
+	// - It no longer applies to galleries posted in the last ~~7~~ 30 days.
 	// - It no longer applies for donators.
 	var galleryTime = (document.documentElement.innerHTML.match(ehDownloadRegex.postedTime) || [])[1];
 	var time = Date.parse(galleryTime + '+0000');
-	return Date.now() - time < 7 * 24 * 60 * 60 * 1000;
+	return Date.now() - time < 30 * 24 * 60 * 60 * 1000;
 }
 
 function isDonator() {
