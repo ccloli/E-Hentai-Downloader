@@ -2541,7 +2541,8 @@ function getImageLimits(forced, host){
 				preData.total = data[2];
 
 				var donatorPower = responseText.match(ehDownloadRegex.donatorPower);
-				preData.donatorPower = +donatorPower;
+				if (!donatorPower || donatorPower.length < 2) return;
+				preData.donatorPower = +donatorPower[1];
 				delete preData.suspended;
 				delete preData.ipBanned;
 			}
