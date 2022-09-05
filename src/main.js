@@ -355,12 +355,12 @@ var replaceHTMLEntites = function(str) {
 };
 
 function isInPeakHours() {
-	// 2022-06-06
-	// - Using the "Download source image" function will now consume GP during peak hours. "Peak hours" for this purpose is (in UTC) weekdays between 14:00 and 20:00, and weekends between Saturday 14:00 until Sunday 20:00. This will also be used outside of peak hours if the image viewing limit is exhausted.
+	// 2022-08-07
+    // - Adjusted the "peak hours" used by original image downloading to better match the actual measured peak periods. It is now between 14:00 and 20:00 UTC Monday-Saturday, and between 05:00 and 20:00 UTC on Sundays.
 	var date = new Date();
 	var day = date.getUTCDay();
 	var hour = date.getUTCHours();
-	return (day === 6 || hour < 20) && (!day || hour >= 14);
+	return (day === 0 ? hour >= 5 : hour >= 14) && hour < 20;
 }
 
 function isRecentGallery() {
