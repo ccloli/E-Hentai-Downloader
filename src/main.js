@@ -368,9 +368,12 @@ function isRecentGallery() {
 	// A couple of minor tweaks to the "Download source image" changes, since it dropped the utilization by a lot more than we needed it to:
 	// - It no longer applies to galleries posted in the last ~~7~~ 30 days.
 	// - It no longer applies for donators.
+	// 2022-11-25
+    // - One of two new image servers that replace the current oldest image server is now live. (The second one will probably go live in about a month.)
+    // - Increased the cutoff for how old a gallery has to be before it charges GP for original file downloads during peak hours from 30 days to 90 days.
 	var galleryTime = (document.documentElement.innerHTML.match(ehDownloadRegex.postedTime) || [])[1];
 	var time = Date.parse(galleryTime + '+0000');
-	return Date.now() - time < 30 * 24 * 60 * 60 * 1000;
+	return Date.now() - time < 90 * 24 * 60 * 60 * 1000;
 }
 
 function isDonator() {
