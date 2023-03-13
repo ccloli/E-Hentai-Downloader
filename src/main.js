@@ -2,6 +2,7 @@
 var zip;
 var imageList = [];
 var imageData = [];
+var infoObj;
 var infoStr;
 var origin = window.location.origin;
 var setting = null;
@@ -504,6 +505,61 @@ function storeRes(res, index) {
 	res = null;
 }
 
+function getMetadataInZipComment(info, comments) {
+	// https://code.google.com/archive/p/comicbookinfo/wikis/Example.wiki
+	var out = {
+		"appID": "eHentaiDownloader/",
+	}
+	var comicBookInfo = {
+		"publisher": "E-hentai",
+		"comments": comments
+	}
+
+	if (info["Posted"]) {
+		out["lastModified"] = new Date(info["Posted"]).toISOString().replace('T',' ').replace('Z','')
+	}
+
+	// 尝试使用正则从 SubTitle 中提取作者与题名
+	// 正则可视化 
+	// https://jex.im/regulex/#!flags=&re=(.*%3F%5C%5B((%3F%3A(%3F!%E6%B1%89%E5%8C%96%7C%E6%BC%A2%E5%8C%96%7CCE%E5%AE%B6%E6%97%8F%7C%E5%A4%A9%E9%B5%9D%E4%B9%8B%E6%88%80%7C%E7%BF%BB%E8%A8%B3)%5B%5E%5C%5B%5C%5D%5D)*)%5C%5D(%3F%3A%5Cs*(%3F%3A%5C%5B%5B%5E%5C(%5C)%5D%2B%5C%5D%7C%5C(%5B%5E%5C%5B%5C%5D%5C(%5C)%5D%2B%5C))%5Cs*)*(%5B%5E%5C%5B%5C%5D%5C(%5C)%5D%2B).*) 
+	var re = /(.*?\[((?:(?!汉化|漢化|CE家族|天鵝之戀|翻訳)[^\[\]])*)\](?:\s*(?:\[[^\(\)]+\]|\([^\[\]\(\)]+\))\s*)*([^\[\]\(\)]+).*)/
+	var title = ''
+	var author = 'Unknown'
+	if (info["SubTitle"]) {
+		var ms = info["SubTitle"].match(re)
+		if (ms) {
+			title = ms[3].trim()
+			author = ms[2].trim()
+		} else {
+			title = info["SubTitle"]
+		}
+	} else {
+		var ms = info["Title"].match(re)
+		if (ms) {
+			title = ms[3].trim()
+			author = ms[2].trim()
+		} else {
+			title = info["Title"]
+		}
+	}
+	comicBookInfo["title"] = title
+	comicBookInfo["credits"] = [{
+		"person": author,
+		"role": "Writer"
+	}]
+
+	if (info["Language"]) {
+		comicBookInfo["language"] = info["Language"].replace(/TR$/,"").trim()
+	}
+
+	if (info["Tags"]) {
+		comicBookInfo.tags = info["Tags"]
+	}
+
+	out["ComicBookInfo/1.0"] = comicBookInfo
+	return out
+}
+
 function generateZip(isFromFS, fs, isRetry, forced){
 	isSaving = true;
 
@@ -704,6 +760,15 @@ function generateZip(isFromFS, fs, isRetry, forced){
 
 	try {
 		var lastMetaTime = 0;
+		var getZipComment = function () {
+			if (setting['save-as-cbz']) {
+				return JSON.stringify(getMetadataInZipComment(infoObj, infoStr))
+			} else if (setting['save-info'] === 'comment') {
+				return infoStr.replace(/\n/gi, '\r\n')
+			} else {
+				return undefined
+			}
+		}
 		var generateConfig = {
 			type: 'arraybuffer',
 			compression: setting['compression-level'] ? 'DEFLATE' : 'STORE',
@@ -711,7 +776,7 @@ function generateZip(isFromFS, fs, isRetry, forced){
 				level: Math.min(Math.max(setting['compression-level'], 1), 9)
 			},
 			streamFiles: setting['file-descriptor'] ? true : false,
-			comment: setting['save-info'] === 'comment' ? infoStr.replace(/\n/gi, '\r\n') : undefined
+			comment: getZipComment()
 		};
 		var onProgress = function (meta) {
 			// meta update function will be called nearly every 1ms, for performance, update every 300ms
@@ -1848,6 +1913,7 @@ function initEHDownload() {
 	isPausing = false;
 	zip = new JSZip();
 	infoStr = '';
+	infoObj = {};
 	fetchPagesXHR.abort();
 
 	if (setting['recheck-file-name']) {
@@ -1927,6 +1993,9 @@ function initEHDownload() {
 
 	// Array.prototype.some() is a bit ugly, so we use toString().indexOf() lol
 	var infoNeeds = setting['save-info-list'].toString();
+
+	infoObj["Title"] = document.getElementById('gn').textContent
+	infoObj["SubTitle"] = document.getElementById('gj').textContent
 	if (infoNeeds.indexOf('title') >= 0) {
 		infoStr += replaceHTMLEntites(
 			document.getElementById('gn').textContent + '\n' +
@@ -1935,6 +2004,8 @@ function initEHDownload() {
 		);
 	}
 
+	infoObj["Category"] = document.querySelector('#gdc .cs').textContent.trim()
+	infoObj["Uploader"] = replaceHTMLEntites(document.querySelector('#gdn').textContent)
 	if (infoNeeds.indexOf('metas') >= 0) {
 		infoStr += 'Category: ' + document.querySelector('#gdc .cs').textContent.trim() + '\n' +
 				   'Uploader: ' + replaceHTMLEntites(document.querySelector('#gdn').textContent) + '\n';
@@ -1943,29 +2014,37 @@ function initEHDownload() {
 	for (var i = 0; i < metaNodes.length; i++) {
 		var c1 = replaceHTMLEntites(metaNodes[i].getElementsByClassName('gdt1')[0].textContent);
 		var c2 = replaceHTMLEntites(metaNodes[i].getElementsByClassName('gdt2')[0].textContent);
+		infoObj[c1.replace(/:$/, "")] = c2
 		if (infoNeeds.indexOf('metas') >= 0) infoStr += c1 + ' ' + c2 + '\n';
 	}
+	infoObj["Rating"] = unsafeWindow.average_rating
 	if (infoNeeds.indexOf('metas') >= 0) infoStr += 'Rating: ' + unsafeWindow.average_rating + '\n\n';
 
+	var tagStr = 'Tags:\n';
+	infoObj["Tags"] = []
+	var tagsList = document.querySelectorAll('#taglist tr');
+	Array.prototype.forEach.call(tagsList, function(elem){
+		var tds = elem.getElementsByTagName('td');
+		tagStr += '> ' + tds[0].textContent + ' ';
+
+		var tags = tds[1].querySelectorAll('a');
+		tagStr += Array.prototype.map.call(tags, function(e){
+			return e.textContent;
+		}).join(', ') + '\n';
+
+		for (var tag of tags) {
+			infoObj["Tags"].push(tds[0].textContent + tag.textContent)
+		}
+	});
+	tagStr += '\n';
+
 	if (infoNeeds.indexOf('tags') >= 0) {
-		infoStr += 'Tags:\n';
-
-		var tagsList = document.querySelectorAll('#taglist tr');
-		Array.prototype.forEach.call(tagsList, function(elem){
-			var tds = elem.getElementsByTagName('td');
-			infoStr += '> ' + tds[0].textContent + ' ';
-
-			var tags = tds[1].querySelectorAll('a');
-			infoStr += Array.prototype.map.call(tags, function(e){
-				return e.textContent;
-			}).join(', ') + '\n';
-		});
-
-		infoStr += '\n';
+		infoStr += tagStr;
 	}
 
 	if (infoNeeds.indexOf('uploader-comment') >= 0 && document.getElementById('comment_0')) {
 		infoStr += 'Uploader Comment:\n' + document.getElementById('comment_0').innerHTML.replace(/<br>|<br \/>/gi, '\n') + '\n\n';
+		infoObj["Uploader Comment"] = document.getElementById('comment_0').innerHTML.replace(/<br>|<br \/>/gi, '\n')
 	}
 	isDownloading = true;
 	pushDialog(infoStr);
