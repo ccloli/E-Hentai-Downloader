@@ -524,7 +524,7 @@ function getMetadataInZipComment(info, comments) {
 	// https://jex.im/regulex/#!flags=&re=(.*%3F%5C%5B((%3F%3A(%3F!%E6%B1%89%E5%8C%96%7C%E6%BC%A2%E5%8C%96%7CCE%E5%AE%B6%E6%97%8F%7C%E5%A4%A9%E9%B5%9D%E4%B9%8B%E6%88%80%7C%E7%BF%BB%E8%A8%B3)%5B%5E%5C%5B%5C%5D%5D)*)%5C%5D(%3F%3A%5Cs*(%3F%3A%5C%5B%5B%5E%5C(%5C)%5D%2B%5C%5D%7C%5C(%5B%5E%5C%5B%5C%5D%5C(%5C)%5D%2B%5C))%5Cs*)*(%5B%5E%5C%5B%5C%5D%5C(%5C)%5D%2B).*) 
 	var re = /(.*?\[((?:(?!汉化|漢化|CE家族|天鵝之戀|翻訳)[^\[\]])*)\](?:\s*(?:\[[^\(\)]+\]|\([^\[\]\(\)]+\))\s*)*([^\[\]\(\)]+).*)/
 	var title = ''
-	var author = 'Unknown'
+	var author = 'c80c3db2b2cb606bacf75bac6c2e4b9221e58958b5c800a6b0031b726c3f4bc1' // 设置特殊数值防止碰撞
 	if (info["SubTitle"]) {
 		var ms = info["SubTitle"].match(re)
 		if (ms) {
@@ -542,11 +542,35 @@ function getMetadataInZipComment(info, comments) {
 			title = info["Title"]
 		}
 	}
+
+	var autorInfos = []
+	if (author === "c80c3db2b2cb606bacf75bac6c2e4b9221e58958b5c800a6b0031b726c3f4bc1") {
+		var artistTags = info["Tags"].filter((t) => t.startsWith('artist:'))
+		if (artistTags.length !== 0) {
+			artistTags
+				.map((t) => t.replace(/^artist:/,''))
+				.forEach((a) => {
+					autorInfos.push({
+						"person": a,
+						"role": "Writer"
+					})
+				})
+		}
+		else {
+			autorInfos.push({
+				"person": 'Unknown',
+				"role": "Writer"
+			})
+		}
+	} else {
+		autorInfos.push({
+			"person": author,
+			"role": "Writer"
+		})
+	}
+
 	comicBookInfo["title"] = title
-	comicBookInfo["credits"] = [{
-		"person": author,
-		"role": "Writer"
-	}]
+	comicBookInfo["credits"] = autorInfos
 
 	if (info["Language"]) {
 		comicBookInfo["language"] = info["Language"].replace(/TR$/,"").trim()
