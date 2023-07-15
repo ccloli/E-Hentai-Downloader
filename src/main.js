@@ -376,6 +376,15 @@ function isRecentGallery() {
 	return Date.now() - time < 90 * 24 * 60 * 60 * 1000;
 }
 
+function isAncientGallery() {
+	// 2023-07-07
+	// - Galleries posted more than 1 year ago now always require GP to use the "download original image" links. As before, galleries uploaded 3-12 months ago can still use this function with the image quota outside of peak hours, while galleries uploaded less than 3 months ago can do this even during peak hours.
+	// (This still doesn't apply to donators, whose image limits are tied to account rather than IP address and thus cannot be "refreshed" just by switching IP)
+	var galleryTime = (document.documentElement.innerHTML.match(ehDownloadRegex.postedTime) || [])[1];
+	var time = Date.parse(galleryTime + '+0000');
+	return Date.now() - time <= 365 * 24 * 60 * 60 * 1000;
+}
+
 function isDonator() {
 	return Object.keys(localStorage).filter(function (elem) {
 		return elem.indexOf('ehd-image-limits-') === 0;
@@ -384,9 +393,20 @@ function isDonator() {
 			var curData = JSON.parse(localStorage.getItem(elem));
 			return curData.donatorPower;
 		} catch (err) {
-			return false;
+			console.error(err);
+			return 0;
 		}
 	});
+}
+
+function isGPRequired() {
+	return (
+		(
+			isInPeakHours() && !isRecentGallery() && !isDonator()
+		) || (
+			isAncientGallery() && isDonator() < 1
+		)
+	);
 }
 
 function createBlob(abdata, config) {
@@ -1240,7 +1260,7 @@ function fetchOriginalImage(index, nodeList) {
 					}
 
 					if (confirm('You have temporarily reached the limit for how many images you can browse.\n\
-If you don\'t have enough limit, or you have but it\'s in site\'s peak hours, you need to use GP to download, but you don\'t have enough GP to add quota.\n\n\
+If you don\'t have enough limit, or it\'s in site\'s peak hours, or the gallery is uploaded for a long time, you need to use GP to download, but you don\'t have enough GP to add quota.\n\n\
 To increase viewing limits, you can:\n\
 - If you are not signed in, sign in to get quota.\n\
 - Run Hentai@Home to get points which you can pay to increase your limit.\n\
@@ -2549,6 +2569,7 @@ function getImageLimits(forced, host){
 				delete preData.suspended;
 				delete preData.ipBanned;
 			}
+			console.log('[EHD] Image Limits >', JSON.stringify(preData));
 			localStorage.setItem('ehd-image-limits-' + host, JSON.stringify(preData));
 			showImageLimits();
 		}
@@ -2710,7 +2731,7 @@ function showPreCalcCost(){
 
 	// tor site don't have original image feature
 	if (isUsingOriginal) {
-		if (isInPeakHours() && !isRecentGallery() && !isDonator()) {
+		if (isGPRequired()) {
 			isUsingGP = true;
 		} else {
 			// 1 point per 0.1 MB since August 2019, less than 0.1 MB will also be counted, so asumme each image size has the extra < 100 KB
@@ -2722,7 +2743,7 @@ function showPreCalcCost(){
 		<a \
 			href="https://github.com/ccloli/E-Hentai-Downloader/wiki/E%E2%88%92Hentai-Image-Viewing-Limits" \
 			target="_blank" \
-			title="' + (isUsingOriginal && !isUsingGP ? '...or ' + leastCost + ' + ' + gp + ' GP if you don\'t have enough viewing limits.\n' : '') + '1 point per 0.1 MB since August 2019, less than 0.1 MB will also be counted.\nDuring peak hours, downloading original images will cost GPs. The GP cost is the same as resetting viewing limits.\nEstimated GP cost is a bit more than using offical archive download, in case the sum of each images will be larger than the packed.">'
+			title="' + (isUsingOriginal && !isUsingGP ? '...or ' + leastCost + ' + ' + gp + ' GP if you don\'t have enough viewing limits.\n' : '') + '1 point per 0.1 MB since August 2019, less than 0.1 MB will also be counted.\nDuring peak hours, downloading original images will cost GPs.\nFor gallery uploaded 1 year ago, downloading original images will cost GPs since July 2023.\nThe GP cost is the same as resetting viewing limits.\nEstimated GP cost is a bit more than using offical archive download, in case the sum of each images will be larger than the packed.">'
 		+ 'Estimated Limits Cost: ' + cost + (isUsingGP ? ' + ' + gp + ' GP' : '') + '</a>';
 }
 
@@ -2755,17 +2776,23 @@ ehDownloadAction.addEventListener('click', function(event){
 
 	if (unsafeWindow.apiuid === -1 && !setting['force-as-login'] && !confirm('You are not logged in to E-Hentai Forums, so you can\'t download original images.\nIf you\'ve already logged in, please try logout and login again.\nContinue with resized images?')) return;
 
-	console.log('[EHD] Is Peak Hours >', isInPeakHours(), ' | Is Recent Gallery >', isRecentGallery(), ' | Is Donator >', isDonator());
+	console.log('[EHD] Is Peak Hours >', isInPeakHours(), ' | Is Recent Gallery >', isRecentGallery(), ' | Is Ancient Gallery >', isAncientGallery(), ' | Is Donator >', isDonator());
 
 	if (
 		!setting['force-resized'] &&
 		!isTor &&
-		!setting['never-warn-peak-hours'] &&
-		isInPeakHours() &&
-		!isRecentGallery() &&
-		!isDonator() &&
-		!confirm('It\'s peak hours now, downloading original images will cost your GPs instead of viewing limits.\nYou can download resized images or disable this notification in script\'s settings.\n\nContinue downloading with original images?')
-	) return;
+		!setting['never-warn-peak-hours']
+	) {
+		if (isInPeakHours()) {
+			if (!confirm('It\'s peak hours now, downloading original images will cost your GPs instead of viewing limits.\nYou can download resized images or disable this notification in script\'s settings.\n\nContinue downloading with original images?')) {
+				return;
+			}
+		} else if (isGPRequired()) {
+			if (!confirm('The gallery has been uploaded for a very long time, downloading original images will cost your GPs instead of viewing limits.\nYou can download resized images or disable this notification in script\'s settings.\n\nContinue downloading with original images?')) {
+				return;
+			}
+		}
+	}
 
 	ehDownloadDialog.innerHTML = '';
 
