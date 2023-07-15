@@ -382,7 +382,7 @@ function isAncientGallery() {
 	// (This still doesn't apply to donators, whose image limits are tied to account rather than IP address and thus cannot be "refreshed" just by switching IP)
 	var galleryTime = (document.documentElement.innerHTML.match(ehDownloadRegex.postedTime) || [])[1];
 	var time = Date.parse(galleryTime + '+0000');
-	return Date.now() - time <= 365 * 24 * 60 * 60 * 1000;
+	return Date.now() - time >= 365 * 24 * 60 * 60 * 1000;
 }
 
 function isDonator() {
