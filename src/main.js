@@ -356,7 +356,7 @@ var replaceHTMLEntites = function(str) {
 
 function isInPeakHours() {
 	// 2022-08-07
-    // - Adjusted the "peak hours" used by original image downloading to better match the actual measured peak periods. It is now between 14:00 and 20:00 UTC Monday-Saturday, and between 05:00 and 20:00 UTC on Sundays.
+	// - Adjusted the "peak hours" used by original image downloading to better match the actual measured peak periods. It is now between 14:00 and 20:00 UTC Monday-Saturday, and between 05:00 and 20:00 UTC on Sundays.
 	var date = new Date();
 	var day = date.getUTCDay();
 	var hour = date.getUTCHours();
@@ -369,8 +369,8 @@ function isRecentGallery() {
 	// - It no longer applies to galleries posted in the last ~~7~~ 30 days.
 	// - It no longer applies for donators.
 	// 2022-11-25
-    // - One of two new image servers that replace the current oldest image server is now live. (The second one will probably go live in about a month.)
-    // - Increased the cutoff for how old a gallery has to be before it charges GP for original file downloads during peak hours from 30 days to 90 days.
+	// - One of two new image servers that replace the current oldest image server is now live. (The second one will probably go live in about a month.)
+	// - Increased the cutoff for how old a gallery has to be before it charges GP for original file downloads during peak hours from 30 days to 90 days.
 	var galleryTime = (document.documentElement.innerHTML.match(ehDownloadRegex.postedTime) || [])[1];
 	var time = Date.parse(galleryTime + '+0000');
 	return Date.now() - time < 90 * 24 * 60 * 60 * 1000;
@@ -397,6 +397,11 @@ function isDonator() {
 			return 0;
 		}
 	});
+}
+
+function isSourceNexusEnabled() {
+	var curData = JSON.parse(localStorage.getItem('ehd-resolution') || '{"timestamp":0}');
+	return +curData.originalImages && +curData.resolution === 0;
 }
 
 function isGPRequired() {
@@ -1910,7 +1915,7 @@ function initEHDownload() {
 			'Roll back and use Blob to handle file.');
 	};
 
-  	if ((!setting['store-in-fs'] && !setting['never-warn-large-gallery'] && requiredMBs >= 300) && !confirm('This archive is too large (original size), please consider downloading this archive in a different way.\n\nMaximum allowed file size: Chrome 56- 500MB | Chrome 57+ 2 GB | Firefox ~800 MB (depends on your RAM)\n\nPlease also consider your operating system\'s free memory (RAM), it may take about DOUBLE the size of archive file size when generating ZIP file.\n\n* If you continue, you would probably get an error like "Failed - No File" or "Out Of Memory" if you don\'t have enough RAM and can\'t save the file successfully.\n\n* If you are using Chrome, you can try enabling "Request File System to handle large Zip file" on the settings page.\n\n* You can set Pages Range to download this archive in parts. If you have already enabled it, please ignore this message.\n\nAre you sure to continue downloading?')) return;
+	if ((!setting['store-in-fs'] && !setting['never-warn-large-gallery'] && requiredMBs >= 300) && !confirm('This archive is too large (original size), please consider downloading this archive in a different way.\n\nMaximum allowed file size: Chrome 56- 500MB | Chrome 57+ 2 GB | Firefox ~800 MB (depends on your RAM)\n\nPlease also consider your operating system\'s free memory (RAM), it may take about DOUBLE the size of archive file size when generating ZIP file.\n\n* If you continue, you would probably get an error like "Failed - No File" or "Out Of Memory" if you don\'t have enough RAM and can\'t save the file successfully.\n\n* If you are using Chrome, you can try enabling "Request File System to handle large Zip file" on the settings page.\n\n* You can set Pages Range to download this archive in parts. If you have already enabled it, please ignore this message.\n\nAre you sure to continue downloading?')) return;
 	else if (setting['store-in-fs'] && requestFileSystem && requiredMBs >= (setting['fs-size'] !== undefined ? setting['fs-size'] : 200)) {
 		ehDownloadFS.needFileSystem = true;
 		console.log('[EHD] Required File System Space >', requiredBytes);
@@ -2688,6 +2693,7 @@ function getResolutionSetting(forced){
 		var preData = {
 			withoutHentaiAtHome: +((responseText.match(/id="uh_(\d)" checked/) || [])[1] || 0),
 			resolution: +((responseText.match(/id="xr_(\d)" checked/) || [])[1] || 0),
+			originalImages: +((responseText.match(/id="oi_(\d)".*? checked/) || [])[1] || 0),
 			timestamp: Date.now()
 		};
 		console.log('[EHD] Resolution Setting >', JSON.stringify(preData));
@@ -2724,18 +2730,23 @@ function showPreCalcCost(){
 		perCost += 5;
 	}
 	var leastCost = page * perCost;
+		// 1 point per 0.1 MB since August 2019, less than 0.1 MB will also be counted, so asumme each image size has the extra < 100 KB
+	var normalCost = Math.ceil((size / 1e5) + page * (1 + perCost));
 	var cost = leastCost;
 	var gp = Math.ceil(size / 1e5) * 2 + page;
 	var isUsingGP = false;
 	var isUsingOriginal = !setting['force-resized'] && !isTor;
+	var isSourceNexus = isSourceNexusEnabled();
 
 	// tor site don't have original image feature
 	if (isUsingOriginal) {
 		if (isGPRequired()) {
 			isUsingGP = true;
+		}
+		if (!isUsingGP) {
+			cost = normalCost;
 		} else {
-			// 1 point per 0.1 MB since August 2019, less than 0.1 MB will also be counted, so asumme each image size has the extra < 100 KB
-			cost = Math.ceil((size / 1e5) + page * (1 + perCost));
+			cost = leastCost + ' + ' + gp + ' GP';
 		}
 	}
 
@@ -2743,8 +2754,11 @@ function showPreCalcCost(){
 		<a \
 			href="https://github.com/ccloli/E-Hentai-Downloader/wiki/E%E2%88%92Hentai-Image-Viewing-Limits" \
 			target="_blank" \
-			title="' + (isUsingOriginal && !isUsingGP ? '...or ' + leastCost + ' + ' + gp + ' GP if you don\'t have enough viewing limits.\n' : '') + '1 point per 0.1 MB since August 2019, less than 0.1 MB will also be counted.\nDuring peak hours, downloading original images will cost GPs.\nFor gallery uploaded 1 year ago, downloading original images will cost GPs since July 2023.\nThe GP cost is the same as resetting viewing limits.\nEstimated GP cost is a bit more than using offical archive download, in case the sum of each images will be larger than the packed.">'
-		+ 'Estimated Limits Cost: ' + cost + (isUsingGP ? ' + ' + gp + ' GP' : '') + '</a>';
+			title="' +
+			(isUsingOriginal && isSourceNexus ? '...or ' + cost + ' if Source Nexus hath perk is not available.\n' : '') +
+			(isUsingOriginal && !isUsingGP ? '...or ' + leastCost + ' + ' + gp + ' GP if you don\'t have enough viewing limits.\n' : '') +
+			'1 point per 0.1 MB since August 2019, less than 0.1 MB will also be counted.\nDuring peak hours, downloading original images will cost GPs.\nFor gallery uploaded 1 year ago, downloading original images will cost GPs since July 2023.\nThe GP cost is the same as resetting viewing limits.\nEstimated GP cost is a bit more than using offical archive download, in case the sum of each images will be larger than the packed.">'
+		+ 'Estimated Limits Cost: ' + (isSourceNexus ? leastCost : cost) + '</a>';
 }
 
 // EHD Box, thanks to JingJang@GitHub, source: https://github.com/JingJang/E-Hentai-Downloader
@@ -2781,14 +2795,16 @@ ehDownloadAction.addEventListener('click', function(event){
 	if (
 		!setting['force-resized'] &&
 		!isTor &&
-		!setting['never-warn-peak-hours']
+		!setting['never-warn-peak-hours'] &&
+		isGPRequired() &&
+		!isSourceNexusEnabled()
 	) {
-		if (isInPeakHours()) {
-			if (!confirm('It\'s peak hours now, downloading original images will cost your GPs instead of viewing limits.\nYou can download resized images or disable this notification in script\'s settings.\n\nContinue downloading with original images?')) {
+		if (isAncientGallery() && isDonator() < 1) {
+			if (!confirm('The gallery has been uploaded for a very long time, downloading original images will cost your GPs instead of viewing limits.\nYou can download resized images or disable this notification in script\'s settings.\n\nContinue downloading with original images?')) {
 				return;
 			}
-		} else if (isGPRequired()) {
-			if (!confirm('The gallery has been uploaded for a very long time, downloading original images will cost your GPs instead of viewing limits.\nYou can download resized images or disable this notification in script\'s settings.\n\nContinue downloading with original images?')) {
+		} else {
+			if (!confirm('It\'s peak hours now, downloading original images will cost your GPs instead of viewing limits.\nYou can download resized images or disable this notification in script\'s settings.\n\nContinue downloading with original images?')) {
 				return;
 			}
 		}
