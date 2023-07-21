@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.34.7
+// @version      1.34.8
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -14730,7 +14730,7 @@ function showPreCalcCost(){
 	var gp = Math.ceil(size / 1e5) * 2 + page;
 	var isUsingGP = false;
 	var isUsingOriginal = !setting['force-resized'] && !isTor;
-	var isSourceNexus = isSourceNexusEnabled();
+	// var isSourceNexus = isSourceNexusEnabled();
 
 	// tor site don't have original image feature
 	if (isUsingOriginal) {
@@ -14749,10 +14749,10 @@ function showPreCalcCost(){
 			href="https://github.com/ccloli/E-Hentai-Downloader/wiki/E%E2%88%92Hentai-Image-Viewing-Limits" \
 			target="_blank" \
 			title="' +
-			(isUsingOriginal && isSourceNexus ? '...or ' + cost + ' if Source Nexus hath perk is not available.\n' : '') +
+			// (isUsingOriginal && isSourceNexus ? '...or ' + cost + ' if Source Nexus hath perk is not available.\n' : '') +
 			(isUsingOriginal && !isUsingGP ? '...or ' + leastCost + ' + ' + gp + ' GP if you don\'t have enough viewing limits.\n' : '') +
 			'1 point per 0.1 MB since August 2019, less than 0.1 MB will also be counted.\nDuring peak hours, downloading original images will cost GPs.\nFor gallery uploaded 1 year ago, downloading original images will cost GPs since July 2023.\nThe GP cost is the same as resetting viewing limits.\nEstimated GP cost is a bit more than using offical archive download, in case the sum of each images will be larger than the packed.">'
-		+ 'Estimated Limits Cost: ' + (isSourceNexus ? leastCost : cost) + '</a>';
+		+ 'Estimated Limits Cost: ' + (/* isSourceNexus ? leastCost : */ cost) + '</a>';
 }
 
 // EHD Box, thanks to JingJang@GitHub, source: https://github.com/JingJang/E-Hentai-Downloader
@@ -14790,8 +14790,8 @@ ehDownloadAction.addEventListener('click', function(event){
 		!setting['force-resized'] &&
 		!isTor &&
 		!setting['never-warn-peak-hours'] &&
-		isGPRequired() &&
-		!isSourceNexusEnabled()
+		isGPRequired() // &&
+		// !isSourceNexusEnabled()
 	) {
 		if (isAncientGallery() && isDonator() < 1) {
 			if (!confirm('The gallery has been uploaded for a very long time, downloading original images will cost your GPs instead of viewing limits.\nYou can download resized images or disable this notification in script\'s settings.\n\nContinue downloading with original images?')) {
