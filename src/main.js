@@ -2611,11 +2611,11 @@ var getFileSizeAndLength = function() {
 	var sizeMB, sizeKB;
 	var page = pageText - 0;
 
-	if (sizeText.indexOf('MB') >= 0) {
+	if (/Mi?B/.test(sizeText)) {
 		sizeMB = parseFloat(sizeText) + 0.01;
 		sizeKB = sizeMB * 1024;
 	}
-	else if (sizeText.indexOf('GB') >= 0) {
+	else if (/Gi?B/.test(sizeText)) {
 		sizeMB = (parseFloat(sizeText) + 0.01) * 1024;
 		sizeKB = sizeMB * 1024;
 	}
