@@ -45,7 +45,7 @@ var ehDownloadRegex = {
 	fileName: /g\/l.png"\s?\/><\/a><\/div><div>([\s\S]+?) :: /,
 	resFileName: /filename=['"]?([\s\S]+?)['"]?$/m,
 	dangerChars: /[:"*?|<>\/\\\n]/g,
-	pagesRange: /^(\d*(-\d*(\/\d+)?)?\s*,\s*)*\d*(-\d*(\/\d+)?)?$/,
+	pagesRange: /^(!?\d*(-\d*(\/\d+)?)?\s*,\s*)*!?\d*(-\d*(\/\d+)?)?$/,
 	pagesURL: /(?:<a href=").+?(?=")/gi,
 	mpvKey: /var imagelist\s*=\s*(\[.+?\]);/,
 	imageLimits: /You are currently at <strong>(\d+)<\/strong> towards a limit of <strong>(\d+)<\/strong>/,
@@ -1700,26 +1700,44 @@ function getAllPagesURL() {
 		console.log('[EHD] Pages Range >', pagesRangeText);
 		if (!ehDownloadRegex.pagesRange.test(pagesRangeText)) return alert('The format of Pages Range is incorrect.');
 
-		var rangeRegex = /(?:(\d*)-(\d*))(?:\/(\d+))?|(\d+)/g;
+		// range started with negative range, select all as default
+		if (pagesRangeText[0] === '!') {
+			pagesRangeText = '1-,' + pagesRangeText;
+		}
+		var rangeRegex = /!?(?:(\d*)-(\d*))(?:\/(\d+))?|!?(\d+)/g;
 		var matches;
+		var lastPage = getFileSizeAndLength().page;
+
 		while (matches = rangeRegex.exec(pagesRangeText)) {
+			var selected = [];
 			var single = Number(matches[4]);
 			if (!isNaN(single)) {
-				pagesRange.push(single);
-				continue;
+				selected.push(single);
+			}
+			else {
+				var begin = Number(matches[1]) || 1;
+				var end = Number(matches[2]) || lastPage;
+				if (begin > end) {
+					var tmp = begin;
+					begin = end;
+					end = tmp;
+				}
+				var mod = Number(matches[3]) || 1;
+
+				for (var i = begin; i <= end; i += mod) {
+					selected.push(i);
+				}
 			}
 
-			var begin = Number(matches[1]) || 1;
-			var end = Number(matches[2]) || getFileSizeAndLength().page;
-			if (begin > end) {
-				var tmp = begin;
-				begin = end;
-				end = tmp;
+			if (matches[0][0] === '!') {
+				pagesRange = pagesRange.filter(function (e) {
+					return selected.indexOf(e) < 0;
+				});
 			}
-			var mod = Number(matches[3]) || 1;
-
-			for (var i = begin; i <= end; i += mod) {
-				pagesRange.push(i);
+			else {
+				selected.forEach(function (e) {
+					pagesRange.push(e);
+				});
 			}
 		}
 
@@ -2837,7 +2855,7 @@ ehDownloadBox.appendChild(ehDownloadNumberInput);
 
 var ehDownloadRange = document.createElement('div');
 ehDownloadRange.className = 'g2';
-ehDownloadRange.innerHTML = ehDownloadArrow + ' <a><label title="Download ranges of pages, split each range with comma (,)&#13;Example: &#13;-10:   Download from page 1 to 10&#13;12:   Download page 12&#13;14-20:   Download from page 14 to 20&#13;27:   Download page 27&#13;30-40/2:   Download each 2 pages in 30-40 (30, 32, 34, 36, 38, 40)&#13;50-60/3:   Download each 3 pages in 50-60 (50, 53, 56, 59)&#13;70-:   Download from page 70 to the last page">Pages Range <input type="text" placeholder="eg. -10,12,14-20,27,30-40/2,50-60/3,70-"></label></a>';
+ehDownloadRange.innerHTML = ehDownloadArrow + ' <a><label title="Download ranges of pages, split each range with comma (,)&#13;Ranges prefixed with ! means negative range, pages in these range will be excluded&#13;Example: &#13;  -10:   Download from page 1 to 10&#13;  !8:   Exclude page 8&#13;  12:   Download page 12&#13;  14-20:   Download from page 14 to 20&#13;  15-17:   Exclude page 15 to 17&#13;  30-40/2:   Download each 2 pages in 30-40 (30, 32, 34, 36, 38, 40)&#13;  50-60/3:   Download each 3 pages in 50-60 (50, 53, 56, 59)&#13;  70-:   Download from page 70 to the last page&#13;Pages range follows your order, a negative range can drop previous selected pages, the latter positive range can add it back&#13;Example: &#13;  !10-20:   Download every page except page 10 to 20&#13;  1-10,!1-8/2,!4,5:   Download page 1 to 10 but remove 1, 3, 5, 7 and 4, then add 5 back (2, 5, 6, 8, 9, 10)">Pages Range <input type="text" placeholder="eg. -10,!8,12,14-20,!15-17,30-40/2,50-60/3,70-"></label></a>';
 ehDownloadBox.appendChild(ehDownloadRange);
 
 var ehDownloadSetting = document.createElement('div');
