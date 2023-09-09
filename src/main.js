@@ -877,7 +877,7 @@ function updateTotalStatus(){
 function failedFetching(index, nodeList, forced){
 	if (!isDownloading || imageData[index] instanceof ArrayBuffer) return; // Temporarily fixes #31	
 	if (typeof fetchThread[index] !== 'undefined' && 'abort' in fetchThread[index]) fetchThread[index].abort();
-	console.error('[EHD] Index >', index + 1, ' | RealIndex >', imageList[index]['realIndex'], ' | Name >', imageList[index]['imageName'], ' | RetryCount >', retryCount[index], ' | DownloadedCount >', downloadedCount, ' | FetchCount >', fetchCount, ' | FailedCount >', failedCount);
+	console.error('[EHD] Index >', index + 1, ' | RealIndex >', (imageList[index] || {})['realIndex'], ' | Name >', (imageList[index] || {})['imageName'], ' | RetryCount >', retryCount[index], ' | DownloadedCount >', downloadedCount, ' | FetchCount >', fetchCount, ' | FailedCount >', failedCount);
 
 	if (!forced && retryCount[index] < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
 		retryCount[index]++;
@@ -888,7 +888,9 @@ function failedFetching(index, nodeList, forced){
 			class: 'ehD-pt-failed'
 		});
 
-		imageList[index]['imageFinalURL'] = null;
+		if (imageList[index]) {
+			imageList[index]['imageFinalURL'] = null;
+		}
 		failedCount++;
 		if (!isPausing || !setting['force-pause']) fetchCount--;
 
