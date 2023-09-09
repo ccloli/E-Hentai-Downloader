@@ -2772,6 +2772,20 @@ var ehDownloadStylesheet = document.createElement('style');
 ehDownloadStylesheet.textContent = ehDownloadStyle;
 ehDownloadBox.appendChild(ehDownloadStylesheet);
 
+var extraHint;
+if (isInPeakHours() && !isRecentGallery()) {
+	extraHint = document.createElement('a');
+	extraHint.setAttribute('title', 'Peak Hours: It\'s in peak hours now, during peak hours, downloading original images of 90 days ago cost GPs');
+	extraHint.textContent = '[P]';
+	ehDownloadBoxTitle.appendChild(extraHint);
+}
+if (isAncientGallery()) {
+	extraHint = document.createElement('a');
+	extraHint.setAttribute('title', 'Ancient Gallery: Downloading original images of 1 year ago cost GPs');
+	extraHint.textContent = '[A]';
+	ehDownloadBoxTitle.appendChild(extraHint);
+}
+
 var ehDownloadArrow = '<img src="data:image/gif;base64,R0lGODlhBQAHALMAAK6vr7OztK+urra2tkJCQsDAwEZGRrKyskdHR0FBQUhISP///wAAAAAAAAAAAAAAACH5BAEAAAsALAAAAAAFAAcAAAQUUI1FlREVpbOUSkTgbZ0CUEhBLREAOw==">';
 
 var ehDownloadAction = document.createElement('div');
