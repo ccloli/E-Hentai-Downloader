@@ -929,7 +929,13 @@ function checkFailed() {
 				retryAllFailed();
 			}
 			else {
-				pushDialog('\nFetch images failed.\n');
+				var failedPages = [];
+				for (var i = 0; i < imageData.length; i++) {
+					if (imageData[i] == null || imageData[i] === 'Fetching') {
+						failedPages.push(i + 1);
+					}
+				}
+				pushDialog('\nFetch images failed.\nFailed Pages: ' + failedPages.join(',') + '\n');
 				if (setting['auto-download-cancel'] || confirm('Fetch images failed, Please try again later.\n\nWould you like to download downloaded images?')) {
 					saveDownloaded();
 				}
