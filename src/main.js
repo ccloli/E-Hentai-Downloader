@@ -430,7 +430,7 @@ function createBlob(abdata, config) {
 
 // show info in dialog box
 function pushDialog(str) {
-	var needScrollIntoView = ehDownloadDialog.clientHeight + ehDownloadDialog.scrollTop >= ehDownloadDialog.scrollHeight;
+	var needScrollIntoView = ehDownloadDialog.clientHeight + ehDownloadDialog.scrollTop >= ehDownloadDialog.scrollHeight - 5;
 
 	if (typeof str === 'string') {
 		var tn = document.createElement('span');
@@ -972,7 +972,7 @@ function fetchOriginalImage(index, nodeList) {
 	if (isPausing) return;
 
 	var requestURL = imageList[index]['imageFinalURL'] || imageList[index]['imageURL'];
-	var needScrollIntoView = ehDownloadDialog.clientHeight + ehDownloadDialog.scrollTop >= ehDownloadDialog.scrollHeight;
+	var needScrollIntoView = ehDownloadDialog.clientHeight + ehDownloadDialog.scrollTop >= ehDownloadDialog.scrollHeight - 5;
 
 	if (setting['original-download-domain']) {
 		requestURL = requestURL.replace(location.hostname, setting['original-download-domain']);
@@ -2135,7 +2135,7 @@ function getPageData(index) {
 	if (pagesRange.length) var realIndex = pagesRange[index];
 	else var realIndex = index + 1;
 
-	var needScrollIntoView = ehDownloadDialog.clientHeight + ehDownloadDialog.scrollTop >= ehDownloadDialog.scrollHeight;
+	var needScrollIntoView = ehDownloadDialog.clientHeight + ehDownloadDialog.scrollTop >= ehDownloadDialog.scrollHeight - 5;
 
 	var node = progressTable.querySelector('tr[data-index="' + index + '"]');
 	if (!node) {
