@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.34.9
+// @version      1.34.10
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -14720,8 +14720,8 @@ function showPreCalcCost(){
 	var size = info.size;
 	var page = info.page;
 	var perCost = resolutionCost[resolutionSetting.resolution || 0];
-	if (resolutionSetting.withoutHentaiAtHome) {
-		perCost += 5;
+	if ((resolutionSetting.withoutHentaiAtHome || 0) > 1) {
+		perCost += 10;
 	}
 	var leastCost = page * perCost;
 		// 1 point per 0.1 MB since August 2019, less than 0.1 MB will also be counted, so asumme each image size has the extra < 100 KB
