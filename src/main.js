@@ -184,6 +184,7 @@ var ehDownloadFS = {
 	}
 };
 
+var bodyBackground = getComputedStyle(document.body).backgroundColor || '#34353b';
 var ehDownloadStyle = '\
 	@-webkit-keyframes progress { \
 		from { -webkit-transform: translateX(-50%) scaleX(0); transform: translateX(-50%) scaleX(0); } \
@@ -205,14 +206,16 @@ var ehDownloadStyle = '\
 		60% { -webkit-transform: translateX(15%) scaleX(0.7); transform: translateX(15%) scaleX(0.7); } \
 		to { -webkit-transform: translateX(50%) scaleX(0); transform: translateX(50%) scaleX(0); } \
 	} \
-	.ehD-box { margin: 20px auto; width: 732px; box-sizing: border-box; font-size: 12px; border: 1px groove #000000; }\
+	.ehD-box { margin: 16px auto 20px; width: 732px; box-sizing: border-box; font-size: 12px; border: 1px groove #000000; }\
 	.ehD-box a { cursor: pointer; }\
 	.ehD-box .g2 { display: inline-block; margin: 10px; padding: 0; line-height: 14px; }\
-	.ehD-box legend { font-weight: 700; padding: 0 10px; } \
+	.ehD-box legend { font-weight: 700; padding: 4px 10px 0; } \
 	.ehD-box legend a { color: inherit; text-decoration: none; }\
 	.ehD-box input[type="text"] { width: 250px; }\
 	.ehD-box-extend input[type="text"] { width: 255px; }\
 	.ehD-box input::placeholder { color: #999999; -webkit-text-fill-color: #999999; }\
+	.ehD-box.ehD-box-sticky { position: sticky; top: 0px; z-index: 5; background: ' + bodyBackground + '; }\
+	.ehD-box.ehD-box-sticky legend { background: ' + bodyBackground + '; }\
 	.ehD-setting { position: fixed; left: 0; right: 0; top: 0; bottom: 0; padding: 5px; border: 1px solid #000000; background: #34353b; color: #dddddd; width: 600px; height: 380px; max-width: 100%; max-height: 100%; overflow-x: hidden; overflow-y: auto; box-sizing: border-box; margin: auto; z-index: 999; text-align: left; font-size: 12px; outline: 5px rgba(0, 0, 0, 0.25) solid; }\
 	.ehD-setting-tab { list-style: none; margin: 5px 0; padding: 0 10px; border-bottom: 1px solid #cccccc; overflow: auto; }\
 	.ehD-setting-tab li { float: left; padding: 5px 10px; border-bottom: 0; cursor: pointer; }\
@@ -289,8 +292,11 @@ function initSetting() {
 		if (typeof setting['auto-download-cancel'] === 'undefined') {
 			setting['auto-download-cancel'] = true;
 		}
+		if (typeof setting['actions-sticky'] === 'undefined') {
+			setting['actions-sticky'] = true;
+		}
 
-		console.log('[EHD] E-Hentai Downloader Setting >', JSON.stringify(setting));
+		console.log('[EHD] E-Hentai Downloader Setting >', res, '-->', JSON.stringify(setting));
 
 		// disable single-thread download
 		if (setting['enable-multi-threading'] === false) {
@@ -321,6 +327,10 @@ function initSetting() {
 		// Forced request File System to check if have temp archive
 		if (setting['store-in-fs'] && requestFileSystem) {
 			requestFileSystem(window.TEMPORARY, 1024 * 1024 * 1024, ehDownloadFS.initCheckerHandler, ehDownloadFS.errorHandler);
+		}
+
+		if (setting['actions-sticky'] !== false) {
+			ehDownloadBox.classList.add('ehD-box-sticky');
 		}
 	});
 }
@@ -2389,6 +2399,7 @@ function showSettings() {
 					<div class="g2"><label><select data-ehd-setting="status-in-title"><option value="never">Never</option><option value="blur">When current tab is not focused</option><option value="always">Always</option></select> show download progress in title</label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="hide-image-limits"> Disable requesting and showing image limits</label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="hide-estimated-cost"> Disable pre-calculating image limits cost</label></div>\
+					<div class="g2"><label><input type="checkbox" data-ehd-setting="actions-sticky"> Pin download actions box at the top of the page</label></div>\
 					<div class="ehD-setting-note">\
 						<div class="g2">\
 							* Available templates: \
@@ -2541,6 +2552,9 @@ function showSettings() {
 			else {
 				toggleFilenameConfirmInput(!setting['recheck-file-name']);
 			}
+
+			ehDownloadBox.classList[setting['actions-sticky'] ? 'add' : 'remove']('ehD-box-sticky')
+
 			try {
 				showPreCalcCost();
 			}
@@ -2791,7 +2805,7 @@ function showPreCalcCost(){
 var ehDownloadBox = document.createElement('fieldset');
 ehDownloadBox.className = 'ehD-box';
 var ehDownloadBoxTitle = document.createElement('legend');
-ehDownloadBoxTitle.innerHTML = 'E-Hentai Downloader <span class="ehD-box-limit"></span> <span class="ehD-box-cost"></span>';
+ehDownloadBoxTitle.innerHTML = 'E-Hentai Downloader <span class="ehD-box-limit"></span> <span class="ehD-box-cost"></span> ';
 if (origin.indexOf('exhentai.org') >= 0) ehDownloadBoxTitle.style.color = '#ffff66';
 ehDownloadBox.appendChild(ehDownloadBoxTitle);
 var ehDownloadStylesheet = document.createElement('style');
