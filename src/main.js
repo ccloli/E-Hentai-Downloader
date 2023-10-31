@@ -32,7 +32,7 @@ var emptyAudioFile = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU3
 
 var ehDownloadRegex = {
 	imageURL: [
-		/<a href="(\S+?\/fullimg\.php\?\S+?)"/,
+		/<a href="(\S+?\/fullimg(?:\.php\?|\/)\S+?)"/,
 		/<img id="img" src="(\S+?)"/,
 		/<\/(?:script|iframe)><a[\s\S]+?><img src="(\S+?)"/ // Sometimes preview image may not have id="img"
 	],
@@ -214,8 +214,7 @@ var ehDownloadStyle = '\
 	.ehD-box input[type="text"] { width: 250px; }\
 	.ehD-box-extend input[type="text"] { width: 255px; }\
 	.ehD-box input::placeholder { color: #999999; -webkit-text-fill-color: #999999; }\
-	.ehD-box.ehD-box-sticky { position: sticky; top: 0px; z-index: 5; background: ' + bodyBackground + '; }\
-	.ehD-box.ehD-box-sticky legend { background: ' + bodyBackground + '; }\
+	.ehD-box.ehD-box-sticky { position: sticky; top: 0px; z-index: 5; background: ' + bodyBackground + '; box-shadow: 0 0 0 12px ' + bodyBackground + '; }\
 	.ehD-setting { position: fixed; left: 0; right: 0; top: 0; bottom: 0; padding: 5px; border: 1px solid #000000; background: #34353b; color: #dddddd; width: 600px; height: 380px; max-width: 100%; max-height: 100%; overflow-x: hidden; overflow-y: auto; box-sizing: border-box; margin: auto; z-index: 999; text-align: left; font-size: 12px; outline: 5px rgba(0, 0, 0, 0.25) solid; }\
 	.ehD-setting-tab { list-style: none; margin: 5px 0; padding: 0 10px; border-bottom: 1px solid #cccccc; overflow: auto; }\
 	.ehD-setting-tab li { float: left; padding: 5px 10px; border-bottom: 0; cursor: pointer; }\
@@ -1077,7 +1076,7 @@ function fetchOriginalImage(index, nodeList) {
 			class: 'ehD-pt-warning'
 		});
 
-		if (imageList[index]['imageURL'].indexOf('fullimg.php') >= 0 && imageList[index]['imageURL'] !== res.finalUrl) {
+		if (ehDownloadRegex.imageURL[0].test(imageList[index]['imageURL']) && imageList[index]['imageURL'] !== res.finalUrl) {
 			imageList[index]['imageFinalURL'] = res.finalUrl;
 		}
 
@@ -1159,7 +1158,7 @@ function fetchOriginalImage(index, nodeList) {
 				}
 			}
 
-			if (imageList[index]['imageURL'].indexOf('fullimg.php') >= 0 && imageList[index]['imageURL'] !== res.finalUrl) {
+			if (ehDownloadRegex.imageURL[0].test(imageList[index]['imageURL']) && imageList[index]['imageURL'] !== res.finalUrl) {
 				imageList[index]['imageFinalURL'] = res.finalUrl;
 			}
 		},
@@ -1548,7 +1547,7 @@ If you want to reset your limits by paying your GPs or credits right now, or exc
 				class: 'ehD-pt-warning'
 			});
 
-			if (imageList[index]['imageURL'].indexOf('fullimg.php') >= 0 && imageList[index]['imageURL'] !== res.finalUrl) {
+			if (ehDownloadRegex.imageURL[0].test(imageList[index]['imageURL']) && imageList[index]['imageURL'] !== res.finalUrl) {
 				imageList[index]['imageFinalURL'] = res.finalUrl;
 			}
 
@@ -1572,7 +1571,7 @@ If you want to reset your limits by paying your GPs or credits right now, or exc
 				class: 'ehD-pt-warning'
 			});
 
-			if (imageList[index]['imageURL'].indexOf('fullimg.php') >= 0 && imageList[index]['imageURL'] !== res.finalUrl) {
+			if (ehDownloadRegex.imageURL[0].test(imageList[index]['imageURL']) && imageList[index]['imageURL'] !== res.finalUrl) {
 				imageList[index]['imageFinalURL'] = res.finalUrl;
 			}
 
@@ -2229,7 +2228,7 @@ function getPageData(index) {
 			var imageURL = replaceHTMLEntites(
 				(
 					(unsafeWindow.apiuid !== -1 || setting['force-as-login'])
-					&& responseText.indexOf('fullimg.php') >= 0
+					&& ehDownloadRegex.imageURL[0].test(responseText)
 					&& !setting['force-resized']
 				) ? responseText.match(ehDownloadRegex.imageURL[0])[1] : (
 					responseText.indexOf('id="img"') > -1
