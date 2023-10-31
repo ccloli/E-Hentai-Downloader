@@ -2236,6 +2236,14 @@ function getPageData(index) {
 						: responseText.match(ehDownloadRegex.imageURL[2])[1]
 				)
 			);
+			// append nl to original image in case it fails to load from H@H (wtf it's valid?!)
+			if (imageURL.indexOf('fullimg.php') >= 0 || imageURL.indexOf('/fullimg/') >= 0) {
+				imageURL = imageURL + (
+					(imageList[index] && !setting['never-send-nl'] && imageList[index]['nextNL']) ? (
+						imageURL.indexOf('?') >= 0 ? '&' : '?'
+					) + 'nl=' + imageList[index]['nextNL'] : ''
+				);
+			}
 			var fileName = replaceHTMLEntites(responseText.match(ehDownloadRegex.fileName)[1]);
 			var nextNL = ehDownloadRegex.nl.test(responseText) ? responseText.match(ehDownloadRegex.nl)[1] : null;
 		}
