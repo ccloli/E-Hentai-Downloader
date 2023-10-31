@@ -54,7 +54,8 @@ var ehDownloadRegex = {
 	donatorPower: /<td>Donations<\/td><td.*>([+-]?[\d\.]+)<\/td>/,
 	postedTime: /<td.*?>Posted:<\/td><td.*?>(.*?)<\/td>/,
 	categoryTag: /g\/c\/(\w+)\./,
-	slashOnly: /^[\\/]*$/
+	slashOnly: /^[\\/]*$/,
+	originalImagePattern: /\/fullimg(?:\.php\?|\/)/
 };
 
 var dateOffset = new Date().getTimezoneOffset() * 60000;
@@ -1076,7 +1077,7 @@ function fetchOriginalImage(index, nodeList) {
 			class: 'ehD-pt-warning'
 		});
 
-		if (ehDownloadRegex.imageURL[0].test(imageList[index]['imageURL']) && imageList[index]['imageURL'] !== res.finalUrl) {
+		if (ehDownloadRegex.originalImagePattern.test(imageList[index]['imageURL']) && imageList[index]['imageURL'] !== res.finalUrl) {
 			imageList[index]['imageFinalURL'] = res.finalUrl;
 		}
 
@@ -1158,7 +1159,7 @@ function fetchOriginalImage(index, nodeList) {
 				}
 			}
 
-			if (ehDownloadRegex.imageURL[0].test(imageList[index]['imageURL']) && imageList[index]['imageURL'] !== res.finalUrl) {
+			if (ehDownloadRegex.originalImagePattern.test(imageList[index]['imageURL']) && imageList[index]['imageURL'] !== res.finalUrl) {
 				imageList[index]['imageFinalURL'] = res.finalUrl;
 			}
 		},
@@ -1547,7 +1548,7 @@ If you want to reset your limits by paying your GPs or credits right now, or exc
 				class: 'ehD-pt-warning'
 			});
 
-			if (ehDownloadRegex.imageURL[0].test(imageList[index]['imageURL']) && imageList[index]['imageURL'] !== res.finalUrl) {
+			if (ehDownloadRegex.originalImagePattern.test(imageList[index]['imageURL']) && imageList[index]['imageURL'] !== res.finalUrl) {
 				imageList[index]['imageFinalURL'] = res.finalUrl;
 			}
 
@@ -1571,7 +1572,7 @@ If you want to reset your limits by paying your GPs or credits right now, or exc
 				class: 'ehD-pt-warning'
 			});
 
-			if (ehDownloadRegex.imageURL[0].test(imageList[index]['imageURL']) && imageList[index]['imageURL'] !== res.finalUrl) {
+			if (ehDownloadRegex.originalImagePattern.test(imageList[index]['imageURL']) && imageList[index]['imageURL'] !== res.finalUrl) {
 				imageList[index]['imageFinalURL'] = res.finalUrl;
 			}
 
@@ -2237,7 +2238,7 @@ function getPageData(index) {
 				)
 			);
 			// append nl to original image in case it fails to load from H@H (wtf it's valid?!)
-			if (imageURL.indexOf('fullimg.php') >= 0 || imageURL.indexOf('/fullimg/') >= 0) {
+			if (ehDownloadRegex.originalImagePattern.test(imageURL)) {
 				imageURL = imageURL + (
 					(imageList[index] && !setting['never-send-nl'] && imageList[index]['nextNL']) ? (
 						imageURL.indexOf('?') >= 0 ? '&' : '?'
