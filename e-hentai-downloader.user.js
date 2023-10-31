@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.34.10
+// @version      1.35
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -12026,7 +12026,7 @@ var emptyAudioFile = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU3
 
 var ehDownloadRegex = {
 	imageURL: [
-		/<a href="(\S+?\/fullimg\.php\?\S+?)"/,
+		/<a href="(\S+?\/fullimg(?:\.php\?|\/)\S+?)"/,
 		/<img id="img" src="(\S+?)"/,
 		/<\/(?:script|iframe)><a[\s\S]+?><img src="(\S+?)"/ // Sometimes preview image may not have id="img"
 	],
@@ -12039,7 +12039,7 @@ var ehDownloadRegex = {
 	fileName: /g\/l.png"\s?\/><\/a><\/div><div>([\s\S]+?) :: /,
 	resFileName: /filename=['"]?([\s\S]+?)['"]?$/m,
 	dangerChars: /[:"*?|<>\/\\\n]/g,
-	pagesRange: /^(\d*(-\d*(\/\d+)?)?\s*,\s*)*\d*(-\d*(\/\d+)?)?$/,
+	pagesRange: /^(!?\d*(-\d*(\/\d+)?)?\s*,\s*)*!?\d*(-\d*(\/\d+)?)?$/,
 	pagesURL: /(?:<a href=").+?(?=")/gi,
 	mpvKey: /var imagelist\s*=\s*(\[.+?\]);/,
 	imageLimits: /You are currently at <strong>(\d+)<\/strong> towards a limit of <strong>(\d+)<\/strong>/,
@@ -12048,7 +12048,8 @@ var ehDownloadRegex = {
 	donatorPower: /<td>Donations<\/td><td.*>([+-]?[\d\.]+)<\/td>/,
 	postedTime: /<td.*?>Posted:<\/td><td.*?>(.*?)<\/td>/,
 	categoryTag: /g\/c\/(\w+)\./,
-	slashOnly: /^[\\/]*$/
+	slashOnly: /^[\\/]*$/,
+	originalImagePattern: /\/fullimg(?:\.php\?|\/)/
 };
 
 var dateOffset = new Date().getTimezoneOffset() * 60000;
@@ -12178,6 +12179,7 @@ var ehDownloadFS = {
 	}
 };
 
+var bodyBackground = getComputedStyle(document.body).backgroundColor || '#34353b';
 var ehDownloadStyle = '\
 	@-webkit-keyframes progress { \
 		from { -webkit-transform: translateX(-50%) scaleX(0); transform: translateX(-50%) scaleX(0); } \
@@ -12199,14 +12201,15 @@ var ehDownloadStyle = '\
 		60% { -webkit-transform: translateX(15%) scaleX(0.7); transform: translateX(15%) scaleX(0.7); } \
 		to { -webkit-transform: translateX(50%) scaleX(0); transform: translateX(50%) scaleX(0); } \
 	} \
-	.ehD-box { margin: 20px auto; width: 732px; box-sizing: border-box; font-size: 12px; border: 1px groove #000000; }\
+	.ehD-box { margin: 16px auto 20px; width: 732px; box-sizing: border-box; font-size: 12px; border: 1px groove #000000; }\
 	.ehD-box a { cursor: pointer; }\
 	.ehD-box .g2 { display: inline-block; margin: 10px; padding: 0; line-height: 14px; }\
-	.ehD-box legend { font-weight: 700; padding: 0 10px; } \
+	.ehD-box legend { font-weight: 700; padding: 4px 10px 0; } \
 	.ehD-box legend a { color: inherit; text-decoration: none; }\
 	.ehD-box input[type="text"] { width: 250px; }\
 	.ehD-box-extend input[type="text"] { width: 255px; }\
 	.ehD-box input::placeholder { color: #999999; -webkit-text-fill-color: #999999; }\
+	.ehD-box.ehD-box-sticky { position: sticky; top: 0px; z-index: 5; background: ' + bodyBackground + '; box-shadow: 0 0 0 12px ' + bodyBackground + '; }\
 	.ehD-setting { position: fixed; left: 0; right: 0; top: 0; bottom: 0; padding: 5px; border: 1px solid #000000; background: #34353b; color: #dddddd; width: 600px; height: 380px; max-width: 100%; max-height: 100%; overflow-x: hidden; overflow-y: auto; box-sizing: border-box; margin: auto; z-index: 999; text-align: left; font-size: 12px; outline: 5px rgba(0, 0, 0, 0.25) solid; }\
 	.ehD-setting-tab { list-style: none; margin: 5px 0; padding: 0 10px; border-bottom: 1px solid #cccccc; overflow: auto; }\
 	.ehD-setting-tab li { float: left; padding: 5px 10px; border-bottom: 0; cursor: pointer; }\
@@ -12283,8 +12286,11 @@ function initSetting() {
 		if (typeof setting['auto-download-cancel'] === 'undefined') {
 			setting['auto-download-cancel'] = true;
 		}
+		if (typeof setting['actions-sticky'] === 'undefined') {
+			setting['actions-sticky'] = true;
+		}
 
-		console.log('[EHD] E-Hentai Downloader Setting >', JSON.stringify(setting));
+		console.log('[EHD] E-Hentai Downloader Setting >', res, '-->', JSON.stringify(setting));
 
 		// disable single-thread download
 		if (setting['enable-multi-threading'] === false) {
@@ -12315,6 +12321,10 @@ function initSetting() {
 		// Forced request File System to check if have temp archive
 		if (setting['store-in-fs'] && requestFileSystem) {
 			requestFileSystem(window.TEMPORARY, 1024 * 1024 * 1024, ehDownloadFS.initCheckerHandler, ehDownloadFS.errorHandler);
+		}
+
+		if (setting['actions-sticky'] !== false) {
+			ehDownloadBox.classList.add('ehD-box-sticky');
 		}
 	});
 }
@@ -12424,7 +12434,7 @@ function createBlob(abdata, config) {
 
 // show info in dialog box
 function pushDialog(str) {
-	var needScrollIntoView = ehDownloadDialog.clientHeight + ehDownloadDialog.scrollTop >= ehDownloadDialog.scrollHeight;
+	var needScrollIntoView = ehDownloadDialog.clientHeight + ehDownloadDialog.scrollTop >= ehDownloadDialog.scrollHeight - 5;
 
 	if (typeof str === 'string') {
 		var tn = document.createElement('span');
@@ -12871,7 +12881,7 @@ function updateTotalStatus(){
 function failedFetching(index, nodeList, forced){
 	if (!isDownloading || imageData[index] instanceof ArrayBuffer) return; // Temporarily fixes #31	
 	if (typeof fetchThread[index] !== 'undefined' && 'abort' in fetchThread[index]) fetchThread[index].abort();
-	console.error('[EHD] Index >', index + 1, ' | RealIndex >', imageList[index]['realIndex'], ' | Name >', imageList[index]['imageName'], ' | RetryCount >', retryCount[index], ' | DownloadedCount >', downloadedCount, ' | FetchCount >', fetchCount, ' | FailedCount >', failedCount);
+	console.error('[EHD] Index >', index + 1, ' | RealIndex >', (imageList[index] || {})['realIndex'], ' | Name >', (imageList[index] || {})['imageName'], ' | RetryCount >', retryCount[index], ' | DownloadedCount >', downloadedCount, ' | FetchCount >', fetchCount, ' | FailedCount >', failedCount);
 
 	if (!forced && retryCount[index] < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
 		retryCount[index]++;
@@ -12882,7 +12892,9 @@ function failedFetching(index, nodeList, forced){
 			class: 'ehD-pt-failed'
 		});
 
-		imageList[index]['imageFinalURL'] = null;
+		if (imageList[index]) {
+			imageList[index]['imageFinalURL'] = null;
+		}
 		failedCount++;
 		if (!isPausing || !setting['force-pause']) fetchCount--;
 
@@ -12923,7 +12935,13 @@ function checkFailed() {
 				retryAllFailed();
 			}
 			else {
-				pushDialog('\nFetch images failed.\n');
+				var failedPages = [];
+				for (var i = 0; i < imageData.length; i++) {
+					if (imageData[i] == null || imageData[i] === 'Fetching') {
+						failedPages.push(i + 1);
+					}
+				}
+				pushDialog('\nFetch images failed.\nFailed Pages: ' + failedPages.join(',') + '\n');
 				if (setting['auto-download-cancel'] || confirm('Fetch images failed, Please try again later.\n\nWould you like to download downloaded images?')) {
 					saveDownloaded();
 				}
@@ -12958,7 +12976,7 @@ function fetchOriginalImage(index, nodeList) {
 	if (isPausing) return;
 
 	var requestURL = imageList[index]['imageFinalURL'] || imageList[index]['imageURL'];
-	var needScrollIntoView = ehDownloadDialog.clientHeight + ehDownloadDialog.scrollTop >= ehDownloadDialog.scrollHeight;
+	var needScrollIntoView = ehDownloadDialog.clientHeight + ehDownloadDialog.scrollTop >= ehDownloadDialog.scrollHeight - 5;
 
 	if (setting['original-download-domain']) {
 		requestURL = requestURL.replace(location.hostname, setting['original-download-domain']);
@@ -13053,7 +13071,7 @@ function fetchOriginalImage(index, nodeList) {
 			class: 'ehD-pt-warning'
 		});
 
-		if (imageList[index]['imageURL'].indexOf('fullimg.php') >= 0 && imageList[index]['imageURL'] !== res.finalUrl) {
+		if (ehDownloadRegex.originalImagePattern.test(imageList[index]['imageURL']) && imageList[index]['imageURL'] !== res.finalUrl) {
 			imageList[index]['imageFinalURL'] = res.finalUrl;
 		}
 
@@ -13135,7 +13153,7 @@ function fetchOriginalImage(index, nodeList) {
 				}
 			}
 
-			if (imageList[index]['imageURL'].indexOf('fullimg.php') >= 0 && imageList[index]['imageURL'] !== res.finalUrl) {
+			if (ehDownloadRegex.originalImagePattern.test(imageList[index]['imageURL']) && imageList[index]['imageURL'] !== res.finalUrl) {
 				imageList[index]['imageFinalURL'] = res.finalUrl;
 			}
 		},
@@ -13524,7 +13542,7 @@ If you want to reset your limits by paying your GPs or credits right now, or exc
 				class: 'ehD-pt-warning'
 			});
 
-			if (imageList[index]['imageURL'].indexOf('fullimg.php') >= 0 && imageList[index]['imageURL'] !== res.finalUrl) {
+			if (ehDownloadRegex.originalImagePattern.test(imageList[index]['imageURL']) && imageList[index]['imageURL'] !== res.finalUrl) {
 				imageList[index]['imageFinalURL'] = res.finalUrl;
 			}
 
@@ -13548,7 +13566,7 @@ If you want to reset your limits by paying your GPs or credits right now, or exc
 				class: 'ehD-pt-warning'
 			});
 
-			if (imageList[index]['imageURL'].indexOf('fullimg.php') >= 0 && imageList[index]['imageURL'] !== res.finalUrl) {
+			if (ehDownloadRegex.originalImagePattern.test(imageList[index]['imageURL']) && imageList[index]['imageURL'] !== res.finalUrl) {
 				imageList[index]['imageFinalURL'] = res.finalUrl;
 			}
 
@@ -13694,26 +13712,44 @@ function getAllPagesURL() {
 		console.log('[EHD] Pages Range >', pagesRangeText);
 		if (!ehDownloadRegex.pagesRange.test(pagesRangeText)) return alert('The format of Pages Range is incorrect.');
 
-		var rangeRegex = /(?:(\d*)-(\d*))(?:\/(\d+))?|(\d+)/g;
+		// range started with negative range, select all as default
+		if (pagesRangeText[0] === '!') {
+			pagesRangeText = '1-,' + pagesRangeText;
+		}
+		var rangeRegex = /!?(?:(\d*)-(\d*))(?:\/(\d+))?|!?(\d+)/g;
 		var matches;
+		var lastPage = getFileSizeAndLength().page;
+
 		while (matches = rangeRegex.exec(pagesRangeText)) {
+			var selected = [];
 			var single = Number(matches[4]);
 			if (!isNaN(single)) {
-				pagesRange.push(single);
-				continue;
+				selected.push(single);
+			}
+			else {
+				var begin = Number(matches[1]) || 1;
+				var end = Number(matches[2]) || lastPage;
+				if (begin > end) {
+					var tmp = begin;
+					begin = end;
+					end = tmp;
+				}
+				var mod = Number(matches[3]) || 1;
+
+				for (var i = begin; i <= end; i += mod) {
+					selected.push(i);
+				}
 			}
 
-			var begin = Number(matches[1]) || 1;
-			var end = Number(matches[2]) || getFileSizeAndLength().page;
-			if (begin > end) {
-				var tmp = begin;
-				begin = end;
-				end = tmp;
+			if (matches[0][0] === '!') {
+				pagesRange = pagesRange.filter(function (e) {
+					return selected.indexOf(e) < 0;
+				});
 			}
-			var mod = Number(matches[3]) || 1;
-
-			for (var i = begin; i <= end; i += mod) {
-				pagesRange.push(i);
+			else {
+				selected.forEach(function (e) {
+					pagesRange.push(e);
+				});
 			}
 		}
 
@@ -14103,7 +14139,7 @@ function getPageData(index) {
 	if (pagesRange.length) var realIndex = pagesRange[index];
 	else var realIndex = index + 1;
 
-	var needScrollIntoView = ehDownloadDialog.clientHeight + ehDownloadDialog.scrollTop >= ehDownloadDialog.scrollHeight;
+	var needScrollIntoView = ehDownloadDialog.clientHeight + ehDownloadDialog.scrollTop >= ehDownloadDialog.scrollHeight - 5;
 
 	var node = progressTable.querySelector('tr[data-index="' + index + '"]');
 	if (!node) {
@@ -14187,7 +14223,7 @@ function getPageData(index) {
 			var imageURL = replaceHTMLEntites(
 				(
 					(unsafeWindow.apiuid !== -1 || setting['force-as-login'])
-					&& responseText.indexOf('fullimg.php') >= 0
+					&& ehDownloadRegex.imageURL[0].test(responseText)
 					&& !setting['force-resized']
 				) ? responseText.match(ehDownloadRegex.imageURL[0])[1] : (
 					responseText.indexOf('id="img"') > -1
@@ -14195,6 +14231,14 @@ function getPageData(index) {
 						: responseText.match(ehDownloadRegex.imageURL[2])[1]
 				)
 			);
+			// append nl to original image in case it fails to load from H@H (wtf it's valid?!)
+			if (ehDownloadRegex.originalImagePattern.test(imageURL)) {
+				imageURL = imageURL + (
+					(imageList[index] && !setting['never-send-nl'] && imageList[index]['nextNL']) ? (
+						imageURL.indexOf('?') >= 0 ? '&' : '?'
+					) + 'nl=' + imageList[index]['nextNL'] : ''
+				);
+			}
 			var fileName = replaceHTMLEntites(responseText.match(ehDownloadRegex.fileName)[1]);
 			var nextNL = ehDownloadRegex.nl.test(responseText) ? responseText.match(ehDownloadRegex.nl)[1] : null;
 		}
@@ -14357,6 +14401,7 @@ function showSettings() {
 					<div class="g2"><label><select data-ehd-setting="status-in-title"><option value="never">Never</option><option value="blur">When current tab is not focused</option><option value="always">Always</option></select> show download progress in title</label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="hide-image-limits"> Disable requesting and showing image limits</label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="hide-estimated-cost"> Disable pre-calculating image limits cost</label></div>\
+					<div class="g2"><label><input type="checkbox" data-ehd-setting="actions-sticky"> Pin download actions box at the top of the page</label></div>\
 					<div class="ehD-setting-note">\
 						<div class="g2">\
 							* Available templates: \
@@ -14509,6 +14554,9 @@ function showSettings() {
 			else {
 				toggleFilenameConfirmInput(!setting['recheck-file-name']);
 			}
+
+			ehDownloadBox.classList[setting['actions-sticky'] ? 'add' : 'remove']('ehD-box-sticky')
+
 			try {
 				showPreCalcCost();
 			}
@@ -14759,12 +14807,26 @@ function showPreCalcCost(){
 var ehDownloadBox = document.createElement('fieldset');
 ehDownloadBox.className = 'ehD-box';
 var ehDownloadBoxTitle = document.createElement('legend');
-ehDownloadBoxTitle.innerHTML = 'E-Hentai Downloader <span class="ehD-box-limit"></span> <span class="ehD-box-cost"></span>';
+ehDownloadBoxTitle.innerHTML = 'E-Hentai Downloader <span class="ehD-box-limit"></span> <span class="ehD-box-cost"></span> ';
 if (origin.indexOf('exhentai.org') >= 0) ehDownloadBoxTitle.style.color = '#ffff66';
 ehDownloadBox.appendChild(ehDownloadBoxTitle);
 var ehDownloadStylesheet = document.createElement('style');
 ehDownloadStylesheet.textContent = ehDownloadStyle;
 ehDownloadBox.appendChild(ehDownloadStylesheet);
+
+var extraHint;
+if (isInPeakHours() && !isRecentGallery()) {
+	extraHint = document.createElement('a');
+	extraHint.setAttribute('title', 'Peak Hours: It\'s in peak hours now, during peak hours, downloading original images of 90 days ago cost GPs');
+	extraHint.textContent = '[P]';
+	ehDownloadBoxTitle.appendChild(extraHint);
+}
+if (isAncientGallery()) {
+	extraHint = document.createElement('a');
+	extraHint.setAttribute('title', 'Ancient Gallery: Downloading original images of 1 year ago cost GPs');
+	extraHint.textContent = '[A]';
+	ehDownloadBoxTitle.appendChild(extraHint);
+}
 
 var ehDownloadArrow = '<img src="data:image/gif;base64,R0lGODlhBQAHALMAAK6vr7OztK+urra2tkJCQsDAwEZGRrKyskdHR0FBQUhISP///wAAAAAAAAAAAAAAACH5BAEAAAsALAAAAAAFAAcAAAQUUI1FlREVpbOUSkTgbZ0CUEhBLREAOw==">';
 
@@ -14817,7 +14879,7 @@ ehDownloadBox.appendChild(ehDownloadNumberInput);
 
 var ehDownloadRange = document.createElement('div');
 ehDownloadRange.className = 'g2';
-ehDownloadRange.innerHTML = ehDownloadArrow + ' <a><label title="Download ranges of pages, split each range with comma (,)&#13;Example: &#13;-10:   Download from page 1 to 10&#13;12:   Download page 12&#13;14-20:   Download from page 14 to 20&#13;27:   Download page 27&#13;30-40/2:   Download each 2 pages in 30-40 (30, 32, 34, 36, 38, 40)&#13;50-60/3:   Download each 3 pages in 50-60 (50, 53, 56, 59)&#13;70-:   Download from page 70 to the last page">Pages Range <input type="text" placeholder="eg. -10,12,14-20,27,30-40/2,50-60/3,70-"></label></a>';
+ehDownloadRange.innerHTML = ehDownloadArrow + ' <a><label title="Download ranges of pages, split each range with comma (,)&#13;Ranges prefixed with ! means negative range, pages in these range will be excluded&#13;Example: &#13;  -10:   Download from page 1 to 10&#13;  !8:   Exclude page 8&#13;  12:   Download page 12&#13;  14-20:   Download from page 14 to 20&#13;  15-17:   Exclude page 15 to 17&#13;  30-40/2:   Download each 2 pages in 30-40 (30, 32, 34, 36, 38, 40)&#13;  50-60/3:   Download each 3 pages in 50-60 (50, 53, 56, 59)&#13;  70-:   Download from page 70 to the last page&#13;Pages range follows your order, a negative range can drop previous selected pages, the latter positive range can add it back&#13;Example: &#13;  !10-20:   Download every page except page 10 to 20&#13;  1-10,!1-8/2,!4,5:   Download page 1 to 10 but remove 1, 3, 5, 7 and 4, then add 5 back (2, 5, 6, 8, 9, 10)">Pages Range <input type="text" placeholder="eg. -10,!8,12,14-20,!15-17,30-40/2,50-60/3,70-"></label></a>';
 ehDownloadBox.appendChild(ehDownloadRange);
 
 var ehDownloadSetting = document.createElement('div');
