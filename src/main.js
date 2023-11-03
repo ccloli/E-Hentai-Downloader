@@ -2651,10 +2651,12 @@ function showImageLimits(){
 	ehDownloadBox.getElementsByClassName('ehD-box-limit')[0].innerHTML = ' | <a href="https://e-hentai.org/home.php">Image Limits: ' + list.join('; ') + '</a>';
 }
 
-var getFileSizeAndLength = function() {
-	var context = document.getElementById('gdd').textContent;
-	var sizeText = context.split('File Size:')[1].split('Length:')[0].trim();
-	var pageText = context.split('Length:')[1].split('page')[0].trim();
+function getFileSizeAndLength() {
+	// TODO: use api.php if fails
+	var context = (document.getElementById('gdd') || {}).textContent || '';
+	var sizeText = ((context.split('File Size:')[1] || '').split('Length:')[0] || '').trim();
+	var pageText = ((context.split('Length:')[1] || '').split('page')[0] || '').trim() ||
+		((document.querySelector('.gpc') || {}).textContent.split('of').pop().split('images').shift() || '').trim();
 
 	var sizeMB, sizeKB;
 	var page = pageText - 0;
@@ -2771,6 +2773,7 @@ function showPreCalcCost(){
 		5: 5
 	};
 	var info = getFileSizeAndLength();
+	if (info)
 	var size = info.size;
 	var page = info.page;
 	var perCost = resolutionCost[resolutionSetting.resolution || 0];
