@@ -329,9 +329,9 @@ function initSetting() {
 			requestFileSystem(window.TEMPORARY, 1024 * 1024 * 1024, ehDownloadFS.initCheckerHandler, ehDownloadFS.errorHandler);
 		}
 
-		if (setting['actions-sticky'] !== false) {
-			ehDownloadBox.classList.add('ehD-box-sticky');
-		}
+		// if (setting['actions-sticky'] !== false) {
+		// 	ehDownloadBox.classList.add('ehD-box-sticky');
+		// }
 	});
 }
 
@@ -2407,7 +2407,7 @@ function showSettings() {
 					<div class="g2"><label><select data-ehd-setting="status-in-title"><option value="never">Never</option><option value="blur">When current tab is not focused</option><option value="always">Always</option></select> show download progress in title</label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="hide-image-limits"> Disable requesting and showing image limits</label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="hide-estimated-cost"> Disable pre-calculating image limits cost</label></div>\
-					<div class="g2"><label><input type="checkbox" data-ehd-setting="actions-sticky"> Pin download actions box at the top of the page</label></div>\
+					<!--<div class="g2"><label><input type="checkbox" data-ehd-setting="actions-sticky"> Pin download actions box at the top of the page</label></div>-->\
 					<div class="ehD-setting-note">\
 						<div class="g2">\
 							* Available templates: \
@@ -2561,7 +2561,7 @@ function showSettings() {
 				toggleFilenameConfirmInput(!setting['recheck-file-name']);
 			}
 
-			ehDownloadBox.classList[setting['actions-sticky'] ? 'add' : 'remove']('ehD-box-sticky')
+			// ehDownloadBox.classList[setting['actions-sticky'] ? 'add' : 'remove']('ehD-box-sticky');
 
 			try {
 				showPreCalcCost();
