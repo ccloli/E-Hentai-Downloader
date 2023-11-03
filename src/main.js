@@ -311,8 +311,8 @@ function initSetting() {
 
 		if (!setting['hide-image-limits']) {
 			getResolutionSetting(true);
-			getImageLimits(true);
-			setInterval(getImageLimits, 60000);
+			loadImageLimits(true);
+			setInterval(loadImageLimits, 60000);
 		}
 
 		if (!setting['hide-estimated-cost']) {
@@ -956,7 +956,7 @@ function checkFailed() {
 				}
 				isDownloading = false;
 
-				getImageLimits(true);
+				loadImageLimits(true);
 			}
 		}
 	}
@@ -968,7 +968,7 @@ function checkFailed() {
 		generateZip();
 		isDownloading = false;
 
-		getImageLimits(true);
+		loadImageLimits(true);
 	}
 }
 
@@ -1337,7 +1337,7 @@ If you want to reset your limits by paying your GPs or credits right now, or exc
 						isPausing = false;
 						isDownloading = false;
 
-						getImageLimits(true);
+						loadImageLimits(true);
 					});
 					ehDownloadDialog.appendChild(cancelButton);
 
@@ -1414,7 +1414,7 @@ If you want to reset your limits by paying your GPs or credits right now, or exc
 							isPausing = false;
 							isDownloading = false;
 
-							getImageLimits(true);
+							loadImageLimits(true);
 						});
 						ehDownloadDialog.appendChild(cancelButton);
 
@@ -1451,7 +1451,7 @@ If you want to reset your limits by paying your GPs or credits right now, or exc
 						}
 						isDownloading = false;
 
-						getImageLimits(true);
+						loadImageLimits(true);
 						return;
 					}
 				}
@@ -2072,7 +2072,7 @@ function initVisibilityListener() {
 		}
 		else {
 			emptyAudio.pause();
-			getImageLimits();
+			loadImageLimits();
 		}
 	};
 
@@ -2427,6 +2427,7 @@ function showSettings() {
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="never-new-url"> Never get new image URL when failed to download image </label><sup>(2)</sup></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="never-send-nl"> Never send "nl" GET parameter when getting new image URL </label><sup>(2)</sup></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="never-warn-peak-hours"> Never show warning when it\'s in peak hours now </label></div>\
+					<div class="g2"><label><input type="checkbox" data-ehd-setting="never-warn-limits"> Never show warning if image limits will probably used out on starting download</label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="never-warn-large-gallery"> Never show warning when downloading a large gallery (>= 300 MB) </label></div>\
 					<div class="g2"' + (requestFileSystem ? '' : ' style="opacity: 0.5;" title="Only Chrome supports this feature"') + '><label><input type="checkbox" data-ehd-setting="store-in-fs"> Use File System to handle large Zip file</label> <label>when gallery is larger than <input type="number" data-ehd-setting="fs-size" min="0" placeholder="200" style="width: 46px;"> MB (0 is always)</label><sup>(3)</sup></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="play-silent-music"> Play silent music during the process to avoid downloading freeze </label><sup>(4)</sup></div>\
@@ -2579,7 +2580,17 @@ function showSettings() {
 	});
 }
 
-function getImageLimits(forced, host){
+function getImageLimits() {
+	var host = host || location.hostname;
+	if (host === 'exhentai.org') {
+		host = 'e-hentai.org';
+	}
+
+	var preData = JSON.parse(localStorage.getItem('ehd-image-limits-' + host) || '{"timestamp":0}');
+	return preData;
+}
+
+function loadImageLimits(forced, host){
 	if (!visibleState) {
 		return;
 	}
@@ -2589,7 +2600,7 @@ function getImageLimits(forced, host){
 	}
 	var url = 'https://' + host + '/home.php';
 
-	var preData = JSON.parse(localStorage.getItem('ehd-image-limits-' + host) || '{"timestamp":0}');
+	var preData = getImageLimits();
 	if (!forced && new Date() - preData.timestamp < 30000) {
 		return showImageLimits();
 	}
@@ -2757,7 +2768,7 @@ function getResolutionSetting(forced){
 	xhr.send();
 }
 
-function showPreCalcCost(){
+function preCalculateCost(){
 	// tor doesn't count to normal account since the ip is dynamic, but not sure if it counts for donator/hath perk account
 	// if (isTor) {
 	// 	return;
@@ -2773,7 +2784,6 @@ function showPreCalcCost(){
 		5: 5
 	};
 	var info = getFileSizeAndLength();
-	if (info)
 	var size = info.size;
 	var page = info.page;
 	var perCost = resolutionCost[resolutionSetting.resolution || 0];
@@ -2801,6 +2811,25 @@ function showPreCalcCost(){
 		}
 	}
 
+	return {
+		cost: cost,
+		normalCost: normalCost,
+		leastCost: leastCost,
+		perCost: perCost,
+		gp: gp,
+		isUsingOriginal: isUsingOriginal,
+		isUsingGP: isUsingGP,
+	};
+}
+
+function showPreCalcCost(){
+	var data = preCalculateCost();
+	var isUsingOriginal = data.isUsingOriginal;
+	var isUsingGP = data.isUsingGP;
+	var leastCost = data.leastCost;
+	var gp = data.gp;
+	var cost = data.cost;
+
 	ehDownloadBox.getElementsByClassName('ehD-box-cost')[0].innerHTML = ' | \
 		<a \
 			href="https://github.com/ccloli/E-Hentai-Downloader/wiki/E%E2%88%92Hentai-Image-Viewing-Limits" \
@@ -2809,7 +2838,7 @@ function showPreCalcCost(){
 			// (isUsingOriginal && isSourceNexus ? '...or ' + cost + ' if Source Nexus hath perk is not available.\n' : '') +
 			(isUsingOriginal && !isUsingGP ? '...or ' + leastCost + ' + ' + gp + ' GP if you don\'t have enough viewing limits.\n' : '') +
 			'1 point per 0.1 MB since August 2019, less than 0.1 MB will also be counted.\nDuring peak hours, downloading original images will cost GPs.\nFor gallery uploaded 1 year ago, downloading original images will cost GPs since July 2023.\nThe GP cost is the same as resetting viewing limits.\nEstimated GP cost is a bit more than using offical archive download, in case the sum of each images will be larger than the packed.">'
-		+ 'Estimated Limits Cost: ' + (/* isSourceNexus ? leastCost : */ cost) + '</a>';
+		+ 'Estimated Costs: ' + (/* isSourceNexus ? leastCost : */ cost) + '</a>';
 }
 
 // EHD Box, thanks to JingJang@GitHub, source: https://github.com/JingJang/E-Hentai-Downloader
@@ -2870,6 +2899,21 @@ ehDownloadAction.addEventListener('click', function(event){
 			}
 		} else {
 			if (!confirm('It\'s peak hours now, downloading original images will cost your GPs instead of viewing limits.\nYou can download resized images or disable this notification in script\'s settings.\n\nContinue downloading with original images?')) {
+				return;
+			}
+		}
+	}
+
+	if (!setting['never-warn-limits']) {
+		var costData = preCalculateCost();
+		var limitsData = getImageLimits();
+		var totalLimitsCost = +(setting['force-resized'] ? costData.leastCost : costData.normalCost) || 0;
+		if (Number.isNaN(totalLimitsCost)) {
+			totalLimitsCost = 0;
+		}
+		var finalLimits = +(limitsData.cur || 0) + totalLimitsCost;
+		if (finalLimits > limitsData.total) {
+			if (!confirm('You may used up your image limits or will run it out, downloading images exceed your limits will cost GPs instead, or credits if you run out of GPs.\nUsed + Estimated = ' + (limitsData.cur || 0) + ' + ' + totalLimitsCost + ' = ' + finalLimits + ' > ' + limitsData.total + '\n\nContinue downloading?')) {
 				return;
 			}
 		}
