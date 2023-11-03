@@ -2421,48 +2421,51 @@ function showSettings() {
 					</div>\
 				</div>\
 				<div data-setting-page="advanced" class="ehD-setting-content">\
-					<div class="g2"><label>Set compression level as <input type="number" data-ehd-setting="compression-level" min="0" max="9" placeholder="0" style="width: 46px;"> (0 ~ 9, 0 is only store, not recommended to enable)</label></div>\
-					<div class="g2"><label><input type="checkbox" data-ehd-setting="file-descriptor"> Stream files and create Zip with file descriptors </label><sup>(1)</sup></div>\
-					<div class="g2"><label><input type="checkbox" data-ehd-setting="force-resized"> Force download resized image (never download original image) </label><sup>(2)</sup></div>\
-					<div class="g2"><label><input type="checkbox" data-ehd-setting="never-new-url"> Never get new image URL when failed to download image </label><sup>(2)</sup></div>\
-					<div class="g2"><label><input type="checkbox" data-ehd-setting="never-send-nl"> Never send "nl" GET parameter when getting new image URL </label><sup>(2)</sup></div>\
+					<div class="g2"><label>Set compression level as <input type="number" data-ehd-setting="compression-level" min="0" max="9" placeholder="0" style="width: 46px;"> (0 ~ 9, 0 is only store) </label><sup>(1)</sup></div>\
+					<div class="g2"><label><input type="checkbox" data-ehd-setting="file-descriptor"> Stream files and create Zip with file descriptors </label><sup>(2)</sup></div>\
+					<div class="g2"><label><input type="checkbox" data-ehd-setting="force-resized"> Force download resized image (never download original image) </label></div>\
+					<div class="g2"><label><input type="checkbox" data-ehd-setting="never-new-url"> Never get new image URL when failed to download image </label><sup>(3)</sup></div>\
+					<div class="g2"><label><input type="checkbox" data-ehd-setting="never-send-nl"> Never send "nl" GET parameter when getting new image URL </label><sup>(3)</sup></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="never-warn-peak-hours"> Never show warning when it\'s in peak hours now </label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="never-warn-limits"> Never show warning if image limits will probably used out on starting download</label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="never-warn-large-gallery"> Never show warning when downloading a large gallery (>= 300 MB) </label></div>\
-					<div class="g2"' + (requestFileSystem ? '' : ' style="opacity: 0.5;" title="Only Chrome supports this feature"') + '><label><input type="checkbox" data-ehd-setting="store-in-fs"> Use File System to handle large Zip file</label> <label>when gallery is larger than <input type="number" data-ehd-setting="fs-size" min="0" placeholder="200" style="width: 46px;"> MB (0 is always)</label><sup>(3)</sup></div>\
-					<div class="g2"><label><input type="checkbox" data-ehd-setting="play-silent-music"> Play silent music during the process to avoid downloading freeze </label><sup>(4)</sup></div>\
+					<div class="g2"' + (requestFileSystem ? '' : ' style="opacity: 0.5;" title="Only Chrome supports this feature"') + '><label><input type="checkbox" data-ehd-setting="store-in-fs"> Use File System to handle large Zip file</label> <label>when gallery is larger than <input type="number" data-ehd-setting="fs-size" min="0" placeholder="200" style="width: 46px;"> MB (0 is always)</label><sup>(4)</sup></div>\
+					<div class="g2"><label><input type="checkbox" data-ehd-setting="play-silent-music"> Play silent music during the process to avoid downloading freeze </label><sup>(5)</sup></div>\
 					<div class="g2"><label>Record and save gallery info as <select data-ehd-setting="save-info"><option value="file">File info.txt</option><option value="comment">Zip comment</option><option value="none">None</option></select></label></div>\
 					<div class="g2">...which includes <label><input type="checkbox" data-ehd-setting="save-info-list[]" value="title">Title & Gallery Link</label> <label><input type="checkbox" data-ehd-setting="save-info-list[]" value="metas">Metadatas</label> <label><input type="checkbox" data-ehd-setting="save-info-list[]" value="tags">Tags</label> <label><input type="checkbox" data-ehd-setting="save-info-list[]" value="uploader-comment">Uploader Comment</label> <label><input type="checkbox" data-ehd-setting="save-info-list[]" value="page-links">Page Links</label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="replace-with-full-width"> Replace forbidden characters with full-width characters instead of dash (-)</label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="force-pause"> Force drop downloaded images data when pausing download</label></div>\
-					<div class="g2"><label><input type="checkbox" data-ehd-setting="save-as-cbz"> Save as CBZ (Comic book archive) file<sup>(5)</sup></label></div>\
-					<div class="g2"><label><input type="checkbox" data-ehd-setting="pass-cookies"> Pass cookies manually when downloading images <sup>(6)</sup></label></div>\
-					<div class="g2"><label><input type="checkbox" data-ehd-setting="force-as-login"> Force as logged in (actual login state: ' + (unsafeWindow.apiuid === -1 ? 'no' : 'yes') + ', uid: ' + unsafeWindow.apiuid + ') <sup>(7)</sup></label></div>\
-					<div class="g2"><label>Download original images from <select data-ehd-setting="original-download-domain"><option value="">current origin</option><option value="e-hentai.org">e-hentai.org</option><option value="exhentai.org">exhentai.org</option></select> <sup>(8)</sup></label></div>\
+					<div class="g2"><label><input type="checkbox" data-ehd-setting="save-as-cbz"> Save as CBZ (Comic book archive) file<sup>(6)</sup></label></div>\
+					<div class="g2"><label><input type="checkbox" data-ehd-setting="pass-cookies"> Pass cookies manually when downloading images <sup>(7)</sup></label></div>\
+					<div class="g2"><label><input type="checkbox" data-ehd-setting="force-as-login"> Force as logged in (actual login state: ' + (unsafeWindow.apiuid === -1 ? 'no' : 'yes') + ', uid: ' + unsafeWindow.apiuid + ') <sup>(8)</sup></label></div>\
+					<div class="g2"><label>Download original images from <select data-ehd-setting="original-download-domain"><option value="">current origin</option><option value="e-hentai.org">e-hentai.org</option><option value="exhentai.org">exhentai.org</option></select> <sup>(9)</sup></label></div>\
 					<div class="ehD-setting-note">\
 						<div class="g2">\
-							(1) This may reduce memory usage but some decompress softwares may not support the Zip file. See <a href="https://stuk.github.io/jszip/documentation/api_jszip/generate_async.html" target="_blank" style="color: #ffffff;">JSZip Docs</a> for more info.\
+							(1) Higher compression level can get smaller file without lossing any data, but may takes more time. If you have a decent CPU you can set it higher, and if you\'re using macOS set it to at least 1.\
 						</div>\
 						<div class="g2">\
-							(2) Enable these options may save your image viewing limits <a href="https://github.com/ccloli/E-Hentai-Downloader/wiki/E%E2%88%92Hentai-Image-Viewing-Limits" target="_blank" style="color: #ffffff;">(See wiki)</a>, but may also cause some download problems.\
+							(2) This may reduce memory usage but some decompress softwares may not support the Zip file. See <a href="https://stuk.github.io/jszip/documentation/api_jszip/generate_async.html" target="_blank" style="color: #ffffff;">JSZip Docs</a> for more info.\
 						</div>\
 						<div class="g2">\
-							(3) If enabled you can save larger Zip files (probably ~1GB).\
+							(3) Enable these option will never let you to load from regular image server (or say force loaded from H@H). This may save your image viewing limits <a href="https://github.com/ccloli/E-Hentai-Downloader/wiki/E%E2%88%92Hentai-Image-Viewing-Limits" target="_blank" style="color: #ffffff;">(See wiki)</a>, but may also cause some download problems, especially if your network cannot connect to specific H@H node.\
 						</div>\
 						<div class="g2">\
-							(4) If enabled will play slient music to avoid downloading freeze when page is in background <a href="https://github.com/ccloli/E-Hentai-Downloader/issues/65" target="_blank">(See issue)</a>. Only needed if you have the problem, because the audio-playing icon maybe annoying.\
+							(4) If enabled you can save larger Zip files (probably ~1GB).\
 						</div>\
 						<div class="g2">\
-							(5) <a href="https://en.wikipedia.org/wiki/Comic_book_archive">Comic book archive</a> is a file type to archive comic images, you can open it with some comic viewer like CDisplay/CDisplayEX, or just extract it as a Zip file. To keep the order of images, you can also enable numbering images.\
+							(5) If enabled the script will play slient music to avoid downloading freeze when page is in background <a href="https://github.com/ccloli/E-Hentai-Downloader/issues/65" target="_blank">(See issue)</a>. Only needed if you have the problem, because the audio-playing icon maybe annoying.\
 						</div>\
 						<div class="g2">\
-							(6) If you cannot original images, but you\'ve already logged in and your account is not blocked or used up your limits, it may caused by your cookies is not sent to the server. This feature may helps you to pass your current cookies to the download request, but please enable it ONLY if you cannot download any original images.\
+							(6) <a href="https://en.wikipedia.org/wiki/Comic_book_archive">Comic book archive</a> is a file type to archive comic images, you can open it with some comic viewer like CDisplay/CDisplayEX, or just extract it as a Zip file. To keep the order of images, you can also enable numbering images.\
 						</div>\
 						<div class="g2">\
-							(7) If you have already logged in, but the script detects that you\'re not logged in, you can enable this to skip login check. Please note that if you are not logged in actually, the script will not work as expect.\
+							(7) If you cannot original images, but you\'ve already logged in and your account is not blocked or used up your limits, it may caused by your cookies is not sent to the server. This feature may helps you to pass your current cookies to the download request, but please enable it ONLY if you cannot download any original images.\
 						</div>\
 						<div class="g2">\
-							(8) If you have problem to download on the same site, like account session is misleading, you can force redirect original download link to another domain. Pass cookies manually may be needed.\
+							(8) If you have already logged in, but the script detects that you\'re not logged in, you can enable this to skip login check. Please note that if you are not logged in actually, the script will not work as expect.\
+						</div>\
+						<div class="g2">\
+							(9) If you have problem to download on the same site, like account session is misleading, you can force redirect original download link to another domain. Pass cookies manually may be needed.\
 						</div>\
 					</div>\
 				</div>\
