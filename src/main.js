@@ -2651,15 +2651,18 @@ function showImageLimits(){
 	}).sort().map(function(elem){
 		var curData = JSON.parse(localStorage.getItem(elem));
 		if (curData.suspended) {
-			return '<a href="https://forums.e-hentai.org/" target="_blank" style="color: #f00">! Account Suspended !</span>';
+			return '<a href="https://forums.e-hentai.org/" target="_blank" style="color: #f00">! Account Suspended !</a>';
 		}
 		if (curData.ipBanned) {
-			return '<a href="https://e-hentai.org/home.php" target="_blank" style="color: #f00">! IP Banned !</span>';
+			return '<span style="color: #f00">! IP Banned !</span>';
+		}
+		if (curData.cur >= curData.total) {
+			return '<span style="color: #f00">' + curData.cur + '/' + curData.total + '</span>'
 		}
 		return curData.cur + '/' + curData.total;
 	});
 
-	ehDownloadBox.getElementsByClassName('ehD-box-limit')[0].innerHTML = ' | <a href="https://e-hentai.org/home.php">Image Limits: ' + list.join('; ') + '</a>';
+	ehDownloadBox.getElementsByClassName('ehD-box-limit')[0].innerHTML = ' | <a href="https://e-hentai.org/home.php" target="_blank">Image Limits: ' + list.join('; ') + '</a>';
 }
 
 function getFileSizeAndLength() {
