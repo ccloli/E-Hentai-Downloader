@@ -41,7 +41,7 @@ var ehDownloadRegex = {
 		/<a href="(\S+?\/s\/\S+?)"><img src="https?:\/\/ehgt.org\/g\/n.png"/
 	],
 	preFetchURL: /<div class="sn"><a[\s\S]+?href="(\S+?\/s\/\S+?)"/,
-	nl: /return nl\('([\d-]+)'\)/,
+	nl: /return nl\('([\d\w-]+)'\)/,
 	fileName: /g\/l.png"\s?\/><\/a><\/div><div>([\s\S]+?) :: /,
 	resFileName: /filename=['"]?([\s\S]+?)['"]?$/m,
 	dangerChars: /[:"*?|<>\/\\\n]/g,
