@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.35.1
+// @version      1.35.2
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -12408,6 +12408,11 @@ function isSourceNexusEnabled() {
 	return +curData.originalImages && +curData.resolution === 0;
 }
 
+function isMPVAvailable() {
+	var curData = JSON.parse(localStorage.getItem('ehd-resolution') || '{"timestamp":0}');
+	return curData.mpvAvailable;
+}
+
 function isGPRequired() {
 	return (
 		(
@@ -13486,7 +13491,19 @@ If you want to reset your limits by paying your GPs or credits right now, or exc
 
 				// logs in #80 shows sometimes it didn't match the regex, but cannot reproduce right now
 				try {
-					imageList[index]['_imageName'] = imageList[index]['imageName'] = res.responseHeaders.match(ehDownloadRegex.resFileName) ? getSafeName(res.responseHeaders.match(ehDownloadRegex.resFileName)[1].trim()) : imageList[index]['imageName'];
+					var imageName = imageList[index]['imageName'];
+					if (ehDownloadRegex.resFileName.test(res.responseHeaders)) {
+						imageName = getSafeName(res.responseHeaders.match(ehDownloadRegex.resFileName)[1].trim())
+					} else {
+						var fileNameFromUrl = (res.finalUrl || requestURL).split('/').pop().split('?').shift();
+						// TODO: enum all image file extensions? at least blocks fullimg.php
+						if (fileNameFromUrl.indexOf('.') > 0 && fileNameFromUrl.indexOf('.php') < 0) {
+							imageName = getSafeName(fileNameFromUrl);
+						} else {
+							imageName = imageList[index]['imageName'];
+						}
+					}
+					imageList[index]['_imageName'] = imageList[index]['imageName'] = imageName;
 				}
 				catch (error) {
 					console.log('[EHD] #' + (index + 1) + ': Parse file name failed');
@@ -13689,6 +13706,9 @@ function getPagesURLFromMPV() {
 			if (pagesRange.length === 0) {
 				pushDialog('Nothing matches provided pages range, stop downloading.');
 				alert('Nothing matches provided pages range, stop downloading.');
+				if (emptyAudio) {
+					emptyAudio.pause();
+				}
 				insertCloseButton();
 				return;
 			}
@@ -13760,6 +13780,13 @@ function getAllPagesURL() {
 	ehDownloadDialog.style.display = 'block';
 	if (!getAllPagesURLFin) {
 		pageURLsList = [];
+
+		if (isMPVAvailable()) {
+			console.log('[EHD] MPV is available, use MPV to fetch all pages');
+			pushDialog('MPV is available, use MPV to fetch all pages.\n');
+			return getPagesURLFromMPV();
+		}
+
 		var pagesLength;
 		try { // in case pages has been modified like #56
 			pagesLength = [].reduce.call(document.querySelectorAll('.ptt td'), function(x, y){
@@ -14653,7 +14680,7 @@ function showImageLimits(){
 		if (curData.ipBanned) {
 			return '<span style="color: #f00">! IP Banned !</span>';
 		}
-		if (curData.cur >= curData.total) {
+		if (+curData.cur >= +curData.total) {
 			return '<span style="color: #f00">' + curData.cur + '/' + curData.total + '</span>'
 		}
 		return curData.cur + '/' + curData.total;
@@ -14755,6 +14782,7 @@ function getResolutionSetting(forced){
 			withoutHentaiAtHome: +((responseText.match(/id="uh_(\d)" checked/) || [])[1] || 0),
 			resolution: +((responseText.match(/id="xr_(\d)" checked/) || [])[1] || 0),
 			originalImages: +((responseText.match(/id="oi_(\d)".*? checked/) || [])[1] || 0),
+			mpvAvailable: responseText.indexOf('name="qb"') >= 0,
 			timestamp: Date.now()
 		};
 		console.log('[EHD] Resolution Setting >', JSON.stringify(preData));
@@ -14811,7 +14839,7 @@ function preCalculateCost(){
 		}
 	}
 
-	return {
+	var result = {
 		cost: cost,
 		normalCost: normalCost,
 		leastCost: leastCost,
@@ -14820,6 +14848,9 @@ function preCalculateCost(){
 		isUsingOriginal: isUsingOriginal,
 		isUsingGP: isUsingGP,
 	};
+
+	console.log('[EHD] Pre-calculate estimated cost >', JSON.stringify(result));
+	return result;
 }
 
 function showPreCalcCost(){
@@ -14838,7 +14869,7 @@ function showPreCalcCost(){
 			// (isUsingOriginal && isSourceNexus ? '...or ' + cost + ' if Source Nexus hath perk is not available.\n' : '') +
 			(isUsingOriginal && !isUsingGP ? '...or ' + leastCost + ' + ' + gp + ' GP if you don\'t have enough viewing limits.\n' : '') +
 			'1 point per 0.1 MB since August 2019, less than 0.1 MB will also be counted.\nDuring peak hours, downloading original images will cost GPs.\nFor gallery uploaded 1 year ago, downloading original images will cost GPs since July 2023.\nThe GP cost is the same as resetting viewing limits.\nEstimated GP cost is a bit more than using offical archive download, in case the sum of each images will be larger than the packed.">'
-		+ 'Estimated Costs: ' + (/* isSourceNexus ? leastCost : */ cost) + '</a>';
+		+ 'Estimated Costs: ' + (/* isSourceNexus ? leastCost : */ cost || '???') + '</a>';
 }
 
 // EHD Box, thanks to JingJang@GitHub, source: https://github.com/JingJang/E-Hentai-Downloader
