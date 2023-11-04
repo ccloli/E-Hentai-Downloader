@@ -2683,7 +2683,7 @@ function showImageLimits(){
 		if (curData.ipBanned) {
 			return '<span style="color: #f00">! IP Banned !</span>';
 		}
-		if (curData.cur >= curData.total) {
+		if (+curData.cur >= +curData.total) {
 			return '<span style="color: #f00">' + curData.cur + '/' + curData.total + '</span>'
 		}
 		return curData.cur + '/' + curData.total;
