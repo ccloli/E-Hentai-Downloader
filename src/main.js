@@ -1712,6 +1712,9 @@ function getPagesURLFromMPV() {
 			if (pagesRange.length === 0) {
 				pushDialog('Nothing matches provided pages range, stop downloading.');
 				alert('Nothing matches provided pages range, stop downloading.');
+				if (emptyAudio) {
+					emptyAudio.pause();
+				}
 				insertCloseButton();
 				return;
 			}
