@@ -2842,7 +2842,7 @@ function preCalculateCost(){
 		}
 	}
 
-	return {
+	var result = {
 		cost: cost,
 		normalCost: normalCost,
 		leastCost: leastCost,
@@ -2851,6 +2851,9 @@ function preCalculateCost(){
 		isUsingOriginal: isUsingOriginal,
 		isUsingGP: isUsingGP,
 	};
+
+	console.log('[EHD] Pre-calculate estimated cost >', JSON.stringify(result));
+	return result;
 }
 
 function showPreCalcCost(){
@@ -2869,7 +2872,7 @@ function showPreCalcCost(){
 			// (isUsingOriginal && isSourceNexus ? '...or ' + cost + ' if Source Nexus hath perk is not available.\n' : '') +
 			(isUsingOriginal && !isUsingGP ? '...or ' + leastCost + ' + ' + gp + ' GP if you don\'t have enough viewing limits.\n' : '') +
 			'1 point per 0.1 MB since August 2019, less than 0.1 MB will also be counted.\nDuring peak hours, downloading original images will cost GPs.\nFor gallery uploaded 1 year ago, downloading original images will cost GPs since July 2023.\nThe GP cost is the same as resetting viewing limits.\nEstimated GP cost is a bit more than using offical archive download, in case the sum of each images will be larger than the packed.">'
-		+ 'Estimated Costs: ' + (/* isSourceNexus ? leastCost : */ cost) + '</a>';
+		+ 'Estimated Costs: ' + (/* isSourceNexus ? leastCost : */ cost || '???') + '</a>';
 }
 
 // EHD Box, thanks to JingJang@GitHub, source: https://github.com/JingJang/E-Hentai-Downloader
