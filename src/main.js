@@ -1492,7 +1492,19 @@ If you want to reset your limits by paying your GPs or credits right now, or exc
 
 				// logs in #80 shows sometimes it didn't match the regex, but cannot reproduce right now
 				try {
-					imageList[index]['_imageName'] = imageList[index]['imageName'] = res.responseHeaders.match(ehDownloadRegex.resFileName) ? getSafeName(res.responseHeaders.match(ehDownloadRegex.resFileName)[1].trim()) : imageList[index]['imageName'];
+					var imageName = imageList[index]['imageName'];
+					if (ehDownloadRegex.resFileName.test(res.responseHeaders)) {
+						imageName = getSafeName(res.responseHeaders.match(ehDownloadRegex.resFileName)[1].trim())
+					} else {
+						var fileNameFromUrl = (res.finalUrl || requestURL).split('/').pop().split('?').shift();
+						// TODO: enum all image file extensions? at least blocks fullimg.php
+						if (fileNameFromUrl.indexOf('.') > 0 && fileNameFromUrl.indexOf('.php') < 0) {
+							imageName = getSafeName(fileNameFromUrl);
+						} else {
+							imageName = imageList[index]['imageName'];
+						}
+					}
+					imageList[index]['_imageName'] = imageList[index]['imageName'] = imageName;
 				}
 				catch (error) {
 					console.log('[EHD] #' + (index + 1) + ': Parse file name failed');
