@@ -414,6 +414,11 @@ function isSourceNexusEnabled() {
 	return +curData.originalImages && +curData.resolution === 0;
 }
 
+function isMPVAvailable() {
+	var curData = JSON.parse(localStorage.getItem('ehd-resolution') || '{"timestamp":0}');
+	return curData.mpvAvailable;
+}
+
 function isGPRequired() {
 	return (
 		(
@@ -1778,6 +1783,13 @@ function getAllPagesURL() {
 	ehDownloadDialog.style.display = 'block';
 	if (!getAllPagesURLFin) {
 		pageURLsList = [];
+
+		if (isMPVAvailable()) {
+			console.log('[EHD] MPV is available, use MPV to fetch all pages');
+			pushDialog('MPV is available, use MPV to fetch all pages.\n');
+			return getPagesURLFromMPV();
+		}
+
 		var pagesLength;
 		try { // in case pages has been modified like #56
 			pagesLength = [].reduce.call(document.querySelectorAll('.ptt td'), function(x, y){
@@ -2773,6 +2785,7 @@ function getResolutionSetting(forced){
 			withoutHentaiAtHome: +((responseText.match(/id="uh_(\d)" checked/) || [])[1] || 0),
 			resolution: +((responseText.match(/id="xr_(\d)" checked/) || [])[1] || 0),
 			originalImages: +((responseText.match(/id="oi_(\d)".*? checked/) || [])[1] || 0),
+			mpvAvailable: responseText.indexOf('name="qb"') >= 0,
 			timestamp: Date.now()
 		};
 		console.log('[EHD] Resolution Setting >', JSON.stringify(preData));
