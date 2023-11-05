@@ -2750,7 +2750,7 @@ function toggleFilenameConfirmInput(hide){
 		extendNodes = document.createElement('div');
 		extendNodes.className = 'ehD-box-extend';
 		extendNodes.innerHTML = '<div class="g2">' + ehDownloadArrow + ' <a><label>File Name <input type="text" class="ehD-box-extend-filename"></label></a></div>' +
-		                        '<div class="g2">' + ehDownloadArrow + ' <a><label>Path Name <input type="text" class="ehD-box-extend-dirname"</label></a></div>';
+		                        '<div class="g2">' + ehDownloadArrow + ' <a><label>Path Name <input type="text" class="ehD-box-extend-dirname"></label></a></div>';
 		ehDownloadBox.appendChild(extendNodes);
 
 		dirName = getReplacedName(!setting['dir-name'] ? '{gid}_{token}' : setting['dir-name']);
