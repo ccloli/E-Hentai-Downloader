@@ -492,8 +492,9 @@ function getSafeName(str, ignoreSlash) {
 }
 
 // replace dir name and zip filename
-function getReplacedName(str) {
+function getReplacedName(str, imageNumber = '') {
 	return replaceHTMLEntites(str.replace(/\{gid\}/gi, unsafeWindow.gid)
+		.replace(/\{imageNumber\}/gi, imageNumber)
 		.replace(/\{token\}/gi, unsafeWindow.token)
 		.replace(/\{title\}/gi, getSafeName(document.getElementById('gn').textContent))
 		.replace(/\{subtitle\}/gi, document.getElementById('gj').textContent ? getSafeName(document.getElementById('gj').textContent) : getSafeName(document.getElementById('gn').textContent))
@@ -526,7 +527,12 @@ function renameImages() {
 				}
 			}
 		}
-		else elem['imageName'] = elem['imageNumber'] + (setting['number-separator'] ? setting['number-separator'] : '：') + elem['imageName'];
+		else {
+			var numberSeparator = setting['number-separator'] ? setting['number-separator'] : '{imageNumber}：';
+			var backwardCompatibleCheck = numberSeparator.includes('{imageNumber}');
+			numberSeparator = backwardCompatibleCheck ? numberSeparator : '{imageNumber}' + numberSeparator;
+			elem['imageName'] = getReplacedName(numberSeparator + elem['imageName'], elem['imageNumber']);
+		}
 	});
 }
 
@@ -2423,7 +2429,7 @@ function showSettings() {
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="speed-detect"> Abort downloading current image if speed is less than <input type="number" data-ehd-setting="speed-min" min="0" placeholder="5" style="width: 46px;"> KB/s in <input type="number" data-ehd-setting="speed-expired" min="1" placeholder="30" style="width: 46px;"> second(s)</label></div>\
 					<div class="g2"><label>Skip current image after retried <input type="number" data-ehd-setting="retry-count" min="1" placeholder="3" style="width: 46px;"> time(s)</label></div>\
 					<div class="g2"><label>Delay <input type="number" data-ehd-setting="delay-request" min="0" placeholder="0" step="0.1" style="width: 46px;"> second(s) before requesting next image</label></div>\
-					<div class="g2"><label><input type="checkbox" data-ehd-setting="number-images"> Number images (001：01.jpg, 002：01_theme.jpg, 003：02.jpg...) (Separator <input type="text" data-ehd-setting="number-separator" style="width: 46px;" placeholder="：">)</label></div>\
+					<div class="g2"><label><input type="checkbox" data-ehd-setting="number-images"> Number images (001：01.jpg, 002：01_theme.jpg, 003：02.jpg...)<br />(Separator <input type="text" data-ehd-setting="number-separator" style="width: 160px;" placeholder="{imageNumber}：">*) templates is also applied</label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="number-real-index"> Number images with original page number if pages range is set</label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="number-auto-retry"> Retry automatically when images download failed</label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="auto-download-cancel"> Get downloaded images automatically when canceled downloading</label></div>\
