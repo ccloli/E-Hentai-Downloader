@@ -677,8 +677,6 @@ function generateZip(isFromFS, fs, isRetry, forced){
 	};
 
 	var errorHandler = function (error) {
-		abData = undefined;
-
 		pushDialog('An error occurred when generating Zip file as ArrayBuffer.');
 		console.error('[EHD] An error occurred when generating Zip file as ArrayBuffer.');
 		console.error(error);
