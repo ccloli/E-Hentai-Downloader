@@ -568,6 +568,21 @@ function generateZip(isFromFS, fs, isRetry, forced){
 		if (setting['save-info'] === 'file' || !setting['save-info']) {
 			(dirName && !ehDownloadRegex.slashOnly.test(dirName) ? zip.folder(dirName) : zip).file('info.txt', infoStr.replace(/\n/gi, '\r\n'));
 		}
+
+		if (setting['save-x-info']) {
+			try {
+				var data = xScripts.getFromHtml(document.documentElement, window.location.href);
+				if (data !== null) {
+					var xInfo = xScripts.toCommonJson(data);
+					xInfo.source_script = 'e-hentai-downloader';
+					var xInfoStr = JSON.stringify(xInfo, null, '  ');
+					zip.file('info.json', xInfoStr.replace(/\r?\n/gi, '\r\n'));
+				}
+			}
+			catch (error) {
+				console.log(error);
+			}
+		}
 	}
 
 	pushDialog('\n\nGenerating Zip file...\n');
@@ -2464,6 +2479,7 @@ function showSettings() {
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="pass-cookies"> Pass cookies manually when downloading images <sup>(7)</sup></label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="force-as-login"> Force as logged in (actual login state: ' + (unsafeWindow.apiuid === -1 ? 'no' : 'yes') + ', uid: ' + unsafeWindow.apiuid + ') <sup>(8)</sup></label></div>\
 					<div class="g2"><label>Download original images from <select data-ehd-setting="original-download-domain"><option value="">current origin</option><option value="e-hentai.org">e-hentai.org</option><option value="exhentai.org">exhentai.org</option></select> <sup>(9)</sup></label></div>\
+					<div class="g2"><label><input type="checkbox" data-ehd-setting="save-x-info"> Save gallery metadata JSON file </label><sup>(6)</sup></div>\
 					<div class="ehD-setting-note">\
 						<div class="g2">\
 							(1) Higher compression level can get smaller file without lossing any data, but may takes more time. If you have a decent CPU you can set it higher, and if you\'re using macOS set it to at least 1.\
@@ -2491,6 +2507,9 @@ function showSettings() {
 						</div>\
 						<div class="g2">\
 							(9) If you have problem to download on the same site, like account session is misleading, you can force redirect original download link to another domain. Pass cookies manually may be needed.\
+						</div>\
+						<div class="g2">\
+							(6) Some external archive managers read tags and other gallery metadata from an info.json file.\
 						</div>\
 					</div>\
 				</div>\
