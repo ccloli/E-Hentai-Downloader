@@ -2479,7 +2479,7 @@ function showSettings() {
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="pass-cookies"> Pass cookies manually when downloading images <sup>(7)</sup></label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="force-as-login"> Force as logged in (actual login state: ' + (unsafeWindow.apiuid === -1 ? 'no' : 'yes') + ', uid: ' + unsafeWindow.apiuid + ') <sup>(8)</sup></label></div>\
 					<div class="g2"><label>Download original images from <select data-ehd-setting="original-download-domain"><option value="">current origin</option><option value="e-hentai.org">e-hentai.org</option><option value="exhentai.org">exhentai.org</option></select> <sup>(9)</sup></label></div>\
-					<div class="g2"><label><input type="checkbox" data-ehd-setting="save-x-info"> Save gallery metadata JSON file </label><sup>(6)</sup></div>\
+					<div class="g2"><label><input type="checkbox" data-ehd-setting="save-x-info"> Save gallery metadata JSON file </label><sup>(x)</sup></div>\
 					<div class="ehD-setting-note">\
 						<div class="g2">\
 							(1) Higher compression level can get smaller file without lossing any data, but may takes more time. If you have a decent CPU you can set it higher, and if you\'re using macOS set it to at least 1.\
@@ -2509,7 +2509,9 @@ function showSettings() {
 							(9) If you have problem to download on the same site, like account session is misleading, you can force redirect original download link to another domain. Pass cookies manually may be needed.\
 						</div>\
 						<div class="g2">\
-							(6) Some external archive managers read tags and other gallery metadata from an info.json file.\
+							(x) Some external archive managers read tags and other gallery metadata from an info.json file.\
+							<br />\
+							<small style="opacity: 0.7">This feature is not maintained by the owner of E-Hentai Downloader, for any issues please feedback to the original author <a href="https://github.com/dnsev-h/E-Hentai-Downloader" target="_blank">dnsev-h</a>. </small>\
 						</div>\
 					</div>\
 				</div>\
