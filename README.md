@@ -2,6 +2,9 @@
 
 Download E-Hentai archive as zip file :package:
 
+> [!NOTE]  
+> This branch includes [PR#140](https://github.com/ccloli/E-Hentai-Downloader/pull/140) which adds `dnsev-h/x` gallery info json file. This branch is provided AS-IS, and won't be merged to master branch, and the author of E-Hentai Downloader may not response to any problem that introduced by such feature.
+
 
 ## Required Environment
 
@@ -28,8 +31,7 @@ Download E-Hentai archive as zip file :package:
 
 ## Install This Script
 
-- [Download from GitHub](https://github.com/ccloli/E-Hentai-Downloader/raw/master/e-hentai-downloader.user.js)
-- [Download from GreasyFork](https://sleazyfork.org/scripts/10379-e-hentai-downloader)
+- [Download from GitHub](https://github.com/ccloli/E-Hentai-Downloader/raw/dnsev-h_x-info/e-hentai-downloader.user.js)
 
 
 ## How To Use
