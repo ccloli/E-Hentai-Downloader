@@ -1120,7 +1120,7 @@ function fetchOriginalImage(index, nodeList) {
 		method: 'GET',
 		url: requestURL,
 		responseType: 'arraybuffer',
-		timeout: (setting['timeout'] !== undefined) ? Number(setting['timeout']) * 1000 : 300000,
+		timeout: (setting['timeout'] !== undefined) ? Number(setting['timeout']) * 1000 || undefined : 300000,
 		headers: requestHeaders,
 		onprogress: function(res) {
 			var t = new Date().getTime();
