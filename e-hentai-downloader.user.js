@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.35.2
+// @version      1.35.3
 // @description  Download E-Hentai archive as zip file
 // @author       864907600cc
 // @icon         https://secure.gravatar.com/avatar/147834caf9ccb0a66b2505c753747867
@@ -12042,7 +12042,7 @@ var ehDownloadRegex = {
 	pagesRange: /^(!?\d*(-\d*(\/\d+)?)?\s*,\s*)*!?\d*(-\d*(\/\d+)?)?$/,
 	pagesURL: /(?:<a href=").+?(?=")/gi,
 	mpvKey: /var imagelist\s*=\s*(\[.+?\]);/,
-	imageLimits: /You are currently at <strong>(\d+)<\/strong> towards a limit of <strong>(\d+)<\/strong>/,
+	imageLimits: /You are currently at <strong>([\d,]+)<\/strong> towards.*?limit of <strong>([\d,]+)<\/strong>/,
 	pagesLength: /<table class="ptt".+>(\d+)<\/a>.+?<\/table>/,
 	IPBanExpires: /The ban expires in \d+ hours?( and \d+ minutes?)?/,
 	donatorPower: /<td>Donations<\/td><td.*>([+-]?[\d\.]+)<\/td>/,
@@ -12671,8 +12671,6 @@ function generateZip(isFromFS, fs, isRetry, forced){
 	};
 
 	var errorHandler = function (error) {
-		abData = undefined;
-
 		pushDialog('An error occurred when generating Zip file as ArrayBuffer.');
 		console.error('[EHD] An error occurred when generating Zip file as ArrayBuffer.');
 		console.error(error);
@@ -13108,11 +13106,15 @@ function fetchOriginalImage(index, nodeList) {
 		requestHeaders.Cookie = document.cookie;
 	}
 
+	if (ehDownloadRegex.originalImagePattern.test(requestURL)) {
+		requestHeaders['Cache-Control'] = 'no-cache';
+	}
+
 	fetchThread[index] = GM_xmlhttpRequest({
 		method: 'GET',
 		url: requestURL,
 		responseType: 'arraybuffer',
-		timeout: (setting['timeout'] !== undefined) ? Number(setting['timeout']) * 1000 : 300000,
+		timeout: (setting['timeout'] !== undefined) ? Number(setting['timeout']) * 1000 || undefined : 300000,
 		headers: requestHeaders,
 		onprogress: function(res) {
 			var t = new Date().getTime();
@@ -13602,6 +13604,19 @@ If you want to reset your limits by paying your GPs or credits right now, or exc
 		});
 
 		nodeList.status.setAttribute('data-inited-abort', '2');
+	}
+
+	if (!nodeList.fileName.dataset.initedClick !== '1') {
+		nodeList.fileName.addEventListener('click', function(event) {
+			if (event.ctrlKey || event.altKey) {
+				var targetWindow = window.open(imageList[index]['imageFinalURL'] || imageList[index]['imageURL']);
+				try {
+					targetWindow.focus();
+				}
+				catch (e) {}
+			}
+		});
+		nodeList.fileName.setAttribute('data-inited-click', '2');
 	}
 
 	updateTotalStatus();
@@ -14648,8 +14663,8 @@ function loadImageLimits(forced, host){
 			else {
 				var data = responseText.match(ehDownloadRegex.imageLimits);
 				if (!data || data.length < 3) return;
-				preData.cur = data[1];
-				preData.total = data[2];
+				preData.cur = +data[1].replace(/,/g, '');
+				preData.total = +data[2].replace(/,/g, '');
 
 				var donatorPower = responseText.match(ehDownloadRegex.donatorPower);
 				if (!donatorPower || donatorPower.length < 2) return;
@@ -14744,7 +14759,7 @@ function toggleFilenameConfirmInput(hide){
 		extendNodes = document.createElement('div');
 		extendNodes.className = 'ehD-box-extend';
 		extendNodes.innerHTML = '<div class="g2">' + ehDownloadArrow + ' <a><label>File Name <input type="text" class="ehD-box-extend-filename"></label></a></div>' +
-		                        '<div class="g2">' + ehDownloadArrow + ' <a><label>Path Name <input type="text" class="ehD-box-extend-dirname"</label></a></div>';
+		                        '<div class="g2">' + ehDownloadArrow + ' <a><label>Path Name <input type="text" class="ehD-box-extend-dirname"></label></a></div>';
 		ehDownloadBox.appendChild(extendNodes);
 
 		dirName = getReplacedName(!setting['dir-name'] ? '{gid}_{token}' : setting['dir-name']);
