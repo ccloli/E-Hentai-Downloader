@@ -1112,6 +1112,10 @@ function fetchOriginalImage(index, nodeList) {
 		requestHeaders.Cookie = document.cookie;
 	}
 
+	if (ehDownloadRegex.originalImagePattern.test(requestURL)) {
+		requestHeaders['Cache-Control'] = 'no-cache';
+	}
+
 	fetchThread[index] = GM_xmlhttpRequest({
 		method: 'GET',
 		url: requestURL,
