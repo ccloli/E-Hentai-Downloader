@@ -48,7 +48,7 @@ var ehDownloadRegex = {
 	pagesRange: /^(!?\d*(-\d*(\/\d+)?)?\s*,\s*)*!?\d*(-\d*(\/\d+)?)?$/,
 	pagesURL: /(?:<a href=").+?(?=")/gi,
 	mpvKey: /var imagelist\s*=\s*(\[.+?\]);/,
-	imageLimits: /You are currently at <strong>(\d+)<\/strong> towards a limit of <strong>(\d+)<\/strong>/,
+	imageLimits: /You are currently at <strong>([\d,]+)<\/strong> towards.*?limit of <strong>([\d,]+)<\/strong>/,
 	pagesLength: /<table class="ptt".+>(\d+)<\/a>.+?<\/table>/,
 	IPBanExpires: /The ban expires in \d+ hours?( and \d+ minutes?)?/,
 	donatorPower: /<td>Donations<\/td><td.*>([+-]?[\d\.]+)<\/td>/,
@@ -2656,8 +2656,8 @@ function loadImageLimits(forced, host){
 			else {
 				var data = responseText.match(ehDownloadRegex.imageLimits);
 				if (!data || data.length < 3) return;
-				preData.cur = data[1];
-				preData.total = data[2];
+				preData.cur = +data[1].replace(/,/g, '');
+				preData.total = +data[2].replace(/,/g, '');
 
 				var donatorPower = responseText.match(ehDownloadRegex.donatorPower);
 				if (!donatorPower || donatorPower.length < 2) return;
