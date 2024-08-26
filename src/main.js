@@ -1612,6 +1612,19 @@ If you want to reset your limits by paying your GPs or credits right now, or exc
 		nodeList.status.setAttribute('data-inited-abort', '2');
 	}
 
+	if (!nodeList.fileName.dataset.initedClick !== '1') {
+		nodeList.fileName.addEventListener('click', function(event) {
+			if (event.ctrlKey || event.altKey) {
+				var targetWindow = window.open(imageList[index]['imageFinalURL'] || imageList[index]['imageURL']);
+				try {
+					targetWindow.focus();
+				}
+				catch (e) {}
+			}
+		});
+		nodeList.fileName.setAttribute('data-inited-click', '2');
+	}
+
 	updateTotalStatus();
 }
 
