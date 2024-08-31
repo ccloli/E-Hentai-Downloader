@@ -55,25 +55,29 @@ This script won't download archive from E-Hentai archive download page, so it wo
 
 ## Should Be Noticed
 
-- ~~If you are using the latest Tampermonkey, or receive a warning of _"A userscript wants to access a cross-origin resource"_ from Tampermonkey, please **Allow All** or turn off "@connect mode" at setting page. For more info, [see details here](https://github.com/ccloli/E-Hentai-Downloader/wiki/Cross-origin-request-warning-from-Tampermonkey)~~  
-  E-Hentai now uses `hath.network` domain to access images, and it's now listed in `@connect`, so you're not needed to set this with latest Tampermonkey
+- The script is NOT provided by the offical, and using automated scripts/tools is NOT encouraged and may trigger throttle limit or even account ban, DON'T BOTHER ANYONE IN SITE FORUMS FOR ANY SCRIPT-RELATED ISSUE, AND USE AT YOUR OWN RISK.   
+  If you're downloading a large gallery, please consider using torrents if available, or using offical archiver for better and stable experience, and the cost should be closed to using script when the gallery is old enough to use GPs.  
+  For the detail rules, see [E-Hentai Image Viewing Limits](https://github.com/ccloli/E-Hentai-Downloader/wiki/E%E2%88%92Hentai-Image-Viewing-Limits).
 - If you see a message about out of memory on Firefox, or file not found on Chrome, [see solution here](https://github.com/ccloli/E-Hentai-Downloader/wiki/Can't-make-Zip-file-successfully).  
-  In short, use Pages Range to limit each zip file under 500 MB is recommended, and enable File System if you're using Chrome, or use other tools, or upgrade your PC with more RAM
-- ~~ViolentMonkey doesn't support timeout, final URL and download progress~~  
-  The latest ViolentMonkey supports these features now
-- ~~Single-thread download mode is removed in 1.18, if you need it, roll back to [old version](https://github.com/ccloli/E-Hentai-Downloader/releases/tag/v1.17.4)~~  
-  Don't use an old version, it doesn't support current site
-- You can also have a look at [E-Hentai Image Viewing Limits](https://github.com/ccloli/E-Hentai-Downloader/wiki/E%E2%88%92Hentai-Image-Viewing-Limits)
-- Most of galleries may have torrents to download. You can download archive with torrent to get stable download experience, get bonus content (most in cosplay gallery), earn GP and credit, and reduce the pressure of E-Hentai original servers (though it's a P2P site)
+  In short, use Pages Range to limit each zip file under 500 MB is recommended, and enable File System if you're using Chrome, or upgrade your PC with more RAM.  
+  However there're some hard limits, like 2 GB Blob Object limit on browser, and 4 GB size limit on ZIP itself. For such cases (and stability) please try other tools like [gallery-dl](https://github.com/mikf/gallery-dl).
+- You can also have a look at [E-Hentai Image Viewing Limits](https://github.com/ccloli/E-Hentai-Downloader/wiki/E%E2%88%92Hentai-Image-Viewing-Limits).
+- Most of galleries may have torrents to download. You can download archive with torrent to get stable download experience, get bonus content (most in cosplay gallery), earn GP and credit, and reduce the pressure of E-Hentai original servers (though it's a P2P site).
 
-Here are some other compatible information, which is not important.
+Here are some other compatible information (and some of them are backed to around 10 years ago), which is not important.
 
-- ~~Tampermonkey uses a dirty way to give `GM_xhr.response` content (transfers `String` to `ArrayBuffer` everytime), so it'll stuck for 1~3 seconds or more after downloaded image (depend on your device). If you are using Microsoft Edge, you may often see the working tab is stuck, saying it's not responding. Just let it go and do nothing. And if you are using Firefox, it's better to use GreaseMonkey from this side~~  
-  The freeze problem should be fixed in Tampermonkey [4.12.6125](https://github.com/Tampermonkey/tampermonkey/issues/279)
-- Dolphin Browser (Android) doesn't support blob URL, so this script cannot be run in Tampermonkey for Dolphin probably
-- UC Browser (Android) doesn't support blob constructor, so this script cannot be run in Tampermonkey for UC probably
-- Opera 12- doesn't support blob URL, and if generated as data URL, it may crash, so it's not supported
-- TrixIE (for IE) is too old and its `GM_xhr` cannot handle large content, so it's not supported
+- ~~Tampermonkey uses a dirty way to give `GM_xhr.response` content (transfers `String` to `ArrayBuffer` everytime), so it'll stuck for 1~3 seconds or more after downloaded image (depend on your device). If you are using Microsoft Edge, you may often see the working tab is stuck, saying it's not responding. Just let it go and do nothing. And if you are using Firefox, it's better to use GreaseMonkey from this side~~.  
+  The freeze problem should be fixed in Tampermonkey [4.12.6125](https://github.com/Tampermonkey/tampermonkey/issues/279).
+- ~~If you are using the latest Tampermonkey, or receive a warning of _"A userscript wants to access a cross-origin resource"_ from Tampermonkey, please **Allow All** or turn off "@connect mode" at setting page. For more info, [see details here](https://github.com/ccloli/E-Hentai-Downloader/wiki/Cross-origin-request-warning-from-Tampermonkey)~~.  
+  E-Hentai now uses `hath.network` domain to access images, and it's now listed in `@connect`, so you're not needed to set this with latest Tampermonkey.
+- ~~ViolentMonkey doesn't support timeout, final URL and download progress.~~  
+  The latest ViolentMonkey supports these features now.
+- ~~Single-thread download mode is removed in 1.18, if you need it, roll back to [old version](https://github.com/ccloli/E-Hentai-Downloader/releases/tag/v1.17.4).~~  
+  Don't use an old version, it doesn't support current site.
+- Dolphin Browser (Android) doesn't support blob URL, so this script cannot be run in Tampermonkey for Dolphin probably.
+- UC Browser (Android) doesn't support blob constructor, so this script cannot be run in Tampermonkey for UC probably.
+- Opera 12- doesn't support blob URL, and if generated as data URL, it may crash, so it's not supported.
+- TrixIE (for IE) is too old and its `GM_xhr` cannot handle large content, so it's not supported.
 
 
 ## Warning And Limitation
@@ -99,7 +103,7 @@ Different browsers have different maximum file size limits. Here is a table to s
 | Chrome 56-                   | 500 MB                        |
 | Chrome 57+                   | 2 GB or (total RAM / 5)       |
 | Chrome (with File System)    | 1 GB / > 2GB (with 1.33+)     |
-| Firefox                      | > 800MB (depends on your RAM) |
+| Firefox                      | 2 GB                          |
 | Opera 15+                    | Same as Chrome                |
 | Edge 18-                     | ?                             |
 | Edge 79+                     | Same as Chrome                |
