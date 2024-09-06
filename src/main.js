@@ -474,6 +474,7 @@ function getSafeName(str, ignoreSlash) {
 		'>': '＞',
 		'/': '／',
 		'\\': '＼',
+		'~': '～',
 		'\n': '-'
 	};
 	var replaceFn = function(match) {
