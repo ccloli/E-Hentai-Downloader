@@ -474,6 +474,7 @@ function getSafeName(str, ignoreSlash) {
 		'>': '＞',
 		'/': '／',
 		'\\': '＼',
+		'~': '～',
 		'\n': '-'
 	};
 	var replaceFn = function(match) {
@@ -1854,7 +1855,7 @@ function getAllPagesURL() {
 				return;
 			}
 
-			var pagesURL = responseText.split('<div id="gdt">')[1].split('<div class="c">')[0].match(ehDownloadRegex.pagesURL);
+			var pagesURL = responseText.split('<div id="gdt"')[1].split('<div class="gtb"')[0].match(ehDownloadRegex.pagesURL);
 			if (!pagesURL) {
 				console.error('[EHD] Response content is incorrect!');
 				if (retryCount < (setting['retry-count'] !== undefined ? setting['retry-count'] : 3)) {
