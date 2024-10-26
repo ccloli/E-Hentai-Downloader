@@ -1994,7 +1994,7 @@ function initEHDownload() {
 			'Roll back and use Blob to handle file.');
 	};
 
-	if ((!setting['store-in-fs'] && !setting['never-warn-large-gallery'] && requiredMBs >= 300) && !confirm('This archive is too large (original size), please consider downloading this archive in a different way.\n\nMaximum allowed file size: Chrome 56- 500MB | Chrome 57+ 2 GB | Firefox ~800 MB (depends on your RAM)\n\nPlease also consider your operating system\'s free memory (RAM), it may take about DOUBLE the size of archive file size when generating ZIP file.\n\n* If you continue, you would probably get an error like "Failed - No File" or "Out Of Memory" if you don\'t have enough RAM and can\'t save the file successfully.\n\n* If you are using Chrome, you can try enabling "Request File System to handle large Zip file" on the settings page.\n\n* You can set Pages Range to download this archive in parts. If you have already enabled it, please ignore this message.\n\nAre you sure to continue downloading?')) return;
+	if ((!isTor && !setting['store-in-fs'] && !setting['never-warn-large-gallery'] && requiredMBs >= 300) && !confirm('This archive is too large (original size), please consider downloading this archive in a different way.\n\nMaximum allowed file size: Chrome 56- 500MB | Chrome 57+ 2 GB | Firefox ~800 MB (depends on your RAM)\n\nPlease also consider your operating system\'s free memory (RAM), it may take about DOUBLE the size of archive file size when generating ZIP file.\n\n* If you continue, you would probably get an error like "Failed - No File" or "Out Of Memory" if you don\'t have enough RAM and can\'t save the file successfully.\n\n* If you are using Chrome, you can try enabling "Request File System to handle large Zip file" on the settings page.\n\n* You can set Pages Range to download this archive in parts. If you have already enabled it, please ignore this message.\n\nAre you sure to continue downloading?')) return;
 	else if (setting['store-in-fs'] && requestFileSystem && requiredMBs >= (setting['fs-size'] !== undefined ? setting['fs-size'] : 200)) {
 		ehDownloadFS.needFileSystem = true;
 		console.log('[EHD] Required File System Space >', requiredBytes);
@@ -2935,7 +2935,7 @@ ehDownloadAction.addEventListener('click', function(event){
 		return torrentsNode.dispatchEvent(new MouseEvent('click'));
 	}
 
-	if (unsafeWindow.apiuid === -1 && !setting['force-as-login'] && !confirm('You are not logged in to E-Hentai Forums, so you can\'t download original images.\nIf you\'ve already logged in, please try logout and login again.\nContinue with resized images?')) return;
+	if (!isTor && unsafeWindow.apiuid === -1 && !setting['force-as-login'] && !confirm('You are not logged in to E-Hentai Forums, so you can\'t download original images.\nIf you\'ve already logged in, please try logout and login again.\nContinue with resized images?')) return;
 
 	console.log('[EHD] Is Peak Hours >', isInPeakHours(), ' | Is Recent Gallery >', isRecentGallery(), ' | Is Ancient Gallery >', isAncientGallery(), ' | Is Donator >', isDonator());
 
@@ -2957,7 +2957,7 @@ ehDownloadAction.addEventListener('click', function(event){
 		}
 	}
 
-	if (!setting['never-warn-limits']) {
+	if (!isTor && !setting['never-warn-limits']) {
 		var costData = preCalculateCost();
 		var limitsData = getImageLimits();
 		var totalLimitsCost = +(setting['force-resized'] ? costData.leastCost : costData.normalCost) || 0;
