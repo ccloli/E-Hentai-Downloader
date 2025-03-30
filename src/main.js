@@ -305,6 +305,8 @@ function initSetting() {
 			GM_setValue('ehD-setting', JSON.stringify(setting));
 		}
 
+		if (setting['patch-tm-serialized-gm-xhr']) patchTMSerializedGMXhr();
+
 		if (setting['recheck-file-name']) toggleFilenameConfirmInput();
 		ehDownloadNumberInput.querySelector('input').checked = needNumberImages;
 		ehDownloadPauseBtn.textContent = setting['force-pause'] ? 'Pause (Downloading images will be aborted)' : 'Pause (Downloading images will keep downloading)';
