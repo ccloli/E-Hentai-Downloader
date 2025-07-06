@@ -25,6 +25,7 @@ var pretitle = document.title;
 var needTitleStatus = false;
 var delayTime = 0;
 var visibleState = true;
+var serializedRequestPatched = false;
 var isTor = location.hostname === 'exhentai55ld2wyap5juskbm67czulomrouspdacjamjeloj7ugjbsad.onion';
 var fetchPagesXHR = new XMLHttpRequest();
 var emptyAudio;
@@ -305,7 +306,9 @@ function initSetting() {
 			GM_setValue('ehD-setting', JSON.stringify(setting));
 		}
 
-		if (setting['patch-tm-serialized-gm-xhr']) patchTMSerializedGMXhr();
+		if (setting['patch-tm-serialized-gm-xhr']) {
+			serializedRequestPatched = patchTMSerializedGMXhr();
+		}
 
 		if (setting['recheck-file-name']) toggleFilenameConfirmInput();
 		ehDownloadNumberInput.querySelector('input').checked = needNumberImages;
@@ -854,7 +857,7 @@ function generateZip(isFromFS, fs, isRetry, forced){
 						writer.onerror = fsErrorHandler;
 						if (stream) {
 							stream.resume();
-							setTimeout(() => {
+							setTimeout(function () {
 								writer.write(new Blob(chunk, { type: 'application/zip' }));
 							}, 0);
 						}
@@ -2484,6 +2487,7 @@ function showSettings() {
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="pass-cookies"> Pass cookies manually when downloading images <sup>(7)</sup></label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="force-as-login"> Force as logged in (actual login state: ' + (unsafeWindow.apiuid === -1 ? 'no' : 'yes') + ', uid: ' + unsafeWindow.apiuid + ') <sup>(8)</sup></label></div>\
 					<div class="g2"><label>Download original images from <select data-ehd-setting="original-download-domain"><option value="">current origin</option><option value="e-hentai.org">e-hentai.org</option><option value="exhentai.org">exhentai.org</option></select> <sup>(9)</sup></label></div>\
+					<div class="g2"><label><input type="checkbox" data-ehd-setting="patch-tm-serialized-gm-xhr"> Patch Tampermonkey serialized request for Chrome Manifest v3 Extension <sup>(10)</sup></label></div>\
 					<div class="ehD-setting-note">\
 						<div class="g2">\
 							(1) Higher compression level can get smaller file without lossing any data, but may takes more time. If you have a decent CPU you can set it higher, and if you\'re using macOS set it to at least 1.\
@@ -2511,6 +2515,9 @@ function showSettings() {
 						</div>\
 						<div class="g2">\
 							(9) If you have problem to download on the same site, like account session is misleading, you can force redirect original download link to another domain. Pass cookies manually may be needed.\
+						</div>\
+						<div class="g2">\
+							(10) If enabled it may fix the serialized request on latest Chrome (with Manifest V3 extension) + Tampermonkey 5.3.2+, but downloading progress, speed detect and timed out abort may be broken <a href="https://github.com/Tampermonkey/tampermonkey/issues/2215" target="_blank">(See issue)</a>.\
 						</div>\
 					</div>\
 				</div>\
@@ -2599,6 +2606,19 @@ function showSettings() {
 						setting[curSettingName] = inputs[i].value;
 					}
 				}
+
+				if (setting['patch-tm-serialized-gm-xhr'] && !serializedRequestPatched) {
+					serializedRequestPatched = patchTMSerializedGMXhr();
+					if (!serializedRequestPatched) {
+						alert('Patch GM_xhr failed, you may need a hard reload to take effect.')
+					}
+				} else if (!setting['patch-tm-serialized-gm-xhr'] && serializedRequestPatched) {
+					serializedRequestPatched = !revertTMSerializedGMXhrPatch();
+					if (serializedRequestPatched) {
+						alert('Revert GM_xhr patch failed, you may need a hard reload to take effect.')
+					}
+				}
+
 				GM_setValue('ehD-setting', JSON.stringify(setting));
 			}
 			document.body.removeChild(ehDownloadSettingPanel);
