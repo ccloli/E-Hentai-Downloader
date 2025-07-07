@@ -9,11 +9,13 @@ Download E-Hentai archive as zip file :package:
 | ------- | ------------ | ------------ | ------------- |
 | Firefox (56-) | [3.2 beta2+](https://addons.mozilla.org/firefox/addon/greasemonkey/)  |  | |
 | Firefox (57+) | [4.1 beta5+](https://addons.mozilla.org/firefox/addon/greasemonkey/)  | [4.0.5054+](https://addons.mozilla.org/firefox/addon/tampermonkey/) | [2.8.18+](https://addons.mozilla.org/firefox/addon/violentmonkey/) |
-| Chrome |  | [3.5.3630+](https://chrome.google.com/webstore/detail/dhdgffkkebhmkfjojejmpbldmpobfkfo)  | [2.2.6+](https://chrome.google.com/webstore/detail/jinjaccalgkegednnccohejagnlnfdag) |
+| Chrome |  | [3.5.3630+](https://chrome.google.com/webstore/detail/dhdgffkkebhmkfjojejmpbldmpobfkfo) | [2.2.6+](https://chrome.google.com/webstore/detail/jinjaccalgkegednnccohejagnlnfdag) |
+| Chrome (133+) |  | [5.0.0+](https://chrome.google.com/webstore/detail/dhdgffkkebhmkfjojejmpbldmpobfkfo) <sup>(5)</sup> | Incompatible <sup>(6)</sup> |
 | Opera (15+) | |  [3.5.3630+](https://addons.opera.com/extensions/details/tampermonkey-beta/)  | [2.1.10+](https://addons.opera.com/extensions/details/violent-monkey/) |
 | Safari (10.1+) <sup>(1)</sup> | | [4.3.5421+](https://tampermonkey.net/?browser=safari) |
 | Edge (18-) <sup>(2)</sup> | | [4.2.5284+](https://www.microsoft.com/store/p/tampermonkey/9nblggh5162s) |
 | Edge (79+) | | [4.10.6111+](https://microsoftedge.microsoft.com/addons/detail/tampermonkey/iikmkjmpaadaobahmlepeloendndfphd) | [2.12.8+](https://microsoftedge.microsoft.com/addons/detail/eeagobfjdenkkddmbclomhiblgggliao) |
+| Edge (133+) |  | [5.0.0+](https://microsoftedge.microsoft.com/addons/detail/tampermonkey/iikmkjmpaadaobahmlepeloendndfphd) <sup>(5)</sup> |  |
 | Maxthon | | | [2.1.10+](http://extension.maxthon.cn/detail/index.php?view_id=1680) |
 | Yandex Browser for Android <sup>(3)</sup> | | [4.2.5291+](https://chrome.google.com/webstore/detail/dhdgffkkebhmkfjojejmpbldmpobfkfo/) | [2.2.6+](https://chrome.google.com/webstore/detail/jinjaccalgkegednnccohejagnlnfdag) |
 | Kiwi Browser <sup>(3)</sup> | | [4.11+](https://chrome.google.com/webstore/detail/dhdgffkkebhmkfjojejmpbldmpobfkfo/) | [2.12.8+](https://chrome.google.com/webstore/detail/jinjaccalgkegednnccohejagnlnfdag) |
@@ -24,6 +26,9 @@ Download E-Hentai archive as zip file :package:
 > (2) You must upgrade your macOS to 10.12.4 which supports `download` attribute of `<a>` tag.  
 > (3) It's not a good idea to use it on mobile with limited RAM, but it can work, so it's up to you.  
 > (4) Firefox Nightly user requires to follow [this steps](https://blog.mozilla.org/addons/2020/09/29/expanded-extension-support-in-firefox-for-android-nightly/) to install extensions not in default list.  
+> (5) Chrome with forcing Manifest v3 Extension (probably 133+) requires to **enable Developer Mode** to load userscript, and Chrome 138+ may require to **enable Allow User Scripts permission**. Make sure to follow [this steps](https://www.tampermonkey.net/faq.php#Q209) or the script will not load.  
+> (5) Chrome with forcing Manifest v3 Extension (probably 133+) requires to **enable Manifest V2  extension** to load extension by enabling `chrome://flags/#allow-legacy-mv2-extensions`, but it may not working anymore since 139+.  
+
 
 
 ## Install This Script
