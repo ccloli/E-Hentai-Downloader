@@ -2650,7 +2650,7 @@ function showSettings() {
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="force-as-login"> Force as logged in (actual login state: ' + (unsafeWindow.apiuid === -1 ? 'no' : 'yes') + ', uid: ' + unsafeWindow.apiuid + ') <sup>(8)</sup></label></div>\
 					<div class="g2"><label>Download original images from <select data-ehd-setting="original-download-domain"><option value="">current origin</option><option value="e-hentai.org">e-hentai.org</option><option value="exhentai.org">exhentai.org</option></select> <sup>(9)</sup></label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="checksum"> Validate downloaded image checksum <sup>(10)</sup></label></div>\
-					<div class="g2"><label><input type="checkbox" data-ehd-setting="patch-tm-serialized-gm-xhr"> Patch Tampermonkey serialized request for Chrome Manifest v3 Extension <sup>(11)</sup></label></div>\
+					<div class="g2"' + ((GM_info || {}).scriptHandler === 'Tampermonkey' && ((GM_info || {}).version || '').split('.').every((e, i) => e >= [5, 3, 2][i]) ? ' style="opacity: 0.5;" title="The patch only applies to Tampermonkey 5.3.2+"' : '') + '><label><input type="checkbox" data-ehd-setting="patch-tm-serialized-gm-xhr"> Patch Tampermonkey serialized request for Chrome Manifest v3 Extension <sup>(11)</sup></label></div>\
 					<div class="ehD-setting-note">\
 						<div class="g2">\
 							(1) Higher compression level can get smaller file without lossing any data, but may takes more time. If you have a decent CPU you can set it higher, and if you\'re using macOS set it to at least 1.\
