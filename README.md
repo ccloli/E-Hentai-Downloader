@@ -27,7 +27,7 @@ Download E-Hentai archive as zip file :package:
 > (3) It's not a good idea to use it on mobile with limited RAM, but it can work, so it's up to you.  
 > (4) Firefox Nightly user requires to follow [this steps](https://blog.mozilla.org/addons/2020/09/29/expanded-extension-support-in-firefox-for-android-nightly/) to install extensions not in default list.  
 > (5) Chrome with forcing Manifest v3 Extension (probably 133+) requires to **enable Developer Mode** to load userscript, and Chrome 138+ may require to **enable Allow User Scripts permission**. Make sure to follow [this steps](https://www.tampermonkey.net/faq.php#Q209) or the script will not load.  
-> (5) Chrome with forcing Manifest v3 Extension (probably 133+) requires to **enable Manifest V2  extension** to load extension by enabling `chrome://flags/#allow-legacy-mv2-extensions`, but it may not working anymore since 139+.  
+> (6) Chrome with forcing Manifest v3 Extension (probably 133+) requires to **enable Manifest V2  extension** to load extension by enabling `chrome://flags/#allow-legacy-mv2-extensions`, but it may not working anymore since 139+.  
 
 
 
