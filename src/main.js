@@ -305,6 +305,9 @@ function initSetting() {
 		if (typeof setting['actions-sticky'] === 'undefined') {
 			setting['actions-sticky'] = true;
 		}
+		if (typeof setting['checksum'] === 'undefined') {
+			setting['checksum'] = true;
+		}
 
 		console.log('[EHD] E-Hentai Downloader Setting >', res, '-->', JSON.stringify(setting));
 
