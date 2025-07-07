@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         E-Hentai Downloader
-// @version      1.35.4
+// @version      1.36
 // @description  Download E-Hentai archive as zip file (with x-info patch by dnsev-h)
 // @author       864907600cc, dnsev-h
 // @icon         data:image/png;base64,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
@@ -12728,7 +12728,227 @@ module.exports.toCommonJson = require('./.x/src/api/gallery-info/common-json').t
 
 },{"./.x/src/api/gallery-info/common-json":2,"./.x/src/api/gallery-info/get-from-html":3}]},{},[6])(6)
 });
+// see https://github.com/Tampermonkey/utils/blob/main/requires/gh_2215_make_GM_xhr_more_parallel_again.js
+// the patch also converts all ES2015+ to ES5 by using Babel in case of really old browsers
+var patchTMSerializedGMXhr = (function() {
 
+// only very old GreaseMonkey (or newer 4.x?) may not have GM_info,
+// since it's GM (and of course it's not MV3), it doesn't need a patch.
+if (typeof GM_info === 'undefined') {
+	return true;
+}
+
+var _excluded = ["onload", "onloadend", "onerror", "onabort", "ontimeout"],
+	_excluded2 = ["onload", "ontimeout", "onerror"];
+function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
+function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
+function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == typeof i ? i : i + ""; }
+function _toPrimitive(t, r) { if ("object" != typeof t || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != typeof i) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+function _objectWithoutProperties(e, t) { if (null == e) return {}; var o, r, i = _objectWithoutPropertiesLoose(e, t); if (Object.getOwnPropertySymbols) { var n = Object.getOwnPropertySymbols(e); for (r = 0; r < n.length; r++) o = n[r], -1 === t.indexOf(o) && {}.propertyIsEnumerable.call(e, o) && (i[o] = e[o]); } return i; }
+function _objectWithoutPropertiesLoose(r, e) { if (null == r) return {}; var t = {}; for (var n in r) if ({}.hasOwnProperty.call(r, n)) { if (-1 !== e.indexOf(n)) continue; t[n] = r[n]; } return t; }
+// start of gh_2215_make_GM_xhr_more_parallel_again.js
+/*
+ * https://github.com/Tampermonkey/tampermonkey/issues/2215
+ *
+ * This script provides a workaround for a Chrome MV3 issue (https://github.com/w3c/webextensions/issues/694)
+ * where extensions can't set/delete headers that are preserved over redirects.
+ *
+ * By setting `redirect: 'manual'` and following redirects manually, this script ensures request redirects work
+ * as intended and requests to different URLs are made in parallel (again).
+ *
+ * Userscript authors should include this as a `@require` when they need to make parallel requests with GM_xmlhttpRequest,
+ * especially if requests might take a long time to complete.
+ *
+ * Including this script will modify the behavior of GM_xmlhttpRequest and GM.xmlHttpRequest in Tampermonkey only.
+ *
+ * Usage:
+ *
+ * Add this to the metadata block of your userscript:
+ *
+ * // @grant     GM_xmlhttpRequest
+ * // @require   https://raw.githubusercontent.com/Tampermonkey/utils/refs/heads/main/requires/gh_2215_make_GM_xhr_more_parallel_again.js
+ *
+**/
+
+/* global GM_info, GM_xmlhttpRequest, GM */
+
+var HAS_GM = typeof GM !== 'undefined';
+var NEW_GM = function (scope, GM) {
+	// Check if running in Tampermonkey and if version supports redirect control
+	if (GM_info.scriptHandler !== "Tampermonkey" || compareVersions(GM_info.version, "5.3.2") < 0) return;
+
+	// Backup original functions
+	var GM_xmlhttpRequestOrig = GM_xmlhttpRequest;
+	var GM_xmlHttpRequestOrig = GM.xmlHttpRequest;
+	function compareVersions(v1, v2) {
+		var parts1 = v1.split('.').map(Number);
+		var parts2 = v2.split('.').map(Number);
+		var length = Math.max(parts1.length, parts2.length);
+		for (var i = 0; i < length; i++) {
+			var num1 = parts1[i] || 0;
+			var num2 = parts2[i] || 0;
+			if (num1 > num2) return 1;
+			if (num1 < num2) return -1;
+		}
+		return 0;
+	}
+
+	// Wrapper for GM_xmlhttpRequest
+	function GM_xmlhttpRequestWrapper(odetails) {
+		// If redirect is manually set, simply pass odetails to the original function
+		if (odetails.redirect !== undefined) {
+			return GM_xmlhttpRequestOrig(odetails);
+		}
+
+		// Warn if onprogress is used with settings incompatible with fetch mode used in background
+		if (odetails.onprogress || odetails.fetch === false) {
+			console.warn("Fetch mode does not support onprogress in the background.");
+		}
+		var _onload = odetails.onload,
+			onloadend = odetails.onloadend,
+			_onerror = odetails.onerror,
+			_onabort = odetails.onabort,
+			_ontimeout = odetails.ontimeout,
+			details = _objectWithoutProperties(odetails, _excluded);
+
+		// Set redirect to manual and handle redirects
+		var _handleRedirects = function handleRedirects(initialDetails) {
+			var request = GM_xmlhttpRequestOrig(_objectSpread(_objectSpread({}, initialDetails), {}, {
+				redirect: 'manual',
+				onload: function onload(response) {
+					if (response.status >= 300 && response.status < 400) {
+						var m = response.responseHeaders.match(/Location:\s*(\S+)/i);
+						// Follow redirect manually
+						var redirectUrl = m && m[1];
+						if (redirectUrl) {
+							var absoluteUrl = new URL(redirectUrl, initialDetails.url).href;
+							_handleRedirects(_objectSpread(_objectSpread({}, initialDetails), {}, {
+								url: absoluteUrl
+							}));
+							return;
+						}
+					}
+					if (_onload) _onload.call(this, response);
+					if (onloadend) onloadend.call(this, response);
+				},
+				onerror: function onerror(response) {
+					if (_onerror) _onerror.call(this, response);
+					if (onloadend) onloadend.call(this, response);
+				},
+				onabort: function onabort(response) {
+					if (_onabort) _onabort.call(this, response);
+					if (onloadend) onloadend.call(this, response);
+				},
+				ontimeout: function ontimeout(response) {
+					if (_ontimeout) _ontimeout.call(this, response);
+					if (onloadend) onloadend.call(this, response);
+				}
+			}));
+			return request;
+		};
+		return _handleRedirects(details);
+	}
+
+	// Wrapper for GM.xmlHttpRequest
+	function GM_xmlHttpRequestWrapper(odetails) {
+		var abort;
+		var p = new Promise(function (resolve, reject) {
+			var onload = odetails.onload,
+				ontimeout = odetails.ontimeout,
+				onerror = odetails.onerror,
+				send = _objectWithoutProperties(odetails, _excluded2);
+			send.onerror = function (r) {
+				if (onerror) {
+					resolve(r);
+					onerror.call(this, r);
+				} else {
+					reject(r);
+				}
+			};
+			send.ontimeout = function (r) {
+				if (ontimeout) {
+					// See comment above
+					resolve(r);
+					ontimeout.call(this, r);
+				} else {
+					reject(r);
+				}
+			};
+			send.onload = function (r) {
+				resolve(r);
+				if (onload) onload.call(this, r);
+			};
+			var a = GM_xmlhttpRequestWrapper(send).abort;
+			if (abort === true) {
+				a();
+			} else {
+				abort = a;
+			}
+		});
+		p.abort = function () {
+			if (typeof abort === 'function') {
+				abort();
+			} else {
+				abort = true;
+			}
+		};
+		return p;
+	}
+
+	// Export wrappers
+	GM_xmlhttpRequest = GM_xmlhttpRequestWrapper;
+	scope.GM_xmlhttpRequestOrig = GM_xmlhttpRequestOrig;
+	var gopd = Object.getOwnPropertyDescriptor(GM, 'xmlHttpRequest');
+	if (gopd && gopd.configurable === false) {
+		return {
+			__proto__: GM,
+			xmlHttpRequest: GM_xmlHttpRequestWrapper,
+			xmlHttpRequestOrig: GM_xmlHttpRequestOrig
+		};
+	} else {
+		GM.xmlHttpRequest = GM_xmlHttpRequestWrapper;
+		GM.xmlHttpRequestOrig = GM_xmlHttpRequestOrig;
+	}
+}(this, HAS_GM ? GM : {});
+if (HAS_GM && NEW_GM) GM = NEW_GM;
+// end of gh_2215_make_GM_xhr_more_parallel_again.js
+
+var result = !!this.GM_xmlhttpRequestOrig || !!(GM || {}).xmlHttpRequestOrig;
+console.info('[EHD] Patch GM_xhr >', result);
+return result;
+
+}).bind(this);
+
+var revertTMSerializedGMXhrPatch = (function() {
+	try {
+		var GM_xmlhttpRequestOrig = this.GM_xmlhttpRequestOrig;
+		var GM_xmlHttpRequestOrig = (GM || {}).xmlHttpRequestOrig;
+
+		if (GM_xmlhttpRequestOrig) {
+			GM_xmlhttpRequest = GM_xmlhttpRequestOrig;
+		}
+		if (GM_xmlHttpRequestOrig) {
+			if (typeof GM !== 'undefined') {
+				const gopd = Object.getOwnPropertyDescriptor(GM, 'xmlHttpRequest');
+				if (gopd && gopd.configurable === false) {
+					GM = {
+						__proto__: GM,
+						xmlHttpRequest: GM_xmlHttpRequestOrig
+					};
+				} else {
+					GM.xmlHttpRequest = GM_xmlHttpRequestOrig;
+				}
+			}
+		}
+		console.info('[EHD] Patch GM_xhr >', false);
+		return true;
+	} catch (err) {
+		console.warn('[EHD] Failed to revert GM_xhr patch');
+	}
+
+	return false;
+}).bind(this);
 var zip;
 var imageList = [];
 var imageData = [];
@@ -12755,6 +12975,7 @@ var pretitle = document.title;
 var needTitleStatus = false;
 var delayTime = 0;
 var visibleState = true;
+var serializedRequestPatched = false;
 var isTor = location.hostname === 'exhentai55ld2wyap5juskbm67czulomrouspdacjamjeloj7ugjbsad.onion';
 var fetchPagesXHR = new XMLHttpRequest();
 var emptyAudio;
@@ -12785,7 +13006,16 @@ var ehDownloadRegex = {
 	postedTime: /<td.*?>Posted:<\/td><td.*?>(.*?)<\/td>/,
 	categoryTag: /g\/c\/(\w+)\./,
 	slashOnly: /^[\\/]*$/,
-	originalImagePattern: /\/fullimg(?:\.php\?|\/)/
+	originalImagePattern: /\/fullimg(?:\.php\?|\/)/,
+	imageUrlParse: {
+		// /h/f867d249d46a297334a8b1afb54d81653bf130b6-107516-1017-1430-wbp/keystamp=1751874600-6639b6b877;fileindex=191805969;xres=org/000.webp
+		// /om/186543244/5b344bde0f91be5d1863bbc5678efad62def7d2f-3194545-1756-2479-jpg/x/0/o2kdsmedq42cpx1pd8c/001.jpg
+		// /om/191807275/82e263d92cf4b4773b35f5dc62ea8ae0c0942c66-1603232-1200-1600-png/0134c7a0b0defdd71818700e0e7556c01e610fa2-165032-1200-1600-wbp/1280/vctr3olsxn93i81pebm/33_a1.webp
+		signature: /(\w{40})-(\d+)-(\d+)-(\d+)-(\w+)/,
+		h: /\/h\/(.+?)\/(.+?)\/(.+$)/,
+		om: /\/om\/(\d+?)\/(.+?)\/(.+?)\/(\d+)\/.+?\/(.+$)/,
+	},
+	pageUrlParse: /\/s\/(\w+)\/(\d+)-(\d+)/,
 };
 
 var dateOffset = new Date().getTimezoneOffset() * 60000;
@@ -13025,6 +13255,9 @@ function initSetting() {
 		if (typeof setting['actions-sticky'] === 'undefined') {
 			setting['actions-sticky'] = true;
 		}
+		if (typeof setting['checksum'] === 'undefined') {
+			setting['checksum'] = true;
+		}
 
 		console.log('[EHD] E-Hentai Downloader Setting >', res, '-->', JSON.stringify(setting));
 
@@ -13033,6 +13266,10 @@ function initSetting() {
 			delete setting['enable-multi-threading'];
 			alert('Single-thread download is unavailable now, because its code is too old and it\'s hard to add new features on it.\n\nIf you still need it, please roll back to the last-supported version (1.17.4).\n\nYou can get it at:\n- GitHub: https://github.com/ccloli/E-Hentai-Downloader/releases\n- GreasyFork: https://greasyfork.org/scripts/10379-e-hentai-downloader/versions (requires log in and enable Adult content)\n- SleazyFork: https://sleazyfork.org/scripts/10379-e-hentai-downloader/versions');
 			GM_setValue('ehD-setting', JSON.stringify(setting));
+		}
+
+		if (setting['patch-tm-serialized-gm-xhr']) {
+			serializedRequestPatched = patchTMSerializedGMXhr();
 		}
 
 		if (setting['recheck-file-name']) toggleFilenameConfirmInput();
@@ -13230,6 +13467,81 @@ function getReplacedName(str) {
 		.replace(/\{subtitle\}/gi, document.getElementById('gj').textContent ? getSafeName(document.getElementById('gj').textContent) : getSafeName(document.getElementById('gn').textContent))
 		.replace(/\{tag\}|\{category\}/gi, document.querySelector('#gdc .cs').textContent.trim().toUpperCase())
 		.replace(/\{uploader\}/gi, getSafeName(document.querySelector('#gdn').textContent)));
+}
+
+function parseImageUrl(url) {
+	var result = {};
+	if (url.includes('/om/')) {
+		result.serverType = 'om';
+	} else if (url.includes('/h/')) {
+		result.serverType = 'h';
+	}
+
+	if (result.serverType === 'h') {
+		// H@H
+		// https://lwhzxzy.nxgbghauhksz.hath.network:34587/h/f867d249d46a297334a8b1afb54d81653bf130b6-107516-1017-1430-wbp/keystamp=1751874600-6639b6b877;fileindex=191805969;xres=org/000.webp
+		var pattern = url.match(ehDownloadRegex.imageUrlParse.h);
+		if (!pattern) {
+			return result;
+		}
+
+		var signature = pattern[1], params = pattern[2], fileName = pattern[3];
+		var parsedParams = params.split(';').reduce(function(res, item) {
+			var i = item.split('=');
+			res[i[0]] = res[i[1]];
+			return res;
+		}, {});
+		var parsedSignature = signature.match(ehDownloadRegex.imageUrlParse.signature) || [];
+
+		result.sha1 = parsedSignature[1];
+		result.fileSize = parsedSignature[2];
+		result.width = parsedSignature[3];
+		result.height = parsedSignature[4];
+		result.fileType = parsedSignature[5];
+		result.fileIndex = parsedParams.fileindex;
+		result.xres = parsedParams.xres === 'org' ? '0' : parsedParams.xres;
+		result.fileName = fileName;
+	} else if (result.serverType === 'om') {
+		// origin server
+		var pattern = url.match(ehDownloadRegex.imageUrlParse.om);
+		if (!pattern) {
+			return result;
+		}
+
+		var fileIndex = pattern[1], originalSignature = pattern[2], signature = pattern[3], xres = pattern[4], fileName = pattern[5];
+		var parsedOriginalSignature = originalSignature.match(ehDownloadRegex.imageUrlParse.signature) || [];
+		var parsedSignature = signature === 'x' ? parsedOriginalSignature : signature.match(ehDownloadRegex.imageUrlParse.signature) || [];
+
+		result.sha1 = parsedSignature[1];
+		result.fileSize = parsedSignature[2];
+		result.width = parsedSignature[3];
+		result.height = parsedSignature[4];
+		result.fileType = parsedSignature[5];
+		result.originalSha1 = parsedOriginalSignature[1];
+		result.originalFileSize = parsedOriginalSignature[2];
+		result.originalWidth = parsedOriginalSignature[3];
+		result.originalHeight = parsedOriginalSignature[4];
+		result.originalFileType = parsedOriginalSignature[5];
+		result.fileIndex = fileIndex;
+		result.xres = xres;
+		result.fileName = fileName;
+	}
+	return result;
+}
+
+function getSha1Checksum(abData) {
+	return new Promise(function(resolve, reject) {
+		if (!crypto.subtle.digest) {
+			resolve(null);
+			return;
+		}
+		crypto.subtle.digest('SHA-1', abData).then(function (res) {
+			var result = Array.from(new Uint8Array(res)).map(function(item) {
+				return ('00' + item.toString(16)).substr(-2);
+			}).join('');
+			resolve(result);
+		}).catch(reject);
+	});
 }
 
 function PageData(pageURL, imageURL, imageName, nextNL, realIndex, imageNumber) {
@@ -13597,7 +13909,7 @@ function generateZip(isFromFS, fs, isRetry, forced){
 						writer.onerror = fsErrorHandler;
 						if (stream) {
 							stream.resume();
-							setTimeout(() => {
+							setTimeout(function () {
 								writer.write(new Blob(chunk, { type: 'application/zip' }));
 							}, 0);
 						}
@@ -14266,6 +14578,81 @@ If you want to reset your limits by paying your GPs or credits right now, or exc
 					imageList[index]['_imageName'] = imageList[index]['imageName'];
 				}
 
+				if (setting['checksum']) {
+					var parsedImageUrl = parseImageUrl(res.finalUrl || requestURL);
+					// full sha1
+					var checksum = parsedImageUrl.sha1;
+					if (!checksum) {
+						var parsedPageUrl = imageList[index]['pageURL'].match(ehDownloadRegex.pageUrlParse) || [];
+						// segment sha1, only has the first 10 chars
+						checksum = parsedPageUrl[1];
+					}
+
+					if (checksum) {
+						updateProgress(nodeList, {
+							name: '#' + imageList[index]['realIndex'] + ': ' + imageList[index]['imageName'],
+							status: 'Hashing...',
+							progress: '1',
+							progressText: '100%',
+						});
+
+						getSha1Checksum(response).then((hash) => {
+							// required to be matched at start
+							// hash may be null, which may because the browser doesn't support it
+							if (!hash || hash.indexOf(checksum) !== 0) {
+								console.log('[EHD] #' + (index + 1) + ': Checksum mismatch');
+								console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL, '\nFinal URL >', res.finalUrl, '\nResposeHeaders >' + res.responseHeaders);
+								console.log('[EHD] #' + (index + 1) + ': Expected Checksum >', checksum, ' | Actual Checksum >', hash);
+
+								updateProgress(nodeList, {
+									status: 'Failed! (Checksum Mismatch)',
+									progress: '0',
+									progressText: '',
+									class: 'ehD-pt-warning'
+								});
+
+								for (var i in res) {
+									delete res[i];
+								}
+								response = null;
+								return failedFetching(index, nodeList);
+							}
+
+							updateProgress(nodeList, {
+								name: '#' + imageList[index]['realIndex'] + ': ' + imageList[index]['imageName'],
+								status: 'Succeed!',
+								progress: '1',
+								progressText: '100%',
+								class: 'ehD-pt-succeed'
+							});
+
+							storeRes(response, index);
+
+							for (var i in res) {
+								delete res[i];
+							}
+							response = null;
+						}).catch(function (error) {
+							console.log('[EHD] #' + (index + 1) + ': Checksum failed');
+							console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL, '\nFinal URL >', res.finalUrl, '\nResposeHeaders >' + res.responseHeaders);
+							console.error(error);
+
+							updateProgress(nodeList, {
+								status: 'Failed! (Checksum Error)',
+								progress: '0',
+								progressText: '',
+								class: 'ehD-pt-failed'
+							});
+
+							for (var i in res) {
+								delete res[i];
+							}
+							return failedFetching(index, nodeList);
+						});
+						return;
+					}
+				}
+
 				updateProgress(nodeList, {
 					name: '#' + imageList[index]['realIndex'] + ': ' + imageList[index]['imageName'],
 					status: 'Succeed!',
@@ -14284,7 +14671,7 @@ If you want to reset your limits by paying your GPs or credits right now, or exc
 			catch (error) {
 				console.log('[EHD] #' + (index + 1) + ': Unknown Error (Please send feedback)');
 				console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL, '\nFinal URL >', res.finalUrl, '\nResposeHeaders >' + res.responseHeaders);
-				console.log(error);
+				console.error(error);
 
 				updateProgress(nodeList, {
 					status: 'Failed! (Unknown)',
@@ -14739,7 +15126,7 @@ function initEHDownload() {
 			'Roll back and use Blob to handle file.');
 	};
 
-	if ((!setting['store-in-fs'] && !setting['never-warn-large-gallery'] && requiredMBs >= 300) && !confirm('This archive is too large (original size), please consider downloading this archive in a different way.\n\nMaximum allowed file size: Chrome 56- 500MB | Chrome 57+ 2 GB | Firefox ~800 MB (depends on your RAM)\n\nPlease also consider your operating system\'s free memory (RAM), it may take about DOUBLE the size of archive file size when generating ZIP file.\n\n* If you continue, you would probably get an error like "Failed - No File" or "Out Of Memory" if you don\'t have enough RAM and can\'t save the file successfully.\n\n* If you are using Chrome, you can try enabling "Request File System to handle large Zip file" on the settings page.\n\n* You can set Pages Range to download this archive in parts. If you have already enabled it, please ignore this message.\n\nAre you sure to continue downloading?')) return;
+	if ((!isTor && !setting['store-in-fs'] && !setting['never-warn-large-gallery'] && requiredMBs >= 300) && !confirm('This archive is too large (original size), please consider downloading this archive in a different way.\n\nMaximum allowed file size: Chrome 56- 500MB | Chrome 57+ 2 GB | Firefox ~800 MB (depends on your RAM)\n\nPlease also consider your operating system\'s free memory (RAM), it may take about DOUBLE the size of archive file size when generating ZIP file.\n\n* If you continue, you would probably get an error like "Failed - No File" or "Out Of Memory" if you don\'t have enough RAM and can\'t save the file successfully.\n\n* If you are using Chrome, you can try enabling "Request File System to handle large Zip file" on the settings page.\n\n* You can set Pages Range to download this archive in parts. If you have already enabled it, please ignore this message.\n\nAre you sure to continue downloading?')) return;
 	else if (setting['store-in-fs'] && requestFileSystem && requiredMBs >= (setting['fs-size'] !== undefined ? setting['fs-size'] : 200)) {
 		ehDownloadFS.needFileSystem = true;
 		console.log('[EHD] Required File System Space >', requiredBytes);
@@ -15227,6 +15614,8 @@ function showSettings() {
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="pass-cookies"> Pass cookies manually when downloading images <sup>(7)</sup></label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="force-as-login"> Force as logged in (actual login state: ' + (unsafeWindow.apiuid === -1 ? 'no' : 'yes') + ', uid: ' + unsafeWindow.apiuid + ') <sup>(8)</sup></label></div>\
 					<div class="g2"><label>Download original images from <select data-ehd-setting="original-download-domain"><option value="">current origin</option><option value="e-hentai.org">e-hentai.org</option><option value="exhentai.org">exhentai.org</option></select> <sup>(9)</sup></label></div>\
+					<div class="g2"><label><input type="checkbox" data-ehd-setting="checksum"> Validate downloaded image checksum <sup>(10)</sup></label></div>\
+					<div class="g2"' + ((GM_info || {}).scriptHandler === 'Tampermonkey' && ((GM_info || {}).version || '').split('.').every((e, i) => e >= [5, 3, 2][i]) ? ' style="opacity: 0.5;" title="The patch only applies to Tampermonkey 5.3.2+"' : '') + '><label><input type="checkbox" data-ehd-setting="patch-tm-serialized-gm-xhr"> Patch Tampermonkey serialized request for Chrome Manifest v3 Extension <sup>(11)</sup></label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="save-x-info"> Save gallery metadata JSON file </label><sup>(x)</sup></div>\
 					<div class="ehD-setting-note">\
 						<div class="g2">\
@@ -15255,6 +15644,12 @@ function showSettings() {
 						</div>\
 						<div class="g2">\
 							(9) If you have problem to download on the same site, like account session is misleading, you can force redirect original download link to another domain. Pass cookies manually may be needed.\
+						</div>\
+						<div class="g2">\
+							(10) Check the image file SHA-1 after downloading, in case the server (mostly H@H server) may return a broken file, or network miscellaneous errors.\
+						</div>\
+						<div class="g2">\
+							(11) If enabled it may fix the serialized request on latest Chrome (with Manifest V3 extension) + Tampermonkey 5.3.2+, but downloading progress, speed detect and timed out abort may be broken <a href="https://github.com/Tampermonkey/tampermonkey/issues/2215" target="_blank">(See issue)</a>.\
 						</div>\
 						<div class="g2">\
 							(x) Some external archive managers read tags and other gallery metadata from an info.json file.\
@@ -15348,6 +15743,19 @@ function showSettings() {
 						setting[curSettingName] = inputs[i].value;
 					}
 				}
+
+				if (setting['patch-tm-serialized-gm-xhr'] && !serializedRequestPatched) {
+					serializedRequestPatched = patchTMSerializedGMXhr();
+					if (!serializedRequestPatched) {
+						alert('Patch GM_xhr failed, you may need a hard reload to take effect.')
+					}
+				} else if (!setting['patch-tm-serialized-gm-xhr'] && serializedRequestPatched) {
+					serializedRequestPatched = !revertTMSerializedGMXhrPatch();
+					if (serializedRequestPatched) {
+						alert('Revert GM_xhr patch failed, you may need a hard reload to take effect.')
+					}
+				}
+
 				GM_setValue('ehD-setting', JSON.stringify(setting));
 			}
 			document.body.removeChild(ehDownloadSettingPanel);
@@ -15686,7 +16094,7 @@ ehDownloadAction.addEventListener('click', function(event){
 		return torrentsNode.dispatchEvent(new MouseEvent('click'));
 	}
 
-	if (unsafeWindow.apiuid === -1 && !setting['force-as-login'] && !confirm('You are not logged in to E-Hentai Forums, so you can\'t download original images.\nIf you\'ve already logged in, please try logout and login again.\nContinue with resized images?')) return;
+	if (!isTor && unsafeWindow.apiuid === -1 && !setting['force-as-login'] && !confirm('You are not logged in to E-Hentai Forums, so you can\'t download original images.\nIf you\'ve already logged in, please try logout and login again.\nContinue with resized images?')) return;
 
 	console.log('[EHD] Is Peak Hours >', isInPeakHours(), ' | Is Recent Gallery >', isRecentGallery(), ' | Is Ancient Gallery >', isAncientGallery(), ' | Is Donator >', isDonator());
 
@@ -15708,7 +16116,7 @@ ehDownloadAction.addEventListener('click', function(event){
 		}
 	}
 
-	if (!setting['never-warn-limits']) {
+	if (!isTor && !setting['never-warn-limits']) {
 		var costData = preCalculateCost();
 		var limitsData = getImageLimits();
 		var totalLimitsCost = +(setting['force-resized'] ? costData.leastCost : costData.normalCost) || 0;

@@ -10,4 +10,5 @@ type %parts_js_dir%first.js>>%output_path%
 type %parts_js_dir%JSZip.js>>%output_path%
 type %parts_js_dir%FileSaver.js>>%output_path%
 type %parts_js_dir%xScripts.js>>%output_path%
+type %parts_js_dir%gh_2215_make_GM_xhr_more_parallel_again.js>>%output_path%
 type %parts_js_dir%main.js>>%output_path%

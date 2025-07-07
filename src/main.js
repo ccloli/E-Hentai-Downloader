@@ -25,6 +25,7 @@ var pretitle = document.title;
 var needTitleStatus = false;
 var delayTime = 0;
 var visibleState = true;
+var serializedRequestPatched = false;
 var isTor = location.hostname === 'exhentai55ld2wyap5juskbm67czulomrouspdacjamjeloj7ugjbsad.onion';
 var fetchPagesXHR = new XMLHttpRequest();
 var emptyAudio;
@@ -55,7 +56,16 @@ var ehDownloadRegex = {
 	postedTime: /<td.*?>Posted:<\/td><td.*?>(.*?)<\/td>/,
 	categoryTag: /g\/c\/(\w+)\./,
 	slashOnly: /^[\\/]*$/,
-	originalImagePattern: /\/fullimg(?:\.php\?|\/)/
+	originalImagePattern: /\/fullimg(?:\.php\?|\/)/,
+	imageUrlParse: {
+		// /h/f867d249d46a297334a8b1afb54d81653bf130b6-107516-1017-1430-wbp/keystamp=1751874600-6639b6b877;fileindex=191805969;xres=org/000.webp
+		// /om/186543244/5b344bde0f91be5d1863bbc5678efad62def7d2f-3194545-1756-2479-jpg/x/0/o2kdsmedq42cpx1pd8c/001.jpg
+		// /om/191807275/82e263d92cf4b4773b35f5dc62ea8ae0c0942c66-1603232-1200-1600-png/0134c7a0b0defdd71818700e0e7556c01e610fa2-165032-1200-1600-wbp/1280/vctr3olsxn93i81pebm/33_a1.webp
+		signature: /(\w{40})-(\d+)-(\d+)-(\d+)-(\w+)/,
+		h: /\/h\/(.+?)\/(.+?)\/(.+$)/,
+		om: /\/om\/(\d+?)\/(.+?)\/(.+?)\/(\d+)\/.+?\/(.+$)/,
+	},
+	pageUrlParse: /\/s\/(\w+)\/(\d+)-(\d+)/,
 };
 
 var dateOffset = new Date().getTimezoneOffset() * 60000;
@@ -295,6 +305,9 @@ function initSetting() {
 		if (typeof setting['actions-sticky'] === 'undefined') {
 			setting['actions-sticky'] = true;
 		}
+		if (typeof setting['checksum'] === 'undefined') {
+			setting['checksum'] = true;
+		}
 
 		console.log('[EHD] E-Hentai Downloader Setting >', res, '-->', JSON.stringify(setting));
 
@@ -303,6 +316,10 @@ function initSetting() {
 			delete setting['enable-multi-threading'];
 			alert('Single-thread download is unavailable now, because its code is too old and it\'s hard to add new features on it.\n\nIf you still need it, please roll back to the last-supported version (1.17.4).\n\nYou can get it at:\n- GitHub: https://github.com/ccloli/E-Hentai-Downloader/releases\n- GreasyFork: https://greasyfork.org/scripts/10379-e-hentai-downloader/versions (requires log in and enable Adult content)\n- SleazyFork: https://sleazyfork.org/scripts/10379-e-hentai-downloader/versions');
 			GM_setValue('ehD-setting', JSON.stringify(setting));
+		}
+
+		if (setting['patch-tm-serialized-gm-xhr']) {
+			serializedRequestPatched = patchTMSerializedGMXhr();
 		}
 
 		if (setting['recheck-file-name']) toggleFilenameConfirmInput();
@@ -500,6 +517,81 @@ function getReplacedName(str) {
 		.replace(/\{subtitle\}/gi, document.getElementById('gj').textContent ? getSafeName(document.getElementById('gj').textContent) : getSafeName(document.getElementById('gn').textContent))
 		.replace(/\{tag\}|\{category\}/gi, document.querySelector('#gdc .cs').textContent.trim().toUpperCase())
 		.replace(/\{uploader\}/gi, getSafeName(document.querySelector('#gdn').textContent)));
+}
+
+function parseImageUrl(url) {
+	var result = {};
+	if (url.includes('/om/')) {
+		result.serverType = 'om';
+	} else if (url.includes('/h/')) {
+		result.serverType = 'h';
+	}
+
+	if (result.serverType === 'h') {
+		// H@H
+		// https://lwhzxzy.nxgbghauhksz.hath.network:34587/h/f867d249d46a297334a8b1afb54d81653bf130b6-107516-1017-1430-wbp/keystamp=1751874600-6639b6b877;fileindex=191805969;xres=org/000.webp
+		var pattern = url.match(ehDownloadRegex.imageUrlParse.h);
+		if (!pattern) {
+			return result;
+		}
+
+		var signature = pattern[1], params = pattern[2], fileName = pattern[3];
+		var parsedParams = params.split(';').reduce(function(res, item) {
+			var i = item.split('=');
+			res[i[0]] = res[i[1]];
+			return res;
+		}, {});
+		var parsedSignature = signature.match(ehDownloadRegex.imageUrlParse.signature) || [];
+
+		result.sha1 = parsedSignature[1];
+		result.fileSize = parsedSignature[2];
+		result.width = parsedSignature[3];
+		result.height = parsedSignature[4];
+		result.fileType = parsedSignature[5];
+		result.fileIndex = parsedParams.fileindex;
+		result.xres = parsedParams.xres === 'org' ? '0' : parsedParams.xres;
+		result.fileName = fileName;
+	} else if (result.serverType === 'om') {
+		// origin server
+		var pattern = url.match(ehDownloadRegex.imageUrlParse.om);
+		if (!pattern) {
+			return result;
+		}
+
+		var fileIndex = pattern[1], originalSignature = pattern[2], signature = pattern[3], xres = pattern[4], fileName = pattern[5];
+		var parsedOriginalSignature = originalSignature.match(ehDownloadRegex.imageUrlParse.signature) || [];
+		var parsedSignature = signature === 'x' ? parsedOriginalSignature : signature.match(ehDownloadRegex.imageUrlParse.signature) || [];
+
+		result.sha1 = parsedSignature[1];
+		result.fileSize = parsedSignature[2];
+		result.width = parsedSignature[3];
+		result.height = parsedSignature[4];
+		result.fileType = parsedSignature[5];
+		result.originalSha1 = parsedOriginalSignature[1];
+		result.originalFileSize = parsedOriginalSignature[2];
+		result.originalWidth = parsedOriginalSignature[3];
+		result.originalHeight = parsedOriginalSignature[4];
+		result.originalFileType = parsedOriginalSignature[5];
+		result.fileIndex = fileIndex;
+		result.xres = xres;
+		result.fileName = fileName;
+	}
+	return result;
+}
+
+function getSha1Checksum(abData) {
+	return new Promise(function(resolve, reject) {
+		if (!crypto.subtle.digest) {
+			resolve(null);
+			return;
+		}
+		crypto.subtle.digest('SHA-1', abData).then(function (res) {
+			var result = Array.from(new Uint8Array(res)).map(function(item) {
+				return ('00' + item.toString(16)).substr(-2);
+			}).join('');
+			resolve(result);
+		}).catch(reject);
+	});
 }
 
 function PageData(pageURL, imageURL, imageName, nextNL, realIndex, imageNumber) {
@@ -867,7 +959,7 @@ function generateZip(isFromFS, fs, isRetry, forced){
 						writer.onerror = fsErrorHandler;
 						if (stream) {
 							stream.resume();
-							setTimeout(() => {
+							setTimeout(function () {
 								writer.write(new Blob(chunk, { type: 'application/zip' }));
 							}, 0);
 						}
@@ -1536,6 +1628,81 @@ If you want to reset your limits by paying your GPs or credits right now, or exc
 					imageList[index]['_imageName'] = imageList[index]['imageName'];
 				}
 
+				if (setting['checksum']) {
+					var parsedImageUrl = parseImageUrl(res.finalUrl || requestURL);
+					// full sha1
+					var checksum = parsedImageUrl.sha1;
+					if (!checksum) {
+						var parsedPageUrl = imageList[index]['pageURL'].match(ehDownloadRegex.pageUrlParse) || [];
+						// segment sha1, only has the first 10 chars
+						checksum = parsedPageUrl[1];
+					}
+
+					if (checksum) {
+						updateProgress(nodeList, {
+							name: '#' + imageList[index]['realIndex'] + ': ' + imageList[index]['imageName'],
+							status: 'Hashing...',
+							progress: '1',
+							progressText: '100%',
+						});
+
+						getSha1Checksum(response).then((hash) => {
+							// required to be matched at start
+							// hash may be null, which may because the browser doesn't support it
+							if (!hash || hash.indexOf(checksum) !== 0) {
+								console.log('[EHD] #' + (index + 1) + ': Checksum mismatch');
+								console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL, '\nFinal URL >', res.finalUrl, '\nResposeHeaders >' + res.responseHeaders);
+								console.log('[EHD] #' + (index + 1) + ': Expected Checksum >', checksum, ' | Actual Checksum >', hash);
+
+								updateProgress(nodeList, {
+									status: 'Failed! (Checksum Mismatch)',
+									progress: '0',
+									progressText: '',
+									class: 'ehD-pt-warning'
+								});
+
+								for (var i in res) {
+									delete res[i];
+								}
+								response = null;
+								return failedFetching(index, nodeList);
+							}
+
+							updateProgress(nodeList, {
+								name: '#' + imageList[index]['realIndex'] + ': ' + imageList[index]['imageName'],
+								status: 'Succeed!',
+								progress: '1',
+								progressText: '100%',
+								class: 'ehD-pt-succeed'
+							});
+
+							storeRes(response, index);
+
+							for (var i in res) {
+								delete res[i];
+							}
+							response = null;
+						}).catch(function (error) {
+							console.log('[EHD] #' + (index + 1) + ': Checksum failed');
+							console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL, '\nFinal URL >', res.finalUrl, '\nResposeHeaders >' + res.responseHeaders);
+							console.error(error);
+
+							updateProgress(nodeList, {
+								status: 'Failed! (Checksum Error)',
+								progress: '0',
+								progressText: '',
+								class: 'ehD-pt-failed'
+							});
+
+							for (var i in res) {
+								delete res[i];
+							}
+							return failedFetching(index, nodeList);
+						});
+						return;
+					}
+				}
+
 				updateProgress(nodeList, {
 					name: '#' + imageList[index]['realIndex'] + ': ' + imageList[index]['imageName'],
 					status: 'Succeed!',
@@ -1554,7 +1721,7 @@ If you want to reset your limits by paying your GPs or credits right now, or exc
 			catch (error) {
 				console.log('[EHD] #' + (index + 1) + ': Unknown Error (Please send feedback)');
 				console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL, '\nFinal URL >', res.finalUrl, '\nResposeHeaders >' + res.responseHeaders);
-				console.log(error);
+				console.error(error);
 
 				updateProgress(nodeList, {
 					status: 'Failed! (Unknown)',
@@ -2009,7 +2176,7 @@ function initEHDownload() {
 			'Roll back and use Blob to handle file.');
 	};
 
-	if ((!setting['store-in-fs'] && !setting['never-warn-large-gallery'] && requiredMBs >= 300) && !confirm('This archive is too large (original size), please consider downloading this archive in a different way.\n\nMaximum allowed file size: Chrome 56- 500MB | Chrome 57+ 2 GB | Firefox ~800 MB (depends on your RAM)\n\nPlease also consider your operating system\'s free memory (RAM), it may take about DOUBLE the size of archive file size when generating ZIP file.\n\n* If you continue, you would probably get an error like "Failed - No File" or "Out Of Memory" if you don\'t have enough RAM and can\'t save the file successfully.\n\n* If you are using Chrome, you can try enabling "Request File System to handle large Zip file" on the settings page.\n\n* You can set Pages Range to download this archive in parts. If you have already enabled it, please ignore this message.\n\nAre you sure to continue downloading?')) return;
+	if ((!isTor && !setting['store-in-fs'] && !setting['never-warn-large-gallery'] && requiredMBs >= 300) && !confirm('This archive is too large (original size), please consider downloading this archive in a different way.\n\nMaximum allowed file size: Chrome 56- 500MB | Chrome 57+ 2 GB | Firefox ~800 MB (depends on your RAM)\n\nPlease also consider your operating system\'s free memory (RAM), it may take about DOUBLE the size of archive file size when generating ZIP file.\n\n* If you continue, you would probably get an error like "Failed - No File" or "Out Of Memory" if you don\'t have enough RAM and can\'t save the file successfully.\n\n* If you are using Chrome, you can try enabling "Request File System to handle large Zip file" on the settings page.\n\n* You can set Pages Range to download this archive in parts. If you have already enabled it, please ignore this message.\n\nAre you sure to continue downloading?')) return;
 	else if (setting['store-in-fs'] && requestFileSystem && requiredMBs >= (setting['fs-size'] !== undefined ? setting['fs-size'] : 200)) {
 		ehDownloadFS.needFileSystem = true;
 		console.log('[EHD] Required File System Space >', requiredBytes);
@@ -2497,6 +2664,8 @@ function showSettings() {
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="pass-cookies"> Pass cookies manually when downloading images <sup>(7)</sup></label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="force-as-login"> Force as logged in (actual login state: ' + (unsafeWindow.apiuid === -1 ? 'no' : 'yes') + ', uid: ' + unsafeWindow.apiuid + ') <sup>(8)</sup></label></div>\
 					<div class="g2"><label>Download original images from <select data-ehd-setting="original-download-domain"><option value="">current origin</option><option value="e-hentai.org">e-hentai.org</option><option value="exhentai.org">exhentai.org</option></select> <sup>(9)</sup></label></div>\
+					<div class="g2"><label><input type="checkbox" data-ehd-setting="checksum"> Validate downloaded image checksum <sup>(10)</sup></label></div>\
+					<div class="g2"' + ((GM_info || {}).scriptHandler === 'Tampermonkey' && ((GM_info || {}).version || '').split('.').every((e, i) => e >= [5, 3, 2][i]) ? ' style="opacity: 0.5;" title="The patch only applies to Tampermonkey 5.3.2+"' : '') + '><label><input type="checkbox" data-ehd-setting="patch-tm-serialized-gm-xhr"> Patch Tampermonkey serialized request for Chrome Manifest v3 Extension <sup>(11)</sup></label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="save-x-info"> Save gallery metadata JSON file </label><sup>(x)</sup></div>\
 					<div class="ehD-setting-note">\
 						<div class="g2">\
@@ -2525,6 +2694,12 @@ function showSettings() {
 						</div>\
 						<div class="g2">\
 							(9) If you have problem to download on the same site, like account session is misleading, you can force redirect original download link to another domain. Pass cookies manually may be needed.\
+						</div>\
+						<div class="g2">\
+							(10) Check the image file SHA-1 after downloading, in case the server (mostly H@H server) may return a broken file, or network miscellaneous errors.\
+						</div>\
+						<div class="g2">\
+							(11) If enabled it may fix the serialized request on latest Chrome (with Manifest V3 extension) + Tampermonkey 5.3.2+, but downloading progress, speed detect and timed out abort may be broken <a href="https://github.com/Tampermonkey/tampermonkey/issues/2215" target="_blank">(See issue)</a>.\
 						</div>\
 						<div class="g2">\
 							(x) Some external archive managers read tags and other gallery metadata from an info.json file.\
@@ -2618,6 +2793,19 @@ function showSettings() {
 						setting[curSettingName] = inputs[i].value;
 					}
 				}
+
+				if (setting['patch-tm-serialized-gm-xhr'] && !serializedRequestPatched) {
+					serializedRequestPatched = patchTMSerializedGMXhr();
+					if (!serializedRequestPatched) {
+						alert('Patch GM_xhr failed, you may need a hard reload to take effect.')
+					}
+				} else if (!setting['patch-tm-serialized-gm-xhr'] && serializedRequestPatched) {
+					serializedRequestPatched = !revertTMSerializedGMXhrPatch();
+					if (serializedRequestPatched) {
+						alert('Revert GM_xhr patch failed, you may need a hard reload to take effect.')
+					}
+				}
+
 				GM_setValue('ehD-setting', JSON.stringify(setting));
 			}
 			document.body.removeChild(ehDownloadSettingPanel);
@@ -2956,7 +3144,7 @@ ehDownloadAction.addEventListener('click', function(event){
 		return torrentsNode.dispatchEvent(new MouseEvent('click'));
 	}
 
-	if (unsafeWindow.apiuid === -1 && !setting['force-as-login'] && !confirm('You are not logged in to E-Hentai Forums, so you can\'t download original images.\nIf you\'ve already logged in, please try logout and login again.\nContinue with resized images?')) return;
+	if (!isTor && unsafeWindow.apiuid === -1 && !setting['force-as-login'] && !confirm('You are not logged in to E-Hentai Forums, so you can\'t download original images.\nIf you\'ve already logged in, please try logout and login again.\nContinue with resized images?')) return;
 
 	console.log('[EHD] Is Peak Hours >', isInPeakHours(), ' | Is Recent Gallery >', isRecentGallery(), ' | Is Ancient Gallery >', isAncientGallery(), ' | Is Donator >', isDonator());
 
@@ -2978,7 +3166,7 @@ ehDownloadAction.addEventListener('click', function(event){
 		}
 	}
 
-	if (!setting['never-warn-limits']) {
+	if (!isTor && !setting['never-warn-limits']) {
 		var costData = preCalculateCost();
 		var limitsData = getImageLimits();
 		var totalLimitsCost = +(setting['force-resized'] ? costData.leastCost : costData.normalCost) || 0;
