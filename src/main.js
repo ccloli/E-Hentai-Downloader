@@ -584,7 +584,7 @@ function getSha1Checksum(abData) {
 		}
 		crypto.subtle.digest('SHA-1', abData).then(function (res) {
 			var result = Array.from(new Uint8Array(res)).map(function(item) {
-				return ('00' + item).substr(-2);
+				return ('00' + item.toString(16)).substr(-2);
 			}).join('');
 			resolve(result);
 		}).catch(reject);
