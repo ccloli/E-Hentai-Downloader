@@ -581,7 +581,8 @@ function parseImageUrl(url) {
 
 function getSha1Checksum(abData) {
 	return new Promise(function(resolve, reject) {
-		if (!crypto.subtle.digest) {
+		// requires Chrome >= 36, Firefox >= 34
+		if (typeof crypto === 'undefined' || !crypto.subtle || !crypto.subtle.digest) {
 			resolve(null);
 			return;
 		}
@@ -1613,7 +1614,7 @@ If you want to reset your limits by paying your GPs or credits right now, or exc
 					imageList[index]['_imageName'] = imageList[index]['imageName'];
 				}
 
-				if (setting['checksum']) {
+				if (setting['checksum'] && typeof crypto !== 'undefined') {
 					var parsedImageUrl = parseImageUrl(res.finalUrl || requestURL);
 					// full sha1
 					var checksum = parsedImageUrl.sha1;
@@ -1634,7 +1635,12 @@ If you want to reset your limits by paying your GPs or credits right now, or exc
 						getSha1Checksum(response).then((hash) => {
 							// required to be matched at start
 							// hash may be null, which may because the browser doesn't support it
-							if (!hash || hash.indexOf(checksum) !== 0) {
+							if (!hash) {
+								console.log('[EHD] #' + (index + 1) + ': Checksum is empty');
+								console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL, '\nFinal URL >', res.finalUrl, '\nResposeHeaders >' + res.responseHeaders);
+								console.log('[EHD] #' + (index + 1) + ': Expected Checksum >', checksum, ' | Actual Checksum >', hash);
+								// do not throw error for such case?
+							} else if (hash.indexOf(checksum) !== 0) {
 								console.log('[EHD] #' + (index + 1) + ': Checksum mismatch');
 								console.log('[EHD] #' + (index + 1) + ': RealIndex >', imageList[index]['realIndex'], ' | ReadyState >', res.readyState, ' | Status >', res.status, ' | StatusText >', res.statusText + '\nRequest URL >', requestURL, '\nFinal URL >', res.finalUrl, '\nResposeHeaders >' + res.responseHeaders);
 								console.log('[EHD] #' + (index + 1) + ': Expected Checksum >', checksum, ' | Actual Checksum >', hash);
@@ -2649,7 +2655,7 @@ function showSettings() {
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="pass-cookies"> Pass cookies manually when downloading images <sup>(7)</sup></label></div>\
 					<div class="g2"><label><input type="checkbox" data-ehd-setting="force-as-login"> Force as logged in (actual login state: ' + (unsafeWindow.apiuid === -1 ? 'no' : 'yes') + ', uid: ' + unsafeWindow.apiuid + ') <sup>(8)</sup></label></div>\
 					<div class="g2"><label>Download original images from <select data-ehd-setting="original-download-domain"><option value="">current origin</option><option value="e-hentai.org">e-hentai.org</option><option value="exhentai.org">exhentai.org</option></select> <sup>(9)</sup></label></div>\
-					<div class="g2"><label><input type="checkbox" data-ehd-setting="checksum"> Validate downloaded image checksum <sup>(10)</sup></label></div>\
+					<div class="g2"' + (typeof crypto === 'undefined' ? ' style="opacity: 0.5;" title="Crypto API is not available"' : '') + '><label><input type="checkbox" data-ehd-setting="checksum"> Validate downloaded image checksum <sup>(10)</sup></label></div>\
 					<div class="g2"' + ((GM_info || {}).scriptHandler === 'Tampermonkey' && ((GM_info || {}).version || '').split('.').every((e, i) => e >= [5, 3, 2][i]) ? ' style="opacity: 0.5;" title="The patch only applies to Tampermonkey 5.3.2+"' : '') + '><label><input type="checkbox" data-ehd-setting="patch-tm-serialized-gm-xhr"> Patch Tampermonkey serialized request for Chrome Manifest v3 Extension <sup>(11)</sup></label></div>\
 					<div class="ehD-setting-note">\
 						<div class="g2">\
