@@ -13031,7 +13031,7 @@ function generateZip(isFromFS, fs, isRetry, forced){
 									fileWriter.write(blob);
 									if ('close' in blob) blob.close(); // File Blob.close() API, not supported by all the browser now
 									blob = null;
-									pushDialog('Success!\nPlease close this tab and open a new tab to download.\nIf you still can\'t download it, try using <a href="https://chrome.google.com/webstore/detail/nhnjmpbdkieehidddbaeajffijockaea" target="_blank">HTML5 FileSystem Explorer</a> to save them.');
+									pushDialog('Success!\nPlease close this tab and open a new tab to download.\nIf you still can\'t download it, try using <a href="https://chromewebstore.google.com/detail/nhnjmpbdkieehidddbaeajffijockaea" target="_blank">HTML5 FileSystem Explorer</a> to save them.');
 
 									files.forEach(function(elem){
 										zip.remove(elem.name);
