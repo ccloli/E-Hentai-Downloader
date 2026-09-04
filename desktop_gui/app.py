@@ -23,7 +23,7 @@ from .downloader import (
     is_huangguo_video_url,
     parse_input_urls,
 )
-from .output_layout import migrate_legacy_output
+from .output_layout import migrate_legacy_output, migrate_source_folders_to_titles
 from .queue_model import (
     COMPLETED,
     DOWNLOADING,
@@ -121,17 +121,28 @@ class DownloaderApp:
                 Path(self.output_var.get()).expanduser(),
                 (item.url for item in self.download_queue.snapshot()),
             )
+            title_migration = migrate_source_folders_to_titles(
+                Path(self.output_var.get()).expanduser(),
+            )
         except OSError as exc:
             self.instance_lock.close()
             raise QueueStoreError(
                 f"无法重新归类旧下载文件：\n{exc}"
             ) from exc
         self.layout_migration_message = ""
+        messages: list[str] = []
         if migration.moved_items:
-            self.layout_migration_message = (
+            messages.append(
                 f"已重新归类旧文件：{migration.image_directories} 个图片目录、"
                 f"{migration.archives} 个 CBZ。"
             )
+        if title_migration.moved_items:
+            messages.append(
+                f"已按标题重命名来源目录：移动 "
+                f"{title_migration.image_directories} 个目录、"
+                f"{title_migration.archives} 个文件。"
+            )
+        self.layout_migration_message = "\n".join(messages)
 
         self._configure_style()
         self._build_ui()
@@ -280,7 +291,7 @@ class DownloaderApp:
 
         ttk.Label(
             destination,
-            text="图片、CBZ 与视频分别保存到 JPG\\URL、CBZ\\URL 和 VIDEO\\URL 目录。",
+            text="图片、CBZ 与视频按作品标题保存到 JPG\\标题、CBZ\\标题 和 VIDEO\\标题 目录。",
             style="Hint.TLabel",
         ).grid(row=1, column=1, columnspan=3, sticky=tk.W, pady=(3, 0))
 

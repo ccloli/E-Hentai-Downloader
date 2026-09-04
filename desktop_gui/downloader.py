@@ -227,6 +227,7 @@ class GalleryInfo:
     page_urls: tuple[str, ...]
     direct_images: bool = False
     source_url: str = ""
+    source_title: str = ""
 
 
 @dataclass(frozen=True)
@@ -1497,6 +1498,7 @@ class EHentaiDownloader:
             token=token,
             title=title,
             page_urls=tuple(page_urls),
+            source_title=title,
         )
 
     def _load_h_manhua_chapter(self, chapter_url: str) -> GalleryInfo:
@@ -1515,6 +1517,7 @@ class EHentaiDownloader:
             )
         slug = match.group("slug")
         chapter = match.group("chapter")
+        title = parsed.title or f"{unquote(slug)} - {unquote(chapter)}"
         return GalleryInfo(
             url=chapter_url,
             gid=safe_name(
@@ -1523,9 +1526,10 @@ class EHentaiDownloader:
                 limit=70,
             ),
             token="",
-            title=parsed.title or f"{unquote(slug)} - {unquote(chapter)}",
+            title=title,
             page_urls=parsed.image_urls,
             direct_images=True,
+            source_title=title,
         )
 
     def _read_gallery_directory(
@@ -1876,6 +1880,7 @@ class EHentaiDownloader:
         archive_directory = cbz_source_directory(
             self.options.output_dir,
             gallery.source_url or gallery.url,
+            gallery.source_title,
         )
         archive_directory.mkdir(parents=True, exist_ok=True)
         cbz_path = archive_directory / f"{directory.name}.cbz"
@@ -1915,6 +1920,7 @@ class EHentaiDownloader:
         parent = image_source_directory(
             self.options.output_dir,
             gallery.source_url or gallery.url,
+            gallery.source_title,
         )
         desired = parent / name
         if desired.exists():
@@ -2211,6 +2217,7 @@ class GameBusDownloader(EHentaiDownloader):
             title=title,
             page_urls=parsed.image_urls,
             direct_images=True,
+            source_title=parsed.comic_title,
         )
 
 
@@ -2315,6 +2322,7 @@ class HuangGuoDownloader(EHentaiDownloader):
             title=f"{info.series_title} 第 {info.episode} 集",
             page_urls=tuple(segment.url for segment in info.segments),
             direct_images=True,
+            source_title=info.series_title,
         )
 
     def _gallery_directory(self, gallery: GalleryInfo) -> Path:
@@ -2324,6 +2332,7 @@ class HuangGuoDownloader(EHentaiDownloader):
         parent = video_source_directory(
             self.options.output_dir,
             gallery.source_url or gallery.url,
+            gallery.source_title or series_title,
         )
         name = safe_name(
             f"{video_id} - {series_title}",

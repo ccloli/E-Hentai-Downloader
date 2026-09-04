@@ -611,7 +611,7 @@ class EndToEndTests(unittest.TestCase):
             self.assertEqual(summary.galleries_completed, 1)
             self.assertEqual(summary.files_downloaded, 2)
             gallery_directory = (
-                image_source_directory(output, gallery_url)
+                image_source_directory(output, gallery_url, "Test: Gallery")
                 / "123 - Test_ Gallery"
             )
             self.assertEqual(
@@ -624,7 +624,7 @@ class EndToEndTests(unittest.TestCase):
             )
 
             cbz_path = (
-                cbz_source_directory(output, gallery_url)
+                cbz_source_directory(output, gallery_url, "Test: Gallery")
                 / "123 - Test_ Gallery.cbz"
             )
             with zipfile.ZipFile(cbz_path) as archive:
@@ -676,7 +676,7 @@ class EndToEndTests(unittest.TestCase):
             self.assertEqual(summary.files_fallback, 1)
             self.assertEqual(
                 (
-                    image_source_directory(output, gallery_url)
+                    image_source_directory(output, gallery_url, "Fallback Gallery")
                     / "123 - Fallback Gallery"
                     / "001 - resized.webp"
                 ).read_bytes(),
@@ -719,7 +719,7 @@ class EndToEndTests(unittest.TestCase):
             summary = downloader.run([gallery_url])
 
             gallery_directory = (
-                image_source_directory(output, gallery_url)
+                image_source_directory(output, gallery_url, "JPEG Gallery")
                 / "123 - JPEG Gallery"
             )
             jpeg_path = gallery_directory / "001 - resized.jpg"
@@ -734,7 +734,7 @@ class EndToEndTests(unittest.TestCase):
             self.assertEqual(summary.files_fallback, 1)
 
             cbz_path = (
-                cbz_source_directory(output, gallery_url)
+                cbz_source_directory(output, gallery_url, "JPEG Gallery")
                 / "123 - JPEG Gallery.cbz"
             )
             with zipfile.ZipFile(cbz_path) as archive:
@@ -756,7 +756,7 @@ class EndToEndTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             output = Path(temp_dir)
             gallery_directory = (
-                image_source_directory(output, gallery_url)
+                image_source_directory(output, gallery_url, "Resume Gallery")
                 / "123 - Resume Gallery"
             )
             gallery_directory.mkdir(parents=True)
@@ -823,7 +823,7 @@ class EndToEndTests(unittest.TestCase):
             summary = downloader.run([chapter_url])
 
             chapter_directory = (
-                image_source_directory(output, chapter_url)
+                image_source_directory(output, chapter_url, "青鸾殇 - 1")
                 / "hm-qingluan-1 - 青鸾殇 - 1"
             )
             self.assertEqual(
@@ -839,7 +839,7 @@ class EndToEndTests(unittest.TestCase):
             self.assertEqual(summary.files_fallback, 0)
 
             cbz_path = (
-                cbz_source_directory(output, chapter_url)
+                cbz_source_directory(output, chapter_url, "青鸾殇 - 1")
                 / "hm-qingluan-1 - 青鸾殇 - 1.cbz"
             )
             with zipfile.ZipFile(cbz_path) as archive:
@@ -972,11 +972,11 @@ class EndToEndTests(unittest.TestCase):
             summary = downloader.run([comic_url])
 
             first_directory = (
-                image_source_directory(output, comic_url)
+                image_source_directory(output, comic_url, "Demo Comic")
                 / "gb-1186-0001-2550 - Demo Comic - 001 - First"
             )
             second_directory = (
-                image_source_directory(output, comic_url)
+                image_source_directory(output, comic_url, "Demo Comic")
                 / "gb-1186-0002-2551 - Demo Comic - 002 - Second"
             )
             self.assertEqual(
@@ -995,7 +995,15 @@ class EndToEndTests(unittest.TestCase):
             self.assertEqual(summary.galleries_completed, 2)
             self.assertEqual(summary.files_downloaded, 3)
             self.assertEqual(
-                len(list(cbz_source_directory(output, comic_url).glob("*.cbz"))),
+                len(
+                    list(
+                        cbz_source_directory(
+                            output,
+                            comic_url,
+                            "Demo Comic",
+                        ).glob("*.cbz")
+                    )
+                ),
                 2,
             )
 
@@ -1237,7 +1245,7 @@ class HuangGuoTests(unittest.TestCase):
             self.assertEqual(summary.files_failed, 0)
 
             directory = (
-                video_source_directory(output, self.series_url) / "900 - 测试短剧"
+                video_source_directory(output, self.series_url, "测试短剧") / "900 - 测试短剧"
             )
             self.assertEqual(
                 (directory / "001 - 测试短剧.ts").read_bytes(),
@@ -1265,7 +1273,7 @@ class HuangGuoTests(unittest.TestCase):
 
             self.assertEqual(summary.galleries_completed, 2)
             directory = (
-                video_source_directory(output, f"{self.series_url}ep-2/")
+                video_source_directory(output, f"{self.series_url}ep-2/", "测试短剧")
                 / "900 - 测试短剧"
             )
             self.assertTrue((directory / "001 - 测试短剧.ts").is_file())
@@ -1276,7 +1284,7 @@ class HuangGuoTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             output = Path(temp_dir)
             directory = (
-                video_source_directory(output, self.series_url) / "900 - 测试短剧"
+                video_source_directory(output, self.series_url, "测试短剧") / "900 - 测试短剧"
             )
             directory.mkdir(parents=True, exist_ok=True)
             (directory / "001 - 测试短剧.mp4").write_bytes(b"already downloaded")
@@ -1320,7 +1328,7 @@ class HuangGuoTests(unittest.TestCase):
             self.assertEqual(summary.galleries_completed, 0)
             self.assertEqual(summary.files_failed, 1)
             directory = (
-                video_source_directory(output, self.series_url) / "900 - 测试短剧"
+                video_source_directory(output, self.series_url, "测试短剧") / "900 - 测试短剧"
             )
             self.assertFalse((directory / "001 - 测试短剧.ts").exists())
             self.assertEqual(

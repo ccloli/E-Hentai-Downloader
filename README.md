@@ -79,25 +79,32 @@ can be started again safely.
 The downloader prefers each page's **Download original** link. If that link is not
 available, the optional fallback downloads the highest-resolution image exposed by
 the page. List links follow **Next** until the list ends; set a collection page
-limit in the GUI when you do not want the entire result set. Every source URL has
-its own deterministic folder, and extracted images and archives use completely
-separate parent trees:
+limit in the GUI when you do not want the entire result set. Each work gets its own
+folder named after its title, and extracted images, archives and videos use
+completely separate parent trees:
 
 ```text
-<output>/JPG/<source-url>/<gallery-or-chapter>/...
-<output>/CBZ/<source-url>/<gallery-or-chapter>.cbz
-<output>/VIDEO/<source-url>/<series>/<episode>.mp4
+<output>/JPG/<title>/<gallery-or-chapter>/...
+<output>/CBZ/<title>/<gallery-or-chapter>.cbz
+<output>/VIDEO/<title>/<series>/<episode>.mp4
 ```
 
+A GameBus comic keeps every chapter under its comic title, and all episodes of a
+Huangguo series share the series title, so opening a folder shows what is inside it.
+Works that share a title land in the same folder; their inner names still carry the
+gallery or chapter id, so nothing is overwritten. When a title is not known yet the
+downloader falls back to a deterministic URL-derived folder name.
+
 On the first launch after upgrading, recognized folders and CBZ files from the old
-flat layout are moved into this structure without overwriting conflicts. For
-readers without WebP support, enable the optional high-quality WebP-to-JPEG
-conversion; resumed jobs also convert existing WebP pages before packaging them.
-H-Manhua chapter links download the full-resolution images listed by the chapter
-page directly. GameBus uses the site's original `image_path` files; a comic URL
-keeps all of its chapters under one source folder, while a direct chapter URL gets
-a different source folder. Only concrete GameBus comic and chapter links are
-accepted, so a list-page link cannot accidentally queue the entire site.
+flat layout are moved into this structure, and source folders still named after a
+URL (`gamebus-comic-629`, `e-hentai-gallery-...`) are renamed to their title. Both
+migrations preserve conflicts instead of overwriting: identical duplicates are
+dropped and differing files are kept under a `.legacy-N` suffix. For readers without
+WebP support, enable the optional high-quality WebP-to-JPEG conversion; resumed jobs
+also convert existing WebP pages before packaging them. H-Manhua chapter links
+download the full-resolution images listed by the chapter page directly. GameBus
+uses the site's original `image_path` files. Only concrete GameBus comic and chapter
+links are accepted, so a list-page link cannot accidentally queue the entire site.
 
 Huangguo pages are served as AES-128 HLS streams. The downloader reads the episode
 list from the play page, fetches the media playlist for each episode, downloads and

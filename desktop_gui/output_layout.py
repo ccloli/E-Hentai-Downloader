@@ -41,6 +41,33 @@ _LEGACY_H_MANHUA_RE = re.compile(
     re.IGNORECASE,
 )
 _INVALID_COMPONENT_RE = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
+_WINDOWS_RESERVED_NAMES = {
+    "CON",
+    "PRN",
+    "AUX",
+    "NUL",
+    *(f"COM{index}" for index in range(1, 10)),
+    *(f"LPT{index}" for index in range(1, 10)),
+}
+
+_TITLE_FROM_GAMEBUS_RE = re.compile(
+    r"^gb-\d+-\d+-\d+\s+-\s+(?P<title>.+?)\s+-\s+\d{3}\s+-\s+.*$",
+)
+_TITLE_FROM_H_MANHUA_RE = re.compile(
+    r"^hm-.+?-[^-]+\s+-\s+(?P<title>.+)$",
+    re.IGNORECASE,
+)
+_TITLE_FROM_NUMBERED_RE = re.compile(r"^\d+\s+-\s+(?P<title>.+)$")
+_SLUG_SOURCE_FOLDER_RE = re.compile(
+    r"^(?:"
+    r"gamebus-(?:comic|chapter)-\d+"
+    r"|huangguo-video-\d+"
+    r"|(?:e-hentai|exhentai)-(?:gallery|image|favorites|tag|collection)-.+"
+    r"|h-manhua-.+"
+    r"|.+-url-[0-9a-f]{12}"
+    r")$",
+    re.IGNORECASE,
+)
 
 
 @dataclass(frozen=True)
@@ -68,7 +95,6 @@ def source_folder_name(url: str) -> str:
     hostname = (parsed.hostname or "").lower().rstrip(".")
     path = parsed.path or "/"
     digest = hashlib.sha256(url.encode("utf-8")).hexdigest()[:12]
-
     if hostname in {"gamebus001.com", "www.gamebus001.com"}:
         comic = _GAMEBUS_COMIC_RE.match(path)
         if comic:
@@ -117,16 +143,50 @@ def source_folder_name(url: str) -> str:
     return f"{host}-url-{digest}"
 
 
-def image_source_directory(output_dir: Path, source_url: str) -> Path:
-    return output_dir / JPG_ROOT_NAME / source_folder_name(source_url)
+def image_source_directory(
+    output_dir: Path,
+    source_url: str,
+    source_title: str = "",
+) -> Path:
+    return source_directory(output_dir, JPG_ROOT_NAME, source_url, source_title)
 
 
-def cbz_source_directory(output_dir: Path, source_url: str) -> Path:
-    return output_dir / CBZ_ROOT_NAME / source_folder_name(source_url)
+def cbz_source_directory(
+    output_dir: Path,
+    source_url: str,
+    source_title: str = "",
+) -> Path:
+    return source_directory(output_dir, CBZ_ROOT_NAME, source_url, source_title)
 
 
-def video_source_directory(output_dir: Path, source_url: str) -> Path:
-    return output_dir / VIDEO_ROOT_NAME / source_folder_name(source_url)
+def video_source_directory(
+    output_dir: Path,
+    source_url: str,
+    source_title: str = "",
+) -> Path:
+    return source_directory(output_dir, VIDEO_ROOT_NAME, source_url, source_title)
+
+
+def title_folder_name(title: str) -> str:
+    return _safe_component(title, "", 120)
+
+
+def source_directory(
+    output_dir: Path,
+    root_name: str,
+    source_url: str,
+    source_title: str = "",
+) -> Path:
+    root = output_dir / root_name
+    preferred = title_folder_name(source_title) if source_title else ""
+    if not preferred:
+        return root / source_folder_name(source_url)
+
+    desired = root / preferred
+    if desired.is_dir():
+        return desired
+    legacy = root / source_folder_name(source_url)
+    return legacy if legacy.is_dir() else desired
 
 
 def plan_legacy_migration(
@@ -191,6 +251,72 @@ def migrate_legacy_output(
             summary.image_directories += 1
         else:
             summary.archives += 1
+    return summary
+
+
+def derive_source_title(name: str) -> str:
+    stem = _archive_base_name(name)
+    if stem is None:
+        stem = name
+    for pattern in (
+        _TITLE_FROM_GAMEBUS_RE,
+        _TITLE_FROM_H_MANHUA_RE,
+        _TITLE_FROM_NUMBERED_RE,
+    ):
+        match = pattern.match(stem)
+        if match:
+            return match.group("title").strip()
+    return ""
+
+
+def plan_title_migration(output_dir: Path) -> tuple[MigrationItem, ...]:
+    planned: list[MigrationItem] = []
+    for root_name in (JPG_ROOT_NAME, CBZ_ROOT_NAME, VIDEO_ROOT_NAME):
+        root = output_dir / root_name
+        if not root.is_dir():
+            continue
+        for folder in sorted(root.iterdir(), key=lambda path: path.name.lower()):
+            if not folder.is_dir() or not _SLUG_SOURCE_FOLDER_RE.match(folder.name):
+                continue
+            for child in sorted(
+                folder.iterdir(),
+                key=lambda path: path.name.lower(),
+            ):
+                title = title_folder_name(derive_source_title(child.name))
+                if not title or title == folder.name:
+                    continue
+                planned.append(
+                    MigrationItem(
+                        source=child,
+                        destination=root / title / child.name,
+                        kind="archive" if child.is_file() else "images",
+                    )
+                )
+    return tuple(planned)
+
+
+def migrate_source_folders_to_titles(output_dir: Path) -> MigrationSummary:
+    summary = MigrationSummary()
+    emptied: set[Path] = set()
+    for item in plan_title_migration(output_dir):
+        try:
+            _move_preserving_conflicts(item.source, item.destination, summary)
+        except OSError as exc:
+            raise OSError(
+                f"Could not migrate {item.source} to {item.destination}: {exc}"
+            ) from exc
+        if item.kind == "images":
+            summary.image_directories += 1
+        else:
+            summary.archives += 1
+        emptied.add(item.source.parent)
+
+    for folder in sorted(emptied, reverse=True):
+        try:
+            if folder.is_dir() and not any(folder.iterdir()):
+                folder.rmdir()
+        except OSError:
+            pass
     return summary
 
 
@@ -337,4 +463,6 @@ def _safe_component(value: str, fallback: str, limit: int) -> str:
     value = re.sub(r"\s+", " ", value).strip(" .")
     if not value:
         value = fallback
+    if value.split(".", 1)[0].upper() in _WINDOWS_RESERVED_NAMES:
+        value = "_" + value
     return value[:limit].rstrip(" .") or fallback
