@@ -53,6 +53,66 @@ Tips:
 * More personalized options can be found on "Settings"
 
 
+## Desktop GUI (Windows)
+
+This repository also includes a standalone Chinese desktop GUI. Add one or more
+E-Hentai gallery, search, tag, favorites, or image-page links, or an H-Manhua
+chapter link such as `https://a.h-manhua.org/manga/comic/qingluan/1/`, to its
+persistent download queue. GameBus comic links such as
+`https://gamebus001.com/comic/1186` download every chapter in order, while
+`https://gamebus001.com/chapter/2552` downloads only that chapter. Huangguo video
+links such as `https://huangguoai.com/video/117/` (or any `.../ep-5/` link of the
+same series) download every episode of that series as video files. More links can
+be added while a download is running, and pending jobs are restored after
+restarting the app. Existing complete files are skipped, so an interrupted job
+can be started again safely.
+
+1. Install [Python 3.10+](https://www.python.org/downloads/) with Tcl/Tk enabled.
+2. Double-click `run-gui.bat`. The first run creates `.venv` and installs the
+   dependencies from `requirements.txt`.
+3. Paste links (one per line), click **加入队列**, choose an output directory, and
+   click **开始队列**. Failed jobs can be selected and queued again.
+4. For ExHentai, private favorites, or account-specific image settings, export a
+   logged-in browser session as a Netscape-format `cookies.txt` and select it in
+   the GUI. Never share this file.
+
+The downloader prefers each page's **Download original** link. If that link is not
+available, the optional fallback downloads the highest-resolution image exposed by
+the page. List links follow **Next** until the list ends; set a collection page
+limit in the GUI when you do not want the entire result set. Every source URL has
+its own deterministic folder, and extracted images and archives use completely
+separate parent trees:
+
+```text
+<output>/JPG/<source-url>/<gallery-or-chapter>/...
+<output>/CBZ/<source-url>/<gallery-or-chapter>.cbz
+<output>/VIDEO/<source-url>/<series>/<episode>.mp4
+```
+
+On the first launch after upgrading, recognized folders and CBZ files from the old
+flat layout are moved into this structure without overwriting conflicts. For
+readers without WebP support, enable the optional high-quality WebP-to-JPEG
+conversion; resumed jobs also convert existing WebP pages before packaging them.
+H-Manhua chapter links download the full-resolution images listed by the chapter
+page directly. GameBus uses the site's original `image_path` files; a comic URL
+keeps all of its chapters under one source folder, while a direct chapter URL gets
+a different source folder. Only concrete GameBus comic and chapter links are
+accepted, so a list-page link cannot accidentally queue the entire site.
+
+Huangguo pages are served as AES-128 HLS streams. The downloader reads the episode
+list from the play page, fetches the media playlist for each episode, downloads and
+decrypts its segments in parallel, and merges them into one file per episode. All
+episodes of a series share a single source folder regardless of which episode link
+was pasted. Partially downloaded segments are kept under a `.parts` folder so an
+interrupted episode resumes instead of restarting, and expired segment URLs are
+refreshed automatically. Merged episodes are remuxed to MP4 when `ffmpeg` is on
+`PATH`; otherwise the playable `.ts` file is kept. Turn the remux option off in the
+GUI to always keep `.ts`.
+
+Original-image requests can consume image quota or GP and automated downloads may
+trigger site throttling. Keep concurrency low and use the tool at your own risk.
+
+
 ## How It Works
 
 This script won't download archive from E-Hentai archive download page, so it won't spend your GPs or credits. It will fetch all the pages of the gallery and get their images' URL. Then script will use `GM_xmlhttpRequest` API (in order to cross origin) to download them. After that, it will package them to a Zip file with [JSZip](https://github.com/Stuk/jszip) and give it to you with [FileSaver.js](https://github.com/eligrey/FileSaver.js).

@@ -1,0 +1,4 @@
+beautifulsoup4>=4.13,<5
+Pillow>=10,<13
+pycryptodome>=3.20,<4
+requests>=2.32,<3
