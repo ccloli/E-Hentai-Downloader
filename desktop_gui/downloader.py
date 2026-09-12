@@ -33,6 +33,7 @@ from .output_layout import (
     image_source_directory,
     video_source_directory,
 )
+from .x_urls import X_HOSTS, canonical_x_video_url, is_x_video_url
 
 
 EHENTAI_DOMAINS = ("e-hentai.org", "exhentai.org")
@@ -306,6 +307,7 @@ def validate_input_url(value: str) -> str:
             is_supported_host(parsed.hostname)
             or is_gamebus_host(parsed.hostname)
             or is_huangguo_host(parsed.hostname)
+            or (parsed.hostname or "").lower().rstrip(".") in X_HOSTS
         )
         or parsed.username
         or parsed.password
@@ -314,7 +316,8 @@ def validate_input_url(value: str) -> str:
         raise InvalidUrlError(
             f"不支持的链接：{value}\n"
             "仅支持 E-Hentai、ExHentai、h-manhua.org 章节、"
-            "gamebus001.com 的漫画或章节链接，以及 huangguoai.com 的短剧链接。"
+            "gamebus001.com 的漫画或章节链接、huangguoai.com 的短剧链接，"
+            "以及 X/Twitter 推文视频链接。"
         )
     normalized = urlunparse(
         (
@@ -326,6 +329,13 @@ def validate_input_url(value: str) -> str:
             "",
         )
     )
+    if (parsed.hostname or "").lower().rstrip(".") in X_HOSTS:
+        if is_x_video_url(normalized):
+            return canonical_x_video_url(normalized)
+        raise InvalidUrlError(
+            f"不支持的 X/Twitter 链接：{value}\n"
+            "请粘贴具体推文链接或其 /video/1 链接，不支持主页、搜索或直播。"
+        )
     if is_h_manhua_host(parsed.hostname):
         if not is_h_manhua_chapter_url(normalized):
             raise InvalidUrlError(
@@ -368,7 +378,7 @@ def parse_input_urls(text: str) -> list[str]:
             seen.add(url)
             urls.append(url)
     if not urls:
-        raise InvalidUrlError("请至少输入一个支持的漫画链接。")
+        raise InvalidUrlError("请至少输入一个支持的漫画或视频链接。")
     return urls
 
 
@@ -432,6 +442,7 @@ def is_direct_download_url(url: str) -> bool:
         or is_h_manhua_chapter_url(url)
         or is_gamebus_url(url)
         or is_huangguo_video_url(url)
+        or is_x_video_url(url)
     )
 
 

@@ -18,6 +18,7 @@ from desktop_gui.downloader import (
     ProgressEvent,
 )
 from desktop_gui.queue_model import COMPLETED, FAILED, PENDING, DownloadQueue
+from desktop_gui.x_downloader import XVideoDownloader
 
 
 URL_ONE = "https://e-hentai.org/g/123/abcdef1234/"
@@ -35,6 +36,12 @@ def make_app() -> DownloaderApp:
 
 class QueueRunnerTests(unittest.TestCase):
     def test_selects_downloader_for_each_supported_site(self) -> None:
+        self.assertIs(
+            _downloader_class_for_url(
+                "https://x.com/0xCodila/status/2098182800482390216/video/1"
+            ),
+            XVideoDownloader,
+        )
         self.assertIs(_downloader_class_for_url(URL_ONE), EHentaiDownloader)
         self.assertIs(
             _downloader_class_for_url("https://gamebus001.com/comic/1186"),

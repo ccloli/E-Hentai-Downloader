@@ -24,6 +24,8 @@ from .downloader import (
     parse_input_urls,
 )
 from .output_layout import migrate_legacy_output, migrate_source_folders_to_titles
+from .x_downloader import XVideoDownloader
+from .x_urls import is_x_video_url
 from .queue_model import (
     COMPLETED,
     DOWNLOADING,
@@ -37,7 +39,7 @@ from .queue_model import (
 )
 
 
-APP_NAME = "E-Hentai / H漫画 / GameBus / 黄果短剧 批量下载器"
+APP_NAME = "漫画 / 黄果短剧 / X 视频 批量下载器"
 
 
 def _settings_path() -> Path:
@@ -50,6 +52,8 @@ def _queue_path() -> Path:
 
 
 def _downloader_class_for_url(url: str) -> type[EHentaiDownloader]:
+    if is_x_video_url(url):
+        return XVideoDownloader
     if is_huangguo_video_url(url):
         return HuangGuoDownloader
     return GameBusDownloader if is_gamebus_url(url) else EHentaiDownloader
@@ -178,7 +182,7 @@ class DownloaderApp:
             text=(
                 "支持 E-Hentai 画廊、搜索、标签、收藏夹、图片页，"
                 "H漫画章节，GameBus 整部漫画或章节，"
-                "以及黄果短剧（huangguoai.com）整部剧集链接；每行一个。"
+                "黄果短剧整部剧集，以及 X/Twitter 推文视频链接；每行一个。"
             ),
             style="Hint.TLabel",
         ).grid(row=1, column=0, sticky=tk.W, pady=(2, 10))
@@ -367,7 +371,7 @@ class DownloaderApp:
         )
         self.video_mp4_input = ttk.Checkbutton(
             options,
-            text="视频合并后转封装为 MP4（需要 ffmpeg，否则保留 .ts）",
+            text="黄果视频合并后转封装为 MP4（需要 ffmpeg，否则保留 .ts）",
             variable=self.video_mp4_var,
         )
         self.video_mp4_input.grid(

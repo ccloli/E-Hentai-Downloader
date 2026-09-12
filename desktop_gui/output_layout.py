@@ -8,6 +8,8 @@ from pathlib import Path
 from typing import Iterable
 from urllib.parse import unquote, urlparse
 
+from .x_urls import x_status_parts
+
 
 JPG_ROOT_NAME = "JPG"
 CBZ_ROOT_NAME = "CBZ"
@@ -91,6 +93,9 @@ class MigrationSummary:
 
 
 def source_folder_name(url: str) -> str:
+    x_parts = x_status_parts(url)
+    if x_parts:
+        return f"x-status-{x_parts[0]}"
     parsed = urlparse(url)
     hostname = (parsed.hostname or "").lower().rstrip(".")
     path = parsed.path or "/"

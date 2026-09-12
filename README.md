@@ -1,220 +1,112 @@
-# E-Hentai-Downloader
+# E-Hentai Downloader Desktop
 
-Download E-Hentai archive as zip file :package:
+A standalone Chinese Windows desktop GUI for downloading comics and videos.
+The browser userscript, bundled JavaScript libraries, and userscript build files
+have been removed. No browser extension is required.
 
-
-## Required Environment
-
-| Browser | [GreaseMonkey](https://www.greasespot.net/) | [Tampermonkey](http://tampermonkey.net/) | [Violentmonkey](https://violentmonkey.github.io/) |
-| ------- | ------------ | ------------ | ------------- |
-| Firefox (56-) | [3.2 beta2+](https://addons.mozilla.org/firefox/addon/greasemonkey/)  |  | |
-| Firefox (57+) | [4.1 beta5+](https://addons.mozilla.org/firefox/addon/greasemonkey/)  | [4.0.5054+](https://addons.mozilla.org/firefox/addon/tampermonkey/) | [2.8.18+](https://addons.mozilla.org/firefox/addon/violentmonkey/) |
-| Chrome |  | [3.5.3630+](https://chrome.google.com/webstore/detail/dhdgffkkebhmkfjojejmpbldmpobfkfo) | [2.2.6+](https://chrome.google.com/webstore/detail/jinjaccalgkegednnccohejagnlnfdag) |
-| Chrome (133+) |  | [5.0.0+](https://chrome.google.com/webstore/detail/dhdgffkkebhmkfjojejmpbldmpobfkfo) <sup>(5)</sup> | Incompatible <sup>(6)</sup> |
-| Opera (15+) | |  [3.5.3630+](https://addons.opera.com/extensions/details/tampermonkey-beta/)  | [2.1.10+](https://addons.opera.com/extensions/details/violent-monkey/) |
-| Safari (10.1+) <sup>(1)</sup> | | [4.3.5421+](https://tampermonkey.net/?browser=safari) |
-| Edge (18-) <sup>(2)</sup> | | [4.2.5284+](https://www.microsoft.com/store/p/tampermonkey/9nblggh5162s) |
-| Edge (79+) | | [4.10.6111+](https://microsoftedge.microsoft.com/addons/detail/tampermonkey/iikmkjmpaadaobahmlepeloendndfphd) | [2.12.8+](https://microsoftedge.microsoft.com/addons/detail/eeagobfjdenkkddmbclomhiblgggliao) |
-| Edge (133+) |  | [5.0.0+](https://microsoftedge.microsoft.com/addons/detail/tampermonkey/iikmkjmpaadaobahmlepeloendndfphd) <sup>(5)</sup> |  |
-| Maxthon | | | [2.1.10+](http://extension.maxthon.cn/detail/index.php?view_id=1680) |
-| Yandex Browser for Android <sup>(3)</sup> | | [4.2.5291+](https://chrome.google.com/webstore/detail/dhdgffkkebhmkfjojejmpbldmpobfkfo/) | [2.2.6+](https://chrome.google.com/webstore/detail/jinjaccalgkegednnccohejagnlnfdag) |
-| Kiwi Browser <sup>(3)</sup> | | [4.11+](https://chrome.google.com/webstore/detail/dhdgffkkebhmkfjojejmpbldmpobfkfo/) | [2.12.8+](https://chrome.google.com/webstore/detail/jinjaccalgkegednnccohejagnlnfdag) |
-| Firefox for Android (68-)<sup>(3)</sup> | Incompatible | Incompatible | [2.12.8+](https://addons.mozilla.org/firefox/addon/violentmonkey/) |
-| Firefox Nightly for Android (85+) <sup>(3)(4)</sup> | Incompatible | [4.11.6120+](https://addons.mozilla.org/firefox/addon/tampermonkey/) | [2.12.8+](https://addons.mozilla.org/firefox/addon/violentmonkey/) |
-
-> (1) You must upgrade your Windows 10 to 14393 which supports Edge extension.  
-> (2) You must upgrade your macOS to 10.12.4 which supports `download` attribute of `<a>` tag.  
-> (3) It's not a good idea to use it on mobile with limited RAM, but it can work, so it's up to you.  
-> (4) Firefox Nightly user requires to follow [this steps](https://blog.mozilla.org/addons/2020/09/29/expanded-extension-support-in-firefox-for-android-nightly/) to install extensions not in default list.  
-> (5) Chrome with forcing Manifest v3 Extension (probably 133+) requires to **enable Developer Mode** to load userscript, and Chrome 138+ may require to **enable Allow User Scripts permission**. Make sure to follow [this steps](https://www.tampermonkey.net/faq.php#Q209) or the script will not load.  
-> (6) Chrome with forcing Manifest v3 Extension (probably 133+) requires to **enable Manifest V2  extension** to load extension by enabling `chrome://flags/#allow-legacy-mv2-extensions`, but it may not working anymore since 139+.  
-
-
-
-## Install This Script
-
-- [Download from GitHub](https://github.com/ccloli/E-Hentai-Downloader/raw/master/e-hentai-downloader.user.js)
-- [Download from GreasyFork](https://sleazyfork.org/scripts/10379-e-hentai-downloader)
-
-
-## How To Use
-
-1. Open E-Hentai Gallery
-2. Find your interested gallery
-3. Click "Download Archive" in E-Hentai Downloader box
-4. Have a cup of coffee :coffee:
-5. Save the Zip file
-
-![E-Hentai Downloader box](https://cloud.githubusercontent.com/assets/8115912/10636596/56c9073c-7833-11e5-9161-c2c9f1a288a7.png)
-
-Tips:
-* Check "Number Images" to number download images
-* Set "Pages Range" to choose pages you want to download
-* More personalized options can be found on "Settings"
-
-
-## Desktop GUI (Windows)
-
-This repository also includes a standalone Chinese desktop GUI. Add one or more
-E-Hentai gallery, search, tag, favorites, or image-page links, or an H-Manhua
-chapter link such as `https://a.h-manhua.org/manga/comic/qingluan/1/`, to its
-persistent download queue. GameBus comic links such as
-`https://gamebus001.com/comic/1186` download every chapter in order, while
-`https://gamebus001.com/chapter/2552` downloads only that chapter. Huangguo video
-links such as `https://huangguoai.com/video/117/` (or any `.../ep-5/` link of the
-same series) download every episode of that series as video files. More links can
-be added while a download is running, and pending jobs are restored after
-restarting the app. Existing complete files are skipped, so an interrupted job
-can be started again safely.
+## Run
 
 1. Install [Python 3.10+](https://www.python.org/downloads/) with Tcl/Tk enabled.
-2. Double-click `run-gui.bat`. The first run creates `.venv` and installs the
-   dependencies from `requirements.txt`.
+2. Double-click `run-gui.bat`. It creates `.venv` and installs missing dependencies
+   or updates an outdated yt-dlp using `requirements.txt`.
 3. Paste links (one per line), click **加入队列**, choose an output directory, and
-   click **开始队列**. Failed jobs can be selected and queued again.
-4. For ExHentai, private favorites, or account-specific image settings, export a
-   logged-in browser session as a Netscape-format `cookies.txt` and select it in
-   the GUI. Never share this file.
+   click **开始队列**.
+4. When login is required, export your authorized browser session as a
+   Netscape-format `cookies.txt` and select it in the GUI. Never share this file.
 
-The downloader prefers each page's **Download original** link. If that link is not
-available, the optional fallback downloads the highest-resolution image exposed by
-the page. List links follow **Next** until the list ends; set a collection page
-limit in the GUI when you do not want the entire result set. Each work gets its own
-folder named after its title, and extracted images, archives and videos use
-completely separate parent trees:
+More links can be added while downloading. Pending jobs survive restarts, failed
+jobs can be retried, and stopping returns the current task to the waiting queue.
+Existing complete files are skipped when the task is run again.
 
-```text
-<output>/JPG/<title>/<gallery-or-chapter>/...
-<output>/CBZ/<title>/<gallery-or-chapter>.cbz
-<output>/VIDEO/<title>/<series>/<episode>.mp4
+## Supported links
+
+| Source | Supported input |
+| --- | --- |
+| E-Hentai / ExHentai | Gallery, search, tag, favorites, and image-page links |
+| H-Manhua | Chapter links, e.g. `https://a.h-manhua.org/manga/comic/qingluan/1/` |
+| GameBus | Whole comic: `https://gamebus001.com/comic/1186`; chapter: `https://gamebus001.com/chapter/2552` |
+| Huangguo | Whole series from `https://huangguoai.com/video/117/` or any episode link such as `https://huangguoai.com/video/117/ep-5/` |
+| X / Twitter | A status link downloads its embedded videos; a `/video/N` link downloads only the specified video |
+
+### X / Twitter videos
+
+Paste a link such as
+`https://x.com/0xCodila/status/2098182800482390216/video/1` into the existing queue.
+`twitter.com`, mobile links, and `i/web/status` links are also supported.
+Tracking query parameters are removed and equivalent host/username variants are
+deduplicated. A status link and a numbered video link remain distinct queue jobs
+because their download scopes differ.
+
+Video extraction uses [yt-dlp](https://github.com/yt-dlp/yt-dlp), preferring the
+highest-quality available direct MP4 stream, with other combined video formats as
+a fallback. Downloads stream to disk and retain `.part` files for resuming.
+Unavailable HLS fragments cause failure rather than silently producing an
+incomplete video. The Huangguo MP4 option does not affect X downloads.
+
+Only embedded, non-live videos are supported: profiles, search, Spaces, external
+video cards, and link-only posts are not accepted as video downloads. Private,
+deleted, login-gated, or rate-limited posts may fail with an error in the GUI;
+valid cookies can help only if your account already has access. Exported cookies
+are read without rewriting the source file. This does not bypass access controls.
+
+If X changes its API, update the extractor from the repository directory:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install --upgrade yt-dlp
 ```
 
-A GameBus comic keeps every chapter under its comic title, and all episodes of a
-Huangguo series share the series title, so opening a folder shows what is inside it.
-Works that share a title land in the same folder; their inner names still carry the
-gallery or chapter id, so nothing is overwritten. When a title is not known yet the
-downloader falls back to a deterministic URL-derived folder name.
+### Comics and Huangguo series
 
-On the first launch after upgrading, recognized folders and CBZ files from the old
-flat layout are moved into this structure, and source folders still named after a
-URL (`gamebus-comic-629`, `e-hentai-gallery-...`) are renamed to their title. Both
-migrations preserve conflicts instead of overwriting: identical duplicates are
-dropped and differing files are kept under a `.legacy-N` suffix. For readers without
-WebP support, enable the optional high-quality WebP-to-JPEG conversion; resumed jobs
-also convert existing WebP pages before packaging them. H-Manhua chapter links
-download the full-resolution images listed by the chapter page directly. GameBus
-uses the site's original `image_path` files. Only concrete GameBus comic and chapter
-links are accepted, so a list-page link cannot accidentally queue the entire site.
+The downloader prefers each E-Hentai page's **Download original** link. If it is
+unavailable, the optional fallback uses the highest-resolution image exposed by
+the page. List links follow **Next** until the list ends; set a collection page
+limit when you do not want the entire result set.
 
-Huangguo pages are served as AES-128 HLS streams. The downloader reads the episode
-list from the play page, fetches the media playlist for each episode, downloads and
-decrypts its segments in parallel, and merges them into one file per episode. All
-episodes of a series share a single source folder regardless of which episode link
-was pasted. Partially downloaded segments are kept under a `.parts` folder so an
-interrupted episode resumes instead of restarting, and expired segment URLs are
-refreshed automatically. Merged episodes are remuxed to MP4 when `ffmpeg` is on
-`PATH`; otherwise the playable `.ts` file is kept. Turn the remux option off in the
-GUI to always keep `.ts`.
+H-Manhua uses the full-resolution images listed on chapter pages. GameBus uses
+the site's original `image_path` files. Concrete comic/chapter links are required
+so list pages cannot accidentally queue an entire site. Optional high-quality
+WebP-to-JPEG conversion also converts existing WebP pages on resumed jobs before
+CBZ packaging.
 
-Original-image requests can consume image quota or GP and automated downloads may
-trigger site throttling. Keep concurrency low and use the tool at your own risk.
+Huangguo downloads all episodes listed on the play page. It reads AES-128 HLS
+playlists, downloads and decrypts segments in parallel, and merges each episode.
+Partial segments remain in `.parts` for resuming; expired segment URLs are
+refreshed automatically. With `ffmpeg` on `PATH`, the optional MP4 setting remuxes
+merged episodes; otherwise playable `.ts` files are retained.
 
+## Output
 
-## How It Works
+Images, archives, and videos use separate parent trees named after work titles:
 
-This script won't download archive from E-Hentai archive download page, so it won't spend your GPs or credits. It will fetch all the pages of the gallery and get their images' URL. Then script will use `GM_xmlhttpRequest` API (in order to cross origin) to download them. After that, it will package them to a Zip file with [JSZip](https://github.com/Stuk/jszip) and give it to you with [FileSaver.js](https://github.com/eligrey/FileSaver.js).
+```text
+<output>\JPG\<title>\<gallery-or-chapter>\...
+<output>\CBZ\<title>\<gallery-or-chapter>.cbz
+<output>\VIDEO\<title>\<series>\<episode>.mp4
+<output>\VIDEO\<title>\x-<status-id>\x-<media-id>.mp4
+```
 
+A GameBus comic keeps its chapters under one comic title; Huangguo episodes share
+their series title. Inner names include source IDs to avoid overwriting works
+with the same title. If a title is unavailable, a URL-derived name is used.
 
-## Should Be Noticed
+On upgrade, recognized legacy flat folders and archives are moved into this
+layout, and URL-named source folders are renamed to titles. Migrations preserve
+conflicts: identical duplicates are dropped and differing files are retained
+under a `.legacy-N` suffix.
 
-- The script is NOT provided by the offical, and using automated scripts/tools is NOT encouraged and may trigger throttle limit or even account ban, DON'T BOTHER ANYONE IN SITE FORUMS FOR ANY SCRIPT-RELATED ISSUE, AND USE AT YOUR OWN RISK.   
-  If you're downloading a large gallery, please consider using torrents if available, or using offical archiver for better and stable experience, and the cost should be closed to using script when the gallery is old enough to use GPs.  
-  For the detail rules, see [E-Hentai Image Viewing Limits](https://github.com/ccloli/E-Hentai-Downloader/wiki/E%E2%88%92Hentai-Image-Viewing-Limits).
-- If you see a message about out of memory on Firefox, or file not found on Chrome, [see solution here](https://github.com/ccloli/E-Hentai-Downloader/wiki/Can't-make-Zip-file-successfully).  
-  In short, use Pages Range to limit each zip file under 500 MB is recommended, and enable File System if you're using Chrome, or upgrade your PC with more RAM.  
-  However there're some hard limits, like 2 GB Blob Object limit on browser, and 4 GB size limit on ZIP itself. For such cases (and stability) please try other tools like [gallery-dl](https://github.com/mikf/gallery-dl).
-- You can also have a look at [E-Hentai Image Viewing Limits](https://github.com/ccloli/E-Hentai-Downloader/wiki/E%E2%88%92Hentai-Image-Viewing-Limits).
-- Most of galleries may have torrents to download. You can download archive with torrent to get stable download experience, get bonus content (most in cosplay gallery), earn GP and credit, and reduce the pressure of E-Hentai original servers (though it's a P2P site).
+## Development
 
-Here are some other compatible information (and some of them are backed to around 10 years ago), which is not important.
+```powershell
+.\.venv\Scripts\python.exe -m desktop_gui --check
+.\.venv\Scripts\python.exe -m unittest discover -s tests
+```
 
-- ~~Tampermonkey uses a dirty way to give `GM_xhr.response` content (transfers `String` to `ArrayBuffer` everytime), so it'll stuck for 1~3 seconds or more after downloaded image (depend on your device). If you are using Microsoft Edge, you may often see the working tab is stuck, saying it's not responding. Just let it go and do nothing. And if you are using Firefox, it's better to use GreaseMonkey from this side~~.  
-  The freeze problem should be fixed in Tampermonkey [4.12.6125](https://github.com/Tampermonkey/tampermonkey/issues/279).
-- ~~If you are using the latest Tampermonkey, or receive a warning of _"A userscript wants to access a cross-origin resource"_ from Tampermonkey, please **Allow All** or turn off "@connect mode" at setting page. For more info, [see details here](https://github.com/ccloli/E-Hentai-Downloader/wiki/Cross-origin-request-warning-from-Tampermonkey)~~.  
-  E-Hentai now uses `hath.network` domain to access images, and it's now listed in `@connect`, so you're not needed to set this with latest Tampermonkey.
-- ~~ViolentMonkey doesn't support timeout, final URL and download progress.~~  
-  The latest ViolentMonkey supports these features now.
-- ~~Single-thread download mode is removed in 1.18, if you need it, roll back to [old version](https://github.com/ccloli/E-Hentai-Downloader/releases/tag/v1.17.4).~~  
-  Don't use an old version, it doesn't support current site.
-- Dolphin Browser (Android) doesn't support blob URL, so this script cannot be run in Tampermonkey for Dolphin probably.
-- UC Browser (Android) doesn't support blob constructor, so this script cannot be run in Tampermonkey for UC probably.
-- Opera 12- doesn't support blob URL, and if generated as data URL, it may crash, so it's not supported.
-- TrixIE (for IE) is too old and its `GM_xhr` cannot handle large content, so it's not supported.
+The GUI source is in `desktop_gui`; `run-gui.bat` is the desktop launcher, not a
+browser userscript.
 
+## Notice
 
-## Warning And Limitation
-
-### Memory Usage
-
-The script will store **ALL** the data in RAM, not in HDD. This will increase the memory usage of current tab process. So if you don't have enough RAM, or the archive is too large (see [file size limit section](#file-size-limit)), please pay attention to your memory usage, or try other download tools.
-
-"Out of memory" problem is **the most limitaion** of the script (in fact, all the sections of "Warning And Limitation" are about RAM problem, and here is also a specific [out of memory](https://github.com/ccloli/E-Hentai-Downloader/issues?utf8=%E2%9C%93&q=label%3A%22out+of+memory%22+) tag to label all related issues). If you get an error like out of memory, [see solution here](https://github.com/ccloli/E-Hentai-Downloader/wiki/Can't-make-Zip-file-successfully). And if you usually have the problem, try other tools.
-
-### Browser Developer Tools
-
-To help us debug, the script will output some logs into console (F12 -> Console). If you find a bug, you can keep opening devtools to see and copy the logs. But note that it may increase memory usage and reduce running efficiency. So don't open console only if you want to see the output logs.
-
-### File Size Limit
-
-_(This part is a bit long, you can just read the table)_
-
-Different browsers have different maximum file size limits. Here is a table to show the maximum size the supported browser can handle.
-
-| Browser                      | Maximum Size                  |
-| ---------------------------- | ----------------------------- |
-| Chrome 56-                   | 500 MB                        |
-| Chrome 57+                   | 2 GB or (total RAM / 5)       |
-| Chrome (with File System)    | 1 GB / > 2GB (with 1.33+)     |
-| Firefox                      | 2 GB                          |
-| Opera 15+                    | Same as Chrome                |
-| Edge 18-                     | ?                             |
-| Edge 79+                     | Same as Chrome                |
-| Safari 10.1+                 | ?                             |
-| Maxthon                      | ?                             |
-
-For **Google Chrome 56-**, it has a hard limit at **500 MB** on **Blob Storage** for years. That means all the files that in storage cannot be larger than 500MB in total, and if the storage doesn't have enough free space to save the next file, it'll return a **fake** Blob instance silently **without any errors**. Also for Chrome 45-, `Blob.close()` didn't implement (and it's depreated so no browser supports it now), so we cannot free those used Blob immediately at that time, only to pary the browser will GC them ASAP (and for most of time it didn't work). That's why here is [a wiki page](https://github.com/ccloli/E-Hentai-Downloader/wiki/Can't-make-Zip-file-successfully) to help you work around this.
-
-So to help you save larger files, the script can save the Zip file into **File System**, a deprecated HTML5 API but still works on Chrome (as it's Chrome introduce the standard first). With the API, you can handle larger file because the file data will be writing to your disk instead of storing in Blob Storage, its limit is also big enough (10% of your disk free storage, 15 GB in maximum). But when processing the file, the files are still keeping in RAM, and if datas are too large, Chrome may also cannot handle them. From my test the maximum limit maybe **1 GB** if you only have 8 GB RAM, but it may also depends on your device. If you have enough RAM, you can download a gallery larger than **2 GB** with 1.33+.
-
-**Chrome 57+** [fixes the 500 MB limit of Blob Storage](https://bugs.chromium.org/p/chromium/issues/detail?id=375297#c107), so that it can handler larger files in RAM just like File System. Its quota is still exist but it's larger, which bases on the limits below, and [here are some examples](https://stackoverflow.com/a/43816041) to make it more clear:
-
-> In-memory quota:
-> * `2GB` if system is x64 and NOT ChromeOS or Android
-> * `Total RAM amount / 5`;
-> 
-> Disk quota:
-> * `Disk size / 2` if ChromeOS (user partition disk size)
-> * `Disk size / 20` if Android
-> * `Disk size / 10` otherwise.
-> 
-> Also, if disk is almost full, we try to keep at least `(in-memory quota)*2` disk space available, and we limit the disk quota accordingly.
-
-For **Firefox**, from our previous data from [FileSaver.js](https://github.com/eligrey/FileSaver.js), the limit is 800 MB. But from our tests, you can save the file that larger than 800 MB. So we think the limit of Firefox is depending on your device, as it stores the Blob in RAM. If you have a larger RAM, you can save a larger file. However, you should care about your RAM usage, as if Firefox cannot get more RAM to generate Zip, it'll throw an "out of memory" error. To give you some advice, no more than 200 MB if you're using 4 GB RAM, and be care for more than 800 MB if you're using 8 GB RAM.
-
-**Opera 15+** is a Chromium-based browser, so you can check its Chromium version and compare it to Chrome version to get your limit. All the other Chromium-based browsers can also use this rule.
-
-**Safari 10.1+** finally supports `download` attribute on `<a>` tag, so you can now make it works on Safari. We don't have too much data about Safari Blob limit, so if you're dealing with Safari, be care about your RAM usage.
-
-
-## Todo List
-
-[See plans and progress here](https://github.com/ccloli/E-Hentai-Downloader/wiki/Todo-List), notice that some of them may changed or removed in some time.
-
-
-## Report A Bug
-
-You can report a bug or give suggestions at [GitHub Issue](https://github.com/ccloli/E-Hentai-Downloader/issues) or [GreasyFork Feedback](https://sleazyfork.org/scripts/10379-e-hentai-downloader/feedback). English and Chinese are acceptable :stuck_out_tongue_closed_eyes:
-
-English is not my mother tounge, so if you found any mistakes, don't hesitate to [let me know](https://github.com/ccloli/E-Hentai-Downloader/issues/24) =ω=
-
-Sorry my code is a bit untidy, so it may hard for your development. I'll try optimizing it in a further time :sweat_smile:
+Download only content you are authorized to save and follow each site's rules.
+Original-image requests can consume image quota or GP; automated requests may
+trigger throttling or account restrictions. Keep concurrency low. This is an
+unofficial tool and is provided at your own risk.

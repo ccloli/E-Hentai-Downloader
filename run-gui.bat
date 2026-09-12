@@ -19,7 +19,7 @@ if not exist ".venv\Scripts\python.exe" (
     if errorlevel 1 goto :error
 )
 
-".venv\Scripts\python.exe" -c "import PIL, bs4, requests, Crypto" >nul 2>nul
+".venv\Scripts\python.exe" -c "import PIL, bs4, requests, Crypto; from yt_dlp.version import __version__; assert tuple(map(int, __version__.split('.')[:3])) >= (2026, 8, 19)" >nul 2>nul
 if errorlevel 1 (
     echo Installing GUI dependencies...
     ".venv\Scripts\python.exe" -m pip install --disable-pip-version-check -r requirements.txt
