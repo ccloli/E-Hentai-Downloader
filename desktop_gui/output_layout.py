@@ -21,11 +21,11 @@ _HUANGGUO_VIDEO_RE = re.compile(
     r"^/video/(?P<id>\d+)(?:/ep-(?P<episode>\d+))?/?$",
     re.IGNORECASE,
 )
-_EH_GALLERY_RE = re.compile(
+_COMIC_GALLERY_RE = re.compile(
     r"^/g/(?P<gid>\d+)/(?P<token>[0-9a-f]{10})(?:/|$)",
     re.IGNORECASE,
 )
-_EH_IMAGE_RE = re.compile(
+_COMIC_IMAGE_RE = re.compile(
     r"^/s/[0-9a-f]{10}/(?P<gid>\d+)-(?P<page>\d+)(?:/|$)",
     re.IGNORECASE,
 )
@@ -37,7 +37,7 @@ _LEGACY_GAMEBUS_RE = re.compile(
     r"^gb-(?P<comic>\d+)-\d+-(?P<chapter>\d+)\s+-\s+",
     re.IGNORECASE,
 )
-_LEGACY_EH_RE = re.compile(r"^(?P<gid>\d+)\s+-\s+")
+_LEGACY_COMIC_RE = re.compile(r"^(?P<gid>\d+)\s+-\s+")
 _LEGACY_H_MANHUA_RE = re.compile(
     r"^hm-(?P<slug>.+)-(?P<chapter>[^-]+)\s+-\s+",
     re.IGNORECASE,
@@ -64,7 +64,7 @@ _SLUG_SOURCE_FOLDER_RE = re.compile(
     r"^(?:"
     r"gamebus-(?:comic|chapter)-\d+"
     r"|huangguo-video-\d+"
-    r"|(?:e-hentai|exhentai)-(?:gallery|image|favorites|tag|collection)-.+"
+    r"|(?:comic|comic-private|e-hentai|exhentai)-(?:gallery|image|favorites|tag|collection)-.+"
     r"|h-manhua-.+"
     r"|.+-url-[0-9a-f]{12}"
     r")$",
@@ -92,7 +92,7 @@ class MigrationSummary:
         return self.image_directories + self.archives
 
 
-def source_folder_name(url: str) -> str:
+def source_folder_name(url: str, *, legacy: bool = False) -> str:
     x_parts = x_status_parts(url)
     if x_parts:
         return f"x-status-{x_parts[0]}"
@@ -114,14 +114,17 @@ def source_folder_name(url: str) -> str:
             return f"huangguo-video-{video.group('id')}"
 
     if hostname.endswith("e-hentai.org") or hostname.endswith("exhentai.org"):
-        site = "exhentai" if hostname.endswith("exhentai.org") else "e-hentai"
-        gallery = _EH_GALLERY_RE.match(path)
+        private = hostname.endswith("exhentai.org")
+        site = "comic-private" if private else "comic"
+        if legacy:
+            site = "exhentai" if private else "e-hentai"
+        gallery = _COMIC_GALLERY_RE.match(path)
         if gallery:
             return (
                 f"{site}-gallery-{gallery.group('gid')}-"
                 f"{gallery.group('token').lower()}"
             )
-        image = _EH_IMAGE_RE.match(path)
+        image = _COMIC_IMAGE_RE.match(path)
         if image:
             return (
                 f"{site}-image-{image.group('gid')}-"
@@ -184,14 +187,14 @@ def source_directory(
 ) -> Path:
     root = output_dir / root_name
     preferred = title_folder_name(source_title) if source_title else ""
-    if not preferred:
-        return root / source_folder_name(source_url)
-
-    desired = root / preferred
+    fallback = root / source_folder_name(source_url)
+    desired = root / preferred if preferred else fallback
     if desired.is_dir():
         return desired
-    legacy = root / source_folder_name(source_url)
-    return legacy if legacy.is_dir() else desired
+    for existing in (fallback, root / source_folder_name(source_url, legacy=True)):
+        if existing.is_dir():
+            return existing
+    return desired
 
 
 def plan_legacy_migration(
@@ -331,7 +334,7 @@ def _legacy_mappings(
     mappings: dict[str, dict[str, str]] = {
         "gamebus_comic": {},
         "gamebus_chapter": {},
-        "eh_gallery": {},
+        "comic_gallery": {},
         "h_manhua": {},
     }
     for url in source_urls:
@@ -346,9 +349,9 @@ def _legacy_mappings(
             if chapter:
                 mappings["gamebus_chapter"][chapter.group("id")] = folder
         elif hostname.endswith("e-hentai.org") or hostname.endswith("exhentai.org"):
-            gallery = _EH_GALLERY_RE.match(parsed.path)
+            gallery = _COMIC_GALLERY_RE.match(parsed.path)
             if gallery:
-                mappings["eh_gallery"][gallery.group("gid")] = folder
+                mappings["comic_gallery"][gallery.group("gid")] = folder
         elif hostname == "h-manhua.org" or hostname.endswith(".h-manhua.org"):
             chapter = _H_MANHUA_RE.match(parsed.path)
             if chapter:
@@ -374,10 +377,10 @@ def _legacy_source_folder(
             or f"gamebus-comic-{comic_id}"
         )
 
-    ehentai = _LEGACY_EH_RE.match(name)
-    if ehentai:
-        gid = ehentai.group("gid")
-        return mappings["eh_gallery"].get(gid) or f"e-hentai-gallery-{gid}-legacy"
+    comic = _LEGACY_COMIC_RE.match(name)
+    if comic:
+        gid = comic.group("gid")
+        return mappings["comic_gallery"].get(gid) or f"comic-gallery-{gid}-legacy"
 
     h_manhua = _LEGACY_H_MANHUA_RE.match(name)
     if h_manhua:

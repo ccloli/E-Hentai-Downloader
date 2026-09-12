@@ -12,7 +12,7 @@ from desktop_gui.downloader import (
     CancelledError,
     DownloadOptions,
     DownloadSummary,
-    EHentaiDownloader,
+    ComicDownloader,
     GameBusDownloader,
     HuangGuoDownloader,
     ProgressEvent,
@@ -42,7 +42,7 @@ class QueueRunnerTests(unittest.TestCase):
             ),
             XVideoDownloader,
         )
-        self.assertIs(_downloader_class_for_url(URL_ONE), EHentaiDownloader)
+        self.assertIs(_downloader_class_for_url(URL_ONE), ComicDownloader)
         self.assertIs(
             _downloader_class_for_url("https://gamebus001.com/comic/1186"),
             GameBusDownloader,
@@ -102,7 +102,7 @@ class QueueRunnerTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as temp_dir:
             options = DownloadOptions(output_dir=Path(temp_dir))
-            with patch("desktop_gui.app.EHentaiDownloader", FakeDownloader):
+            with patch("desktop_gui.app.ComicDownloader", FakeDownloader):
                 app._run_queue(options, threading.Event())
 
         self.assertEqual(processed, [URL_ONE, URL_TWO])
@@ -130,7 +130,7 @@ class QueueRunnerTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             options = DownloadOptions(output_dir=Path(temp_dir))
             with patch(
-                "desktop_gui.app.EHentaiDownloader",
+                "desktop_gui.app.ComicDownloader",
                 CancellingDownloader,
             ):
                 app._run_queue(options, stop_event)
@@ -152,7 +152,7 @@ class QueueRunnerTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as temp_dir:
             options = DownloadOptions(output_dir=Path(temp_dir))
-            with patch("desktop_gui.app.EHentaiDownloader", FailingDownloader):
+            with patch("desktop_gui.app.ComicDownloader", FailingDownloader):
                 app._run_queue(options, threading.Event())
 
         item = app.download_queue.snapshot()[0]
@@ -171,7 +171,7 @@ class QueueRunnerTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as temp_dir:
             options = DownloadOptions(output_dir=Path(temp_dir))
-            with patch("desktop_gui.app.EHentaiDownloader", FailingDownloader):
+            with patch("desktop_gui.app.ComicDownloader", FailingDownloader):
                 app._run_queue(options, stop_event)
 
         item = app.download_queue.snapshot()[0]

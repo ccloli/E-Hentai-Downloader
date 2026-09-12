@@ -13,7 +13,7 @@ from PIL import Image
 from desktop_gui.downloader import (
     DownloadOptions,
     DownloaderError,
-    EHentaiDownloader,
+    ComicDownloader,
     GameBusDownloader,
     GalleryInfo,
     HuangGuoDownloader,
@@ -602,7 +602,7 @@ class EndToEndTests(unittest.TestCase):
                 request_delay=0,
                 create_cbz=True,
             )
-            downloader = EHentaiDownloader(
+            downloader = ComicDownloader(
                 options,
                 session_factory=lambda: FakeSession(routes),
             )
@@ -662,7 +662,7 @@ class EndToEndTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as temp_dir:
             output = Path(temp_dir)
-            downloader = EHentaiDownloader(
+            downloader = ComicDownloader(
                 DownloadOptions(
                     output_dir=output,
                     workers=1,
@@ -706,7 +706,7 @@ class EndToEndTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as temp_dir:
             output = Path(temp_dir)
-            downloader = EHentaiDownloader(
+            downloader = ComicDownloader(
                 DownloadOptions(
                     output_dir=output,
                     workers=1,
@@ -763,7 +763,7 @@ class EndToEndTests(unittest.TestCase):
             webp_path = gallery_directory / "001 - page.webp"
             webp_path.write_bytes(make_webp())
 
-            downloader = EHentaiDownloader(
+            downloader = ComicDownloader(
                 DownloadOptions(
                     output_dir=output,
                     workers=1,
@@ -810,7 +810,7 @@ class EndToEndTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as temp_dir:
             output = Path(temp_dir)
-            downloader = EHentaiDownloader(
+            downloader = ComicDownloader(
                 DownloadOptions(
                     output_dir=output,
                     workers=2,
@@ -1092,7 +1092,7 @@ class EndToEndTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as temp_dir:
             output = Path(temp_dir)
-            downloader = EHentaiDownloader(
+            downloader = ComicDownloader(
                 DownloadOptions(
                     output_dir=output,
                     retries=0,
@@ -1115,7 +1115,7 @@ class EndToEndTests(unittest.TestCase):
                 / "123 - Old title"
             )
             old_directory.mkdir(parents=True)
-            downloader = EHentaiDownloader(
+            downloader = ComicDownloader(
                 DownloadOptions(output_dir=output, request_delay=0),
                 session_factory=lambda: FakeSession({}),
             )
@@ -1146,7 +1146,7 @@ class EndToEndTests(unittest.TestCase):
             },
         }
         with tempfile.TemporaryDirectory() as temp_dir:
-            downloader = EHentaiDownloader(
+            downloader = ComicDownloader(
                 DownloadOptions(output_dir=Path(temp_dir), request_delay=0),
                 session_factory=lambda: FakeSession(routes),
             )
@@ -1164,7 +1164,7 @@ class EndToEndTests(unittest.TestCase):
             }
         }
         with tempfile.TemporaryDirectory() as temp_dir:
-            downloader = EHentaiDownloader(
+            downloader = ComicDownloader(
                 DownloadOptions(output_dir=Path(temp_dir), request_delay=0),
                 session_factory=lambda: FakeSession(routes),
             )

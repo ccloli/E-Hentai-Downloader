@@ -21,6 +21,18 @@ from desktop_gui.output_layout import (
 
 
 class OutputLayoutTests(unittest.TestCase):
+    def test_legacy_gallery_folders_are_reused_after_rename(self) -> None:
+        url = "https://e-hentai.org/g/4073508/93195150e3/"
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            legacy = root / JPG_ROOT_NAME / "e-hentai-gallery-4073508-93195150e3"
+            legacy.mkdir(parents=True)
+            self.assertEqual(image_source_directory(root, url), legacy)
+            self.assertEqual(image_source_directory(root, url, "Title"), legacy)
+            titled = root / JPG_ROOT_NAME / "Title"
+            titled.mkdir()
+            self.assertEqual(image_source_directory(root, url, "Title"), titled)
+
     def test_source_urls_have_deterministic_separate_roots(self) -> None:
         comic_url = "https://gamebus001.com/comic/941"
         chapter_url = "https://gamebus001.com/chapter/1682"
@@ -33,7 +45,7 @@ class OutputLayoutTests(unittest.TestCase):
         )
         self.assertEqual(
             source_folder_name(gallery_url),
-            "e-hentai-gallery-4073508-93195150e3",
+            "comic-gallery-4073508-93195150e3",
         )
 
         root = Path("D:/downloads")

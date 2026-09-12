@@ -1,4 +1,4 @@
-# E-Hentai Downloader Desktop
+# Comic Downloader Desktop
 
 A standalone Chinese Windows desktop GUI for downloading comics and videos.
 The browser userscript, bundled JavaScript libraries, and userscript build files
@@ -18,11 +18,23 @@ More links can be added while downloading. Pending jobs survive restarts, failed
 jobs can be retried, and stopping returns the current task to the waiting queue.
 Existing complete files are skipped when the task is run again.
 
+The **下载队列**, **保存与登录**, and **选项** panels can be collapsed or expanded
+using their header buttons (mouse, Space, or Enter). They start expanded.
+Collapsing only hides controls: queue processing, settings, selection, and
+progress updates are preserved. Start/stop buttons and progress remain outside
+these panels.
+
+New installations store settings and the queue in `%APPDATA%\Comic`, with
+`Downloads\Comic` as the default output directory. Existing installations keep
+using their original settings, queue, lock, and configured output path; existing
+download folders are reused. Site domains and legacy compatibility identifiers
+are unchanged. The GitHub repository is not renamed.
+
 ## Supported links
 
 | Source | Supported input |
 | --- | --- |
-| E-Hentai / ExHentai | Gallery, search, tag, favorites, and image-page links |
+| Comic gallery sites | Gallery, search, tag, favorites, and image-page links on `e-hentai.org` / `exhentai.org` |
 | H-Manhua | Chapter links, e.g. `https://a.h-manhua.org/manga/comic/qingluan/1/` |
 | GameBus | Whole comic: `https://gamebus001.com/comic/1186`; chapter: `https://gamebus001.com/chapter/2552` |
 | Huangguo | Whole series from `https://huangguoai.com/video/117/` or any episode link such as `https://huangguoai.com/video/117/ep-5/` |
@@ -57,7 +69,7 @@ If X changes its API, update the extractor from the repository directory:
 
 ### Comics and Huangguo series
 
-The downloader prefers each E-Hentai page's **Download original** link. If it is
+The downloader prefers each gallery page's **Download original** link. If it is
 unavailable, the optional fallback uses the highest-resolution image exposed by
 the page. List links follow **Next** until the list ends; set a collection page
 limit when you do not want the entire result set.

@@ -13,7 +13,7 @@ from .downloader import (
     CancelledError,
     DownloadOptions,
     DownloadSummary,
-    EHentaiDownloader,
+    ComicDownloader,
     GameBusDownloader,
     HuangGuoDownloader,
     InvalidUrlError,
@@ -26,6 +26,7 @@ from .downloader import (
 from .output_layout import migrate_legacy_output, migrate_source_folders_to_titles
 from .x_downloader import XVideoDownloader
 from .x_urls import is_x_video_url
+from .widgets import CollapsibleSection
 from .queue_model import (
     COMPLETED,
     DOWNLOADING,
@@ -39,24 +40,27 @@ from .queue_model import (
 )
 
 
-APP_NAME = "漫画 / 黄果短剧 / X 视频 批量下载器"
+APP_NAME = "Comic - 漫画 / 黄果短剧 / X 视频 批量下载器"
 
 
 def _settings_path() -> Path:
     root = Path(os.environ.get("APPDATA", Path.home()))
-    return root / "E-Hentai-Downloader" / "gui-settings.json"
+    legacy = root / "E-Hentai-Downloader"
+    # Keep the original queue and lock together for existing installations.
+    directory = legacy if legacy.is_dir() else root / "Comic"
+    return directory / "gui-settings.json"
 
 
 def _queue_path() -> Path:
     return _settings_path().with_name("download-queue.json")
 
 
-def _downloader_class_for_url(url: str) -> type[EHentaiDownloader]:
+def _downloader_class_for_url(url: str) -> type[ComicDownloader]:
     if is_x_video_url(url):
         return XVideoDownloader
     if is_huangguo_video_url(url):
         return HuangGuoDownloader
-    return GameBusDownloader if is_gamebus_url(url) else EHentaiDownloader
+    return GameBusDownloader if is_gamebus_url(url) else ComicDownloader
 
 
 class DownloaderApp:
@@ -93,12 +97,12 @@ class DownloaderApp:
             )
         self.queue_stop_event = threading.Event()
         self.queue_worker: threading.Thread | None = None
-        self.downloader: EHentaiDownloader | None = None
+        self.downloader: ComicDownloader | None = None
         self.queue_running = False
         self.closing = False
         self.settings = self._load_settings()
 
-        default_output = Path.home() / "Downloads" / "E-Hentai"
+        default_output = Path.home() / "Downloads" / "Comic"
         self.output_var = tk.StringVar(
             value=self.settings.get("output_dir", str(default_output))
         )
@@ -180,7 +184,7 @@ class DownloaderApp:
         ttk.Label(
             container,
             text=(
-                "支持 E-Hentai 画廊、搜索、标签、收藏夹、图片页，"
+                "支持 Comic 画廊、搜索、标签、收藏夹、图片页，"
                 "H漫画章节，GameBus 整部漫画或章节，"
                 "黄果短剧整部剧集，以及 X/Twitter 推文视频链接；每行一个。"
             ),
@@ -212,8 +216,9 @@ class DownloaderApp:
             style="Hint.TLabel",
         ).grid(row=1, column=0, columnspan=2, sticky=tk.W, pady=(4, 0))
 
-        queue_frame = ttk.LabelFrame(container, text="下载队列", padding=8)
-        queue_frame.grid(row=3, column=0, sticky=tk.NSEW, pady=(10, 0))
+        self.queue_section = CollapsibleSection(container, "下载队列")
+        self.queue_section.grid(row=3, column=0, sticky=tk.EW, pady=(10, 0))
+        queue_frame = self.queue_section.body
         queue_frame.columnconfigure(0, weight=1)
         queue_frame.rowconfigure(0, weight=1)
         self.queue_tree = ttk.Treeview(
@@ -271,8 +276,9 @@ class DownloaderApp:
             style="Hint.TLabel",
         ).grid(row=0, column=6, sticky=tk.E)
 
-        destination = ttk.LabelFrame(container, text="保存与登录", padding=8)
-        destination.grid(row=4, column=0, sticky=tk.EW, pady=(10, 0))
+        self.destination_section = CollapsibleSection(container, "保存与登录")
+        self.destination_section.grid(row=4, column=0, sticky=tk.EW, pady=(10, 0))
+        destination = self.destination_section.body
         destination.columnconfigure(1, weight=1)
         ttk.Label(destination, text="输出根目录").grid(
             row=0, column=0, sticky=tk.W, padx=(0, 8)
@@ -316,12 +322,13 @@ class DownloaderApp:
         )
         ttk.Label(
             destination,
-            text="ExHentai、私有收藏夹或账号画质设置需要 Netscape 格式 Cookie。",
+            text="需要登录的画廊、私有收藏夹或账号画质设置需要 Netscape 格式 Cookie。",
             style="Hint.TLabel",
         ).grid(row=3, column=1, columnspan=3, sticky=tk.W, pady=(3, 0))
 
-        options = ttk.LabelFrame(container, text="选项", padding=8)
-        options.grid(row=5, column=0, sticky=tk.EW, pady=(10, 0))
+        self.options_section = CollapsibleSection(container, "选项")
+        self.options_section.grid(row=5, column=0, sticky=tk.EW, pady=(10, 0))
+        options = self.options_section.body
         ttk.Label(options, text="并发数").grid(row=0, column=0, sticky=tk.W)
         self.workers_input = ttk.Spinbox(
             options,
@@ -401,7 +408,7 @@ class DownloaderApp:
         self.stop_button.grid(row=0, column=1, padx=(8, 0))
         ttk.Label(
             controls,
-            text="E-Hentai 原图可能消耗图片额度或 GP，请遵守站点规则并控制并发。",
+            text="Comic 原图可能消耗图片额度或 GP，请遵守站点规则并控制并发。",
             style="Warning.TLabel",
         ).grid(row=0, column=2, sticky=tk.E, padx=(12, 0))
 
@@ -538,7 +545,7 @@ class DownloaderApp:
         self.queue_worker = threading.Thread(
             target=self._run_queue,
             args=(options, self.queue_stop_event),
-            name="ehd-queue",
+            name="comic-queue",
             daemon=True,
         )
         self.queue_worker.start()

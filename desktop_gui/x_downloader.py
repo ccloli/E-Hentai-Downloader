@@ -10,7 +10,7 @@ from yt_dlp.utils import DownloadError
 
 from .downloader import (
     DownloaderError,
-    EHentaiDownloader,
+    ComicDownloader,
     FileResult,
     GalleryDownloadResult,
     GalleryInfo,
@@ -38,7 +38,7 @@ class _Logger:
         self.downloader._emit("error", message)
 
 
-class XVideoDownloader(EHentaiDownloader):
+class XVideoDownloader(ComicDownloader):
     progress_unit = "视频"
     file_unit = "个视频"
 

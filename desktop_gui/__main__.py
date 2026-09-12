@@ -16,7 +16,7 @@ def main() -> None:
         from yt_dlp.version import __version__ as yt_dlp_version
 
         print(
-            f"EHD Desktop {__version__}; Python OK; Tk {tkinter.TkVersion}; "
+            f"Comic Desktop {__version__}; Python OK; Tk {tkinter.TkVersion}; "
             f"requests {requests.__version__}; beautifulsoup4 {bs4.__version__}; "
             f"Pillow {PIL.__version__}; pycryptodome {Crypto.__version__}; "
             f"yt-dlp {yt_dlp_version}"

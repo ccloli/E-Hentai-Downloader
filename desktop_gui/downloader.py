@@ -36,14 +36,14 @@ from .output_layout import (
 from .x_urls import X_HOSTS, canonical_x_video_url, is_x_video_url
 
 
-EHENTAI_DOMAINS = ("e-hentai.org", "exhentai.org")
+COMIC_DOMAINS = ("e-hentai.org", "exhentai.org")
 H_MANHUA_DOMAIN = "h-manhua.org"
 GAMEBUS_DOMAIN = "gamebus001.com"
 GAMEBUS_IMAGE_DOMAIN = "image.gamebus001.com"
 GAMEBUS_BASE_URL = f"https://{GAMEBUS_DOMAIN}"
 HUANGGUO_DOMAIN = "huangguoai.com"
 HUANGGUO_BASE_URL = f"https://{HUANGGUO_DOMAIN}"
-SUPPORTED_DOMAINS = (*EHENTAI_DOMAINS, H_MANHUA_DOMAIN)
+SUPPORTED_DOMAINS = (*COMIC_DOMAINS, H_MANHUA_DOMAIN)
 GALLERY_PATH_RE = re.compile(
     r"^/g/(?P<gid>\d+)/(?P<token>[0-9a-f]{10})(?:/|$)", re.IGNORECASE
 )
@@ -259,13 +259,13 @@ def is_supported_host(hostname: str | None) -> bool:
     )
 
 
-def is_ehentai_host(hostname: str | None) -> bool:
+def is_comic_host(hostname: str | None) -> bool:
     if not hostname:
         return False
     hostname = hostname.lower().rstrip(".")
     return any(
         hostname == domain or hostname.endswith("." + domain)
-        for domain in EHENTAI_DOMAINS
+        for domain in COMIC_DOMAINS
     )
 
 
@@ -315,7 +315,7 @@ def validate_input_url(value: str) -> str:
     ):
         raise InvalidUrlError(
             f"不支持的链接：{value}\n"
-            "仅支持 E-Hentai、ExHentai、h-manhua.org 章节、"
+            "仅支持 Comic 画廊站点、h-manhua.org 章节、"
             "gamebus001.com 的漫画或章节链接、huangguoai.com 的短剧链接，"
             "以及 X/Twitter 推文视频链接。"
         )
@@ -385,7 +385,7 @@ def parse_input_urls(text: str) -> list[str]:
 def is_gallery_url(url: str) -> bool:
     parsed = urlparse(url)
     return (
-        is_ehentai_host(parsed.hostname)
+        is_comic_host(parsed.hostname)
         and GALLERY_PATH_RE.match(parsed.path) is not None
     )
 
@@ -393,7 +393,7 @@ def is_gallery_url(url: str) -> bool:
 def is_image_page_url(url: str) -> bool:
     parsed = urlparse(url)
     return (
-        is_ehentai_host(parsed.hostname)
+        is_comic_host(parsed.hostname)
         and IMAGE_PATH_RE.match(parsed.path) is not None
     )
 
@@ -1216,7 +1216,7 @@ def create_session(options: DownloadOptions) -> requests.Session:
             "User-Agent": (
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                 "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/138.0 Safari/537.36 EHD-Desktop/1.0"
+                "Chrome/138.0 Safari/537.36 Comic-Desktop/1.0"
             ),
             "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.7",
         }
@@ -1245,7 +1245,7 @@ class _RateLimiter:
             cancel_event.wait(min(wait_for, 0.1))
 
 
-class EHentaiDownloader:
+class ComicDownloader:
     progress_unit = "页"
     file_unit = "张"
 
@@ -1433,7 +1433,7 @@ class EHentaiDownloader:
 
         if not galleries:
             raise DownloaderError(
-                "集合页面中没有找到画廊。若这是收藏夹或 ExHentai 链接，"
+                "集合页面中没有找到画廊。若这是收藏夹或需要登录的画廊链接，"
                 "请提供已登录账号导出的 cookies.txt。"
             )
         self._emit(
@@ -1585,7 +1585,7 @@ class EHentaiDownloader:
 
         executor = ThreadPoolExecutor(
             max_workers=self.options.workers,
-            thread_name_prefix="ehd-download",
+            thread_name_prefix="comic-download",
         )
         try:
             for index, page_url in enumerate(gallery.page_urls, start=1):
@@ -2049,7 +2049,7 @@ class EHentaiDownloader:
             ("this gallery is currently unavailable", "画廊当前不可用。"),
             ("your ip address has been temporarily banned", "当前 IP 被站点临时限制。"),
             ("you are currently at your image limit", "站点图片浏览额度已用尽。"),
-            ("sadpanda.jpg", "ExHentai 登录无效，请更新 cookies.txt。"),
+            ("sadpanda.jpg", "画廊登录无效，请更新 cookies.txt。"),
         )
         for marker, message in markers:
             if marker in lowered:
@@ -2098,7 +2098,7 @@ class EHentaiDownloader:
         )
 
 
-class GameBusDownloader(EHentaiDownloader):
+class GameBusDownloader(ComicDownloader):
     def __init__(
         self,
         options: DownloadOptions,
@@ -2232,7 +2232,7 @@ class GameBusDownloader(EHentaiDownloader):
         )
 
 
-class HuangGuoDownloader(EHentaiDownloader):
+class HuangGuoDownloader(ComicDownloader):
     progress_unit = "片段"
     file_unit = "集"
 
@@ -2382,7 +2382,7 @@ class HuangGuoDownloader(EHentaiDownloader):
 
         executor = ThreadPoolExecutor(
             max_workers=self.options.workers,
-            thread_name_prefix="ehd-video",
+            thread_name_prefix="comic-video",
         )
         try:
             for index in range(total):
